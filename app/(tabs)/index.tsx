@@ -1,24 +1,25 @@
-import { useRouter, useFocusEffect } from 'expo-router';
+import { SectionCard } from '@/components';
+import { createTables, getDBConnection } from '@/utils/database';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect, useRouter } from 'expo-router';
 import * as SQLite from 'expo-sqlite';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  SafeAreaView,
   ActivityIndicator,
+  LayoutAnimation,
+  Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
-  View,
-  Modal,
-  Pressable,
-  LayoutAnimation,
-  Platform,
+  TouchableOpacity,
   UIManager,
+  View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BookCarousel, { Book } from '../../src/components/BookCarousel';
-import SessionButton from '../../src/components/SessionButton';
 import SearchModal from '../../src/components/SearchModal';
-import { createTables, getDBConnection } from '../../utils/database';
+import SessionButton from '../../src/components/SessionButton';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -31,7 +32,9 @@ export default function HomeScreen() {
   const [completed, setCompleted] = useState<Book[]>([]);
   const [suggested, setSuggested] = useState<Book[]>([]);
   const [showSearch, setShowSearch] = useState(false);
+  
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   /* Init DB once */
   useEffect(() => {
@@ -82,21 +85,66 @@ export default function HomeScreen() {
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-      {/* top bar */}
-      <View style={styles.topBar}>
-        <Pressable style={styles.searchStub} onPress={() => setShowSearch(true)}>
-          <Ionicons name="search" size={16} color="#666" style={{ marginRight: 6 }} />
-          <Text style={{ color: '#666' }}>Cerca…</Text>
-        </Pressable>
-        <SessionButton variant="compact" />
-      </View>
+    <View style={styles.container}>
+      <ScrollView 
+        contentContainerStyle={[
+          styles.contentContainer,
+          {
+            paddingTop: 0,
+            paddingBottom: 16 + insets.bottom
+          }
+        ]}
+        scrollIndicatorInsets={{ right: 1 }}
+      >
+        {/* Header */}
+        <View style={[styles.header, { marginTop: insets.top }]}>
+          <View style={styles.headerTop}>
+            <View>
+              <Text style={styles.title}>La tua libreria</Text>
+              <Text style={styles.subtitle}>Scopri i tuoi libri</Text>
+            </View>
+            <View style={styles.headerActions}>
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={() => setShowSearch(true)}
+              >
+                <Ionicons name="search-outline" size={24} color="#f4511e" />
+              </TouchableOpacity>
+              <SessionButton variant="compact" />
+            </View>
+          </View>
+        </View>
 
-      <ScrollView style={styles.container} scrollIndicatorInsets={{ right: 1 }}>
-        <Section title="Da leggere" books={toRead} router={router} />
-        <Section title="In lettura" books={reading} router={router} />
-        <Section title="Completati" books={completed} router={router} />
-        <Section title="Suggeriti" books={suggested} router={router} />
+        {/* Book sections */}
+        <SectionCard title="In lettura">
+          {reading.length > 0 ? (
+            <BookCarousel books={reading} onPress={(id) => router.push({ pathname: '/book-details', params: { id } })} />
+          ) : (
+            <Text style={styles.emptyText}>Nessun libro in lettura</Text>
+          )}
+        </SectionCard>
+        
+        <SectionCard title="Da leggere">
+          {toRead.length > 0 ? (
+            <BookCarousel books={toRead} onPress={(id) => router.push({ pathname: '/book-details', params: { id } })} />
+          ) : (
+            <Text style={styles.emptyText}>Nessun libro da leggere</Text>
+          )}
+        </SectionCard>
+        
+        <SectionCard title="Completati">
+          {completed.length > 0 ? (
+            <BookCarousel books={completed} onPress={(id) => router.push({ pathname: '/book-details', params: { id } })} />
+          ) : (
+            <Text style={styles.emptyText}>Nessun libro completato</Text>
+          )}
+        </SectionCard>
+        
+        {suggested.length > 0 && (
+          <SectionCard title="Suggeriti">
+            <BookCarousel books={suggested} onPress={(id) => router.push({ pathname: '/book-details', params: { id } })} />
+          </SectionCard>
+        )}
       </ScrollView>
 
       <Modal visible={showSearch} animationType="slide" onRequestClose={() => setShowSearch(false)}>
@@ -109,24 +157,62 @@ export default function HomeScreen() {
           onClose={() => setShowSearch(false)}
         />
       </Modal>
-    </SafeAreaView>
-  );
-}
-
-function Section({ title, books, router }: { title: string; books: Book[]; router: any }) {
-  if (books.length === 0) return null;
-  return (
-    <>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <BookCarousel books={books} onPress={(id) => router.push({ pathname: '/book-details', params: { id } })} />
-    </>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  loader: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  topBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 4, paddingBottom: 8 },
-  searchStub: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#f1f1f1', borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
-  container: { flex: 1, paddingHorizontal: 16 },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', marginVertical: 12 },
+  container: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  contentContainer: {
+    padding: 16,
+  },
+  header: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  iconButton: {
+    padding: 5,
+    marginRight: 8,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#888',
+    padding: 16,
+    fontStyle: 'italic',
+  },
+  loader: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa'
+  },
 });

@@ -3,10 +3,10 @@
 import React from 'react';
 import {
   FlatList,
-  TouchableOpacity,
   Image,
-  Text,
   StyleSheet,
+  Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 
@@ -43,13 +43,14 @@ export default function BookCarousel({ books, onPress }: Props) {
       horizontal
       keyExtractor={(item) => item.id.toString()}
       showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.listContent}
       renderItem={({ item }) => (
         <TouchableOpacity
           style={styles.card}
           onPress={() => onPress(item.id)}
         >
           <Image source={{ uri: item.coverUrl }} style={styles.cover} />
-          <Text numberOfLines={1} style={styles.title}>
+          <Text numberOfLines={2} style={styles.title}>
             {item.title}
           </Text>
         </TouchableOpacity>
@@ -66,21 +67,32 @@ const styles = StyleSheet.create({
   emptyText: {
     color: '#888',
     fontSize: 14,
+    fontStyle: 'italic',
+  },
+  listContent: {
+    paddingVertical: 8,
   },
   card: {
-    marginRight: 12,
-    width: 100,
+    marginRight: 16,
+    width: 110,
   },
   cover: {
-    width: 100,
-    height: 150,
-    borderRadius: 4,
+    width: 110,
+    height: 165,
+    borderRadius: 8,
     backgroundColor: '#eee',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   title: {
-    marginTop: 4,
-    fontSize: 12,
+    marginTop: 8,
+    fontSize: 13,
+    fontWeight: '500',
     textAlign: 'center',
+    color: '#444',
   },
 });
 

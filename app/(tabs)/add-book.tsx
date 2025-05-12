@@ -1,19 +1,21 @@
 // app/(tabs)/add-book.tsx
-import React, { useState } from 'react';
-import {
-  SafeAreaView,
-  View,
-  Text,
-  TextInput,
-  Button,
-  StyleSheet,
-  ScrollView,
-  Modal,
-  Keyboard,
-  Alert,
-} from 'react-native';
+import { SectionCard } from '@/components';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as SQLite from 'expo-sqlite';
+import React, { useState } from 'react';
+import {
+  Alert,
+  Keyboard,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import SearchModal from '../../src/components/SearchModal';
 import { RemoteBook } from '../../src/services/bookApi';
@@ -101,55 +103,134 @@ export default function AddBookScreen() {
     }
   };
 
+  const insets = useSafeAreaInsets();
+  
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.label}>Titolo</Text>
-        <TextInput
-          style={styles.input}
-          value={form.title}
-          onChangeText={(t) => handleChange('title', t)}
-          placeholder="Titolo del libro"
-        />
-
-        <Text style={styles.label}>Autore</Text>
-        <TextInput
-          style={styles.input}
-          value={form.author}
-          onChangeText={(t) => handleChange('author', t)}
-          placeholder="Nome autore"
-        />
-
-        <Text style={styles.label}>Trama</Text>
-        <TextInput
-          style={[styles.input, { height: 80 }]}
-          value={form.description}
-          onChangeText={(t) => handleChange('description', t)}
-          placeholder="Breve trama"
-          multiline
-        />
-
-        <Text style={styles.label}>Copertina (URL)</Text>
-        <TextInput
-          style={styles.input}
-          value={form.coverUrl}
-          onChangeText={(t) => handleChange('coverUrl', t)}
-          placeholder="https://..."
-        />
-
-        <Text style={styles.label}>Anno pubblicazione</Text>
-        <TextInput
-          style={styles.input}
-          value={form.publication}
-          onChangeText={(t) => handleChange('publication', t)}
-          placeholder="YYYY"
-          keyboardType="numeric"
-        />
-
-        <View style={styles.buttonRow}>
-          <Button title="Cerca online" onPress={() => setShowSearch(true)} />
-          <Button title="Salva libro" onPress={handleSave} />
+    <View style={styles.container}>
+      <ScrollView 
+        contentContainerStyle={[
+          styles.contentContainer,
+          {
+            paddingTop: 0,
+            paddingBottom: 16 + insets.bottom
+          }
+        ]}
+      >
+        {/* Header */}
+        <View style={[styles.header, { marginTop: insets.top }]}>
+          <View style={styles.headerTop}>
+            <View style={styles.headerRow}>
+              <TouchableOpacity 
+                style={styles.backButton} 
+                onPress={() => router.back()}
+              >
+                <Ionicons name="arrow-back" size={24} color="#f4511e" />
+              </TouchableOpacity>
+              <Text style={styles.title}>Aggiungi Libro</Text>
+              <TouchableOpacity 
+                style={styles.actionButton}
+                onPress={() => setShowSearch(true)}
+              >
+                <Ionicons name="search-outline" size={22} color="#f4511e" />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.subtitle}>
+              {remoteBook ? 'Libro trovato online' : 'Inserisci i dettagli del libro'}
+            </Text>
+          </View>
         </View>
+
+        {/* Form */}
+        <SectionCard title="Informazioni libro">
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Titolo</Text>
+            <TextInput
+              style={styles.input}
+              value={form.title}
+              onChangeText={(t) => handleChange('title', t)}
+              placeholder="Titolo del libro"
+              placeholderTextColor="#bbb"
+            />
+          </View>
+
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Autore</Text>
+            <TextInput
+              style={styles.input}
+              value={form.author}
+              onChangeText={(t) => handleChange('author', t)}
+              placeholder="Nome autore"
+              placeholderTextColor="#bbb"
+            />
+          </View>
+
+          <View style={styles.formGroup}>
+            <Text style={styles.label}>Trama</Text>
+            <TextInput
+              style={[styles.input, { minHeight: 100 }]}
+              value={form.description}
+              onChangeText={(t) => handleChange('description', t)}
+              placeholder="Breve descrizione della trama"
+              placeholderTextColor="#bbb"
+              multiline
+              textAlignVertical="top"
+            />
+          </View>
+
+          <View style={styles.formRow}>
+            <View style={[styles.formGroup, { flex: 1, marginRight: 8 }]}>
+              <Text style={styles.label}>Copertina (URL)</Text>
+              <TextInput
+                style={styles.input}
+                value={form.coverUrl}
+                onChangeText={(t) => handleChange('coverUrl', t)}
+                placeholder="https://..."
+                placeholderTextColor="#bbb"
+              />
+            </View>
+
+            <View style={[styles.formGroup, { width: 100 }]}>
+              <Text style={styles.label}>Anno</Text>
+              <TextInput
+                style={styles.input}
+                value={form.publication}
+                onChangeText={(t) => handleChange('publication', t)}
+                placeholder="YYYY"
+                placeholderTextColor="#bbb"
+                keyboardType="numeric"
+              />
+            </View>
+          </View>
+
+          <TouchableOpacity 
+            style={styles.saveButton}
+            onPress={handleSave}
+          >
+            <Ionicons name="save-outline" size={22} color="#fff" />
+            <Text style={styles.saveButtonText}>Salva libro</Text>
+          </TouchableOpacity>
+        </SectionCard>
+
+        {remoteBook && (
+          <SectionCard title="Informazioni aggiuntive">
+            <Text style={styles.infoText}>
+              <Text style={styles.infoLabel}>Fonte: </Text>
+              {remoteBook.source === 'google' ? 'Google Books' : 'OpenLibrary'}
+            </Text>
+            {remoteBook.isbn10 && (
+              <Text style={styles.infoText}>
+                <Text style={styles.infoLabel}>ISBN-10: </Text>
+                {remoteBook.isbn10}
+              </Text>
+            )}
+            {remoteBook.isbn13 && (
+              <Text style={styles.infoText}>
+                <Text style={styles.infoLabel}>ISBN-13: </Text>
+                {remoteBook.isbn13}
+              </Text>
+            )}
+          </SectionCard>
+        )}
       </ScrollView>
 
       <Modal
@@ -163,13 +244,103 @@ export default function AddBookScreen() {
           onClose={() => setShowSearch(false)}
         />
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16 },
-  label: { fontSize: 14, fontWeight: 'bold', marginTop: 12 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 10, marginTop: 4 },
-  buttonRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 },
+  container: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  contentContainer: {
+    padding: 16,
+  },
+  header: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  headerTop: {
+    flexDirection: 'column',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666',
+  },
+  backButton: {
+    padding: 8,
+  },
+  actionButton: {
+    padding: 8,
+  },
+  formGroup: {
+    marginBottom: 16,
+  },
+  formRow: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  label: { 
+    fontSize: 14, 
+    fontWeight: '500', 
+    marginBottom: 6,
+    color: '#444',
+  },
+  input: { 
+    borderWidth: 1, 
+    borderColor: '#ddd', 
+    borderRadius: 10, 
+    padding: 12, 
+    backgroundColor: '#fff',
+    fontSize: 16,
+    color: '#333',
+  },
+  saveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f4511e',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    marginTop: 10,
+  },
+  saveButtonText: {
+    fontSize: 16,
+    color: '#fff',
+    marginLeft: 8,
+    fontWeight: '500',
+  },
+  infoText: {
+    fontSize: 15,
+    color: '#666',
+    marginBottom: 6,
+  },
+  infoLabel: {
+    fontWeight: '500',
+    color: '#444',
+  },
+  buttonRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    marginTop: 20 
+  },
 });

@@ -1,18 +1,19 @@
 // src/components/SearchModal.tsx
-import React, { useState, useEffect } from 'react';
-import {
-  SafeAreaView,
-  View,
-  TextInput,
-  FlatList,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  Keyboard,
-} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { searchRemoteBooks, RemoteBook, searchLocalBooks, LocalBook } from '../services/bookApi';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  Image,
+  Keyboard,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { LocalBook, RemoteBook, searchLocalBooks, searchRemoteBooks } from '../services/bookApi';
 
 export type SearchMode = 'remote' | 'local';
 
@@ -69,54 +70,109 @@ export default function SearchModal({ mode, onSelectRemote, onSelectLocal, onClo
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <TextInput
-          placeholder={
-            mode === 'remote'
-              ? 'Cerca titolo / ISBN / autore…'
-              : 'Cerca nella tua libreria…'
-          }
-          value={query}
-          onChangeText={text => {
-            console.log('[SearchModal] query changed to:', text);
-            setQuery(text);
-          }}
-          style={styles.input}
-          autoFocus
-        />
-        <TouchableOpacity onPress={() => {
-          console.log('[SearchModal] onClose pressed');
-          onClose();
-        }} style={styles.closeBtn} hitSlop={{ top:10, bottom:10, left:10, right:10 }}>
-          <Ionicons name="close" size={26} color="#444" />
+        <Text style={styles.headerTitle}>
+          {mode === 'remote' ? 'Cerca Online' : 'Cerca Libri'}
+        </Text>
+      </View>
+
+      <View style={styles.searchBarContainer}>
+        <View style={styles.searchBar}>
+          <Ionicons name="search" size={20} color="#888" style={styles.searchIcon} />
+          <TextInput
+            placeholder={
+              mode === 'remote'
+                ? 'Cerca titolo / ISBN / autore…'
+                : 'Cerca nella tua libreria…'
+            }
+            value={query}
+            onChangeText={text => {
+              console.log('[SearchModal] query changed to:', text);
+              setQuery(text);
+            }}
+            style={styles.input}
+            autoFocus
+          />
+          {query.length > 0 && (
+            <TouchableOpacity onPress={() => setQuery('')} style={styles.clearBtn}>
+              <Ionicons name="close-circle" size={20} color="#aaa" />
+            </TouchableOpacity>
+          )}
+        </View>
+        
+        <TouchableOpacity 
+          onPress={() => {
+            console.log('[SearchModal] onClose pressed');
+            onClose();
+          }} 
+          style={styles.closeBtn}
+        >
+          <Text style={styles.cancelText}>Annulla</Text>
         </TouchableOpacity>
       </View>
 
-      {loading && <ActivityIndicator style={{ marginTop: 16 }} />}
+      {loading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#f4511e" />
+        </View>
+      )}
 
       <FlatList
         data={results}
         keyExtractor={(item, idx) =>
           ((item as any).id ?? (item as any).externalId ?? idx).toString()
         }
-        contentContainerStyle={{ paddingBottom: 24 }}
+        contentContainerStyle={styles.listContainer}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.item} onPress={() => handleSelect(item)}>
-            <Text style={styles.title}>{item.title}</Text>
-            {'authors' in item && (
-              <Text style={styles.subtitle}>
-                {(item as RemoteBook).authors.join(', ')}
-              </Text>
+          <TouchableOpacity 
+            style={styles.item} 
+            onPress={() => handleSelect(item)}
+            activeOpacity={0.7}
+          >
+            {(item as any).coverUrl && (
+              <Image 
+                source={{ uri: (item as any).coverUrl }} 
+                style={styles.coverImage}
+                resizeMode="cover"
+              />
             )}
-            {'author' in item && (
-              <Text style={styles.subtitle}>
-                {(item as LocalBook).author}
-              </Text>
-            )}
+            <View style={styles.itemContent}>
+              <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
+              {'authors' in item && (
+                <Text style={styles.subtitle} numberOfLines={1}>
+                  {(item as RemoteBook).authors.join(', ')}
+                </Text>
+              )}
+              {'author' in item && (
+                <Text style={styles.subtitle} numberOfLines={1}>
+                  {(item as LocalBook).author}
+                </Text>
+              )}
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#ccc" />
           </TouchableOpacity>
         )}
         ListEmptyComponent={
-          !loading ? (
-            <Text style={styles.noResults}>Nessun risultato</Text>
+          !loading && query.trim().length > 0 ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="search-outline" size={50} color="#ddd" />
+              <Text style={styles.noResults}>
+                Nessun risultato trovato per "{query}"
+              </Text>
+              {mode === 'remote' && (
+                <Text style={styles.emptyTip}>
+                  Prova a modificare i termini di ricerca o controlla l'ortografia
+                </Text>
+              )}
+            </View>
+          ) : query.trim().length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Ionicons name="book-outline" size={50} color="#ddd" />
+              <Text style={styles.emptySearch}>
+                {mode === 'remote' 
+                  ? 'Cerca libri online per titolo, autore o ISBN'
+                  : 'Cerca libri nella tua collezione'}
+              </Text>
+            </View>
           ) : null
         }
       />
@@ -128,43 +184,118 @@ export default function SearchModal({ mode, onSelectRemote, onSelectLocal, onClo
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f8f9fa',
   },
   header: {
+    backgroundColor: '#fff',
+    paddingTop: 15,
+    paddingBottom: 10,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    textAlign: 'center',
+  },
+  searchBarContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
+    backgroundColor: '#fff',
+  },
+  searchBar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f1f1f1',
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  searchIcon: {
+    marginRight: 8,
   },
   input: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 10,
-    backgroundColor: '#f5f5f5',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    fontSize: 16,
+    paddingVertical: 0,
+    color: '#333',
+  },
+  clearBtn: {
+    padding: 5,
   },
   closeBtn: {
     marginLeft: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 5,
+  },
+  cancelText: {
+    color: '#f4511e',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  loadingContainer: {
+    padding: 20,
+  },
+  listContainer: {
+    paddingBottom: 24,
   },
   item: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 16,
+    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderColor: '#eee',
+    borderBottomColor: '#eee',
+  },
+  coverImage: {
+    width: 50,
+    height: 75,
+    borderRadius: 4,
+    backgroundColor: '#eee',
+    marginRight: 12,
+  },
+  itemContent: {
+    flex: 1,
+    marginRight: 10,
   },
   title: {
     fontWeight: '600',
     fontSize: 16,
+    color: '#333',
+    marginBottom: 4,
   },
   subtitle: {
-    color: '#555',
-    marginTop: 4,
+    color: '#666',
+    fontSize: 14,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 30,
   },
   noResults: {
     textAlign: 'center',
-    marginTop: 20,
+    marginTop: 16,
+    marginBottom: 8,
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '500',
+  },
+  emptyTip: {
+    textAlign: 'center',
     color: '#888',
+    fontSize: 14,
+  },
+  emptySearch: {
+    textAlign: 'center',
+    marginTop: 16,
+    color: '#888',
+    fontSize: 16,
   },
 });
