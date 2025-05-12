@@ -67,15 +67,18 @@ export async function deleteSession(id: number) {
 }
 
 /** Restituisce la durata della sessione in secondi */
-export async function getDuration(id: number): Promise<number> {
+export async function getDurationToNow(id: number): Promise<number> {
   const db = getDBConnection();
   const row = await db.getFirstAsync(
-    'SELECT duration FROM reading_sessions WHERE id = ?',
+    'SELECT start_time FROM reading_sessions WHERE id = ?',
     id
   ) as SessionRow | null;
   if (!row) throw new Error('Sessione non trovata');
-  if (row.duration === null) throw new Error('Durata non trovata');
-  return row.duration;
+  if (row.start_time === null) throw new Error('Sessione non avviata');
+  const start = new Date(row.start_time);
+  const now = new Date();
+  const duration = Math.floor((now.getTime() - start.getTime()) / 1000);
+  return duration;
 }
 
 /** Salva e aggiorna reading_status */

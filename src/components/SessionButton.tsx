@@ -1,5 +1,5 @@
 // src/components/SessionButton.tsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   TouchableOpacity,
   Text,
@@ -8,83 +8,89 @@ import {
   ActionSheetIOS,
   Platform,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import {
   startSession,
   endSession,
   deleteSession,
-  getDuration,
   saveSessionWithBook,
   getEligibleBooks,
+  getDurationToNow,
+  getActiveSessionId,
 } from '../services/profileService';
-import { getDBConnection } from '../../utils/database';
 
-export default function SessionButton() {
+interface Props {
+  variant?: 'default' | 'compact';
+}
+
+export default function SessionButton({ variant = 'default' }: Props) {
   const [active, setActive] = useState(false);
   const [sessionId, setSessionId] = useState<number | null>(null);
 
-  /* ------------------------- helper common ------------------------- */
+  /* ───────── restore active session on mount ───────── */
+  useEffect(() => {
+    (async () => {
+      const existing = await getActiveSessionId();
+      if (existing) {
+        setSessionId(existing);
+        setActive(true);
+      }
+    })();
+  }, []);
+
   const reset = () => {
     setActive(false);
     setSessionId(null);
   };
 
-  /* ----------------------------- start ----------------------------- */
+  /* ──────────────── start ──────────────── */
   const onStart = async () => {
     try {
       const id = await startSession();
       setSessionId(id);
       setActive(true);
-    } catch (err) {
-      console.error('startSession error', err);
+    } catch (e) {
+      console.error('startSession error', e);
       Alert.alert('Errore', 'Impossibile avviare la sessione.');
     }
   };
 
-  /* ------------------------------ end ------------------------------ */
-  const onEndPress = async () => {
-    if (sessionId === null) return;
-    const seconds = await getDuration(sessionId);
-
-    Alert.alert('Termina sessione', `Hai letto per ${seconds} secondi.`, [
-      {
-        text: 'Continua lettura',
-        style: 'cancel', // chiude alert, continua la sessione
-      },
-      {
-        text: 'Termina e salva',
-        onPress: async () => {
-          try {
+  /* ──────────────── stop / manage ──────────────── */
+  const onStop = async () => {
+    if (!sessionId) return;
+    try {      
+      const seconds = await getDurationToNow(sessionId);
+      Alert.alert('Termina sessione', `Hai letto per ${seconds} secondi.`, [
+        { text: 'Continua', style: 'cancel' },
+        {
+          text: 'Salva',
+          onPress: async () => {
             await endSession(sessionId);
             reset();
-          } catch (e) {
-            console.error(e);
-            Alert.alert('Errore', 'Impossibile terminare la sessione.');
-          }
+          },
         },
-      },
-      {
-        text: 'Termina e associa libro',
-        onPress: () => showBookPicker(seconds),
-      },
-      {
-        text: 'Elimina sessione',
-        style: 'destructive',
-        onPress: async () => {
-          try {
+        {
+          text: 'Associa libro',
+          onPress: () => showBookPicker(seconds),
+        },
+        {
+          text: 'Elimina',
+          style: 'destructive',
+          onPress: async () => {
             await deleteSession(sessionId);
             reset();
-          } catch (e) {
-            console.error(e);
-            Alert.alert('Errore', 'Impossibile eliminare la sessione.');
-          }
+          },
         },
-      },
-    ]);
+      ]);
+    } catch (e) {
+      console.error('onStop error', e);
+      Alert.alert('Errore', 'Impossibile terminare la sessione.');
+    }
   };
 
-  /* ------------------------ associazione libro ------------------------ */
+  /* ─────────── associate book ─────────── */
   const showBookPicker = async (seconds: number) => {
-    if (sessionId === null) return;
+    if (!sessionId) return;
     try {
       const books = await getEligibleBooks();
       if (books.length === 0) {
@@ -93,53 +99,60 @@ export default function SessionButton() {
         reset();
         return;
       }
-
-      const handleBook = async (book: any, markCompleted = false) => {
+      const handle = async (book: any, markCompleted = false) => {
         await endSession(sessionId);
-        await saveSessionWithBook(sessionId!, book.id, markCompleted);
+        await saveSessionWithBook(sessionId, book.id, markCompleted);
         reset();
       };
-
       if (Platform.OS === 'ios') {
         ActionSheetIOS.showActionSheetWithOptions(
           {
             options: [...books.map((b) => b.title), 'Annulla'],
             cancelButtonIndex: books.length,
           },
-          async (idx) => {
-            if (idx === books.length) return; // user cancelled
+          (idx) => {
+            if (idx === books.length) return;
             const book = books[idx];
             if (book.status === 'reading') {
               Alert.alert('Libro in lettura', 'Hai finito di leggerlo?', [
-                { text: 'No', onPress: () => handleBook(book, false) },
-                { text: 'Sì', onPress: () => handleBook(book, true) },
+                { text: 'No', onPress: () => handle(book, false) },
+                { text: 'Sì', onPress: () => handle(book, true) },
               ]);
             } else {
-              await handleBook(book, false);
+              handle(book, false);
             }
           }
         );
       } else {
         const first = books[0];
-        Alert.alert('Associa libro', `Associare "${first.title}"?`, [
+        Alert.alert('Associa libro', `Associare “${first.title}”?`, [
           { text: 'No', style: 'cancel' },
-          {
-            text: 'Sì',
-            onPress: () => handleBook(first, first.status === 'reading'),
-          },
+          { text: 'Sì', onPress: () => handle(first, first.status === 'reading') },
         ]);
       }
-    } catch (err) {
-      console.error('bookPicker error', err);
+    } catch (e) {
+      console.error('showBookPicker error', e);
       Alert.alert('Errore', 'Impossibile associare il libro.');
     }
   };
 
-  /* ---------------------------- render ---------------------------- */
+  /* ──────────────── render ──────────────── */
+  if (variant === 'compact') {
+    return (
+      <TouchableOpacity onPress={active ? onStop : onStart} hitSlop={10} style={{ marginLeft: 12 }}>
+        <Ionicons
+          name={active ? 'book' : 'book-outline'}
+          size={24}
+          color={active ? '#D0021B' : '#4A90E2'}
+        />
+      </TouchableOpacity>
+    );
+  }
+
   return (
     <TouchableOpacity
       style={[styles.btn, active ? styles.stopBtn : styles.startBtn]}
-      onPress={active ? onEndPress : onStart}
+      onPress={active ? onStop : onStart}
     >
       <Text style={styles.txt}>{active ? 'Termina Sessione' : 'Inizia Sessione'}</Text>
     </TouchableOpacity>
@@ -147,12 +160,7 @@ export default function SessionButton() {
 }
 
 const styles = StyleSheet.create({
-  btn: {
-    padding: 12,
-    borderRadius: 8,
-    alignSelf: 'center',
-    marginVertical: 16,
-  },
+  btn: { padding: 12, borderRadius: 8, alignSelf: 'center', marginVertical: 16 },
   startBtn: { backgroundColor: '#4A90E2' },
   stopBtn: { backgroundColor: '#D0021B' },
   txt: { color: '#fff', fontWeight: 'bold' },
