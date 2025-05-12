@@ -169,8 +169,7 @@ const styles = StyleSheet.create({
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
+    alignItems: 'flex-start'
   },
   title: {
     fontSize: 28,
@@ -181,7 +180,6 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 16,
     color: '#666',
-    marginBottom: 16,
   },
   settingsButton: {
     padding: 5,
