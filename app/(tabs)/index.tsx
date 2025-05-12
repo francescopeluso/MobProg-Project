@@ -1,4 +1,3 @@
-// app/(tabs)/index.tsx
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as SQLite from 'expo-sqlite';

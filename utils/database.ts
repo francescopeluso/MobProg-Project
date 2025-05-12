@@ -11,6 +11,31 @@ export const getDBConnection = () => {
   return dbInstance;
 };
 
+export const dropTables = async (db: SQLite.SQLiteDatabase): Promise<void> => {
+  try {
+    // Disable foreign keys
+    await db.execAsync(`PRAGMA foreign_keys = OFF;`);
+    // Drop all tables
+    await db.execAsync(`DROP TABLE IF EXISTS authors;`);
+    await db.execAsync(`DROP TABLE IF EXISTS books;`);
+    await db.execAsync(`DROP TABLE IF EXISTS genres;`);
+    await db.execAsync(`DROP TABLE IF EXISTS book_genres;`);
+    await db.execAsync(`DROP TABLE IF EXISTS reading_status;`);
+    await db.execAsync(`DROP TABLE IF EXISTS reading_sessions;`);
+    await db.execAsync(`DROP TABLE IF EXISTS notes;`);
+    await db.execAsync(`DROP TABLE IF EXISTS ratings;`);
+    await db.execAsync(`DROP TABLE IF EXISTS favorites;`);
+    await db.execAsync(`DROP TABLE IF EXISTS wishlist;`);
+    await db.execAsync(`DROP TABLE IF EXISTS lists;`);
+    await db.execAsync(`DROP TABLE IF EXISTS list_items;`);
+    await db.execAsync(`DROP TRIGGER IF EXISTS trg_after_book_insert;`);
+    console.log('All tables and triggers dropped successfully');
+  } catch (error) {
+    console.error('Error dropping database tables:', error);
+    throw error;
+  }
+};
+
 export const createTables = async (db: SQLite.SQLiteDatabase): Promise<void> => {
   try {
     // Enable foreign keys

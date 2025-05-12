@@ -1,51 +1,71 @@
-import React from 'react';
-import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Tabs } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import * as React from 'react';
+import { StyleSheet } from 'react-native';
 
-export default function TabsLayout() {
+export default function Layout() {
   return (
-    <Tabs
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarIcon: ({ color, size }) => {
-          // cast icon name as any to satisfy TS
-          let iconName: any;
-          switch (route.name) {
-            case 'index':
-              iconName = 'home-outline';
-              break;
-            case 'add-book':
-              iconName = 'book-outline';
-              break;
-            case 'profile':
-              iconName = 'person-outline';
-              break;
-            default:
-              iconName = 'ellipse';
-          }
-          return <Ionicons name={iconName} size={size} color={color} />;
-        },
-        tabBarActiveTintColor: '#4A90E2',
-        tabBarInactiveTintColor: 'gray',
-        tabBarLabelStyle: { fontSize: 12 },
-      })}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{ title: 'Home' }}
-      />
-      <Tabs.Screen
-        name="add-book"
-        options={{ title: 'Aggiungi' }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{ title: 'Profilo' }}
-      />
-      {/* modali */}
-      <Tabs.Screen name="search" options={{ title: 'Cerca' }} />
-      <Tabs.Screen name="book-details" options={{ title: 'Dettagli' }} />
-      <Tabs.Screen name="list-details" options={{ title: 'Lista' }} />
-    </Tabs>
+    <>
+      <StatusBar style="dark" backgroundColor="transparent" translucent />
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarActiveTintColor: '#f4511e',
+          tabBarInactiveTintColor: '#888',
+          tabBarStyle: { 
+            backgroundColor: '#fff',
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+            position: 'absolute',
+            height: 72,
+            paddingBottom: 48,
+            ...styles.shadow
+          },
+          tabBarLabelStyle: { fontSize: 12, paddingBottom: 4 },
+        }}
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: 'Home',
+            tabBarIcon: ({color, size}) => (
+              <Ionicons name="home-outline" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="aggiungi"
+          options={{
+            title: 'Aggiungi',
+            tabBarIcon: ({color, size}) => (
+              <Ionicons name="add-outline" size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="profilo"
+          options={{
+            title: 'Profilo',
+            tabBarIcon: ({color, size}) => (
+              <Ionicons name="person-outline" size={size} color={color} />
+            ),
+          }}
+        />
+      </Tabs>
+    </>
   );
 }
+
+const styles = StyleSheet.create({
+  shadow: {
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.5,
+    elevation: 5
+  }
+});
