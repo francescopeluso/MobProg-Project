@@ -1,9 +1,14 @@
 import * as SQLite from 'expo-sqlite';
 
+// Singleton pattern for database connection
+let dbInstance: SQLite.SQLiteDatabase | null = null;
+
 export const getDBConnection = () => {
-  const db = SQLite.openDatabaseSync('myapp.db');
-  console.log('Database path:', db.databasePath);
-  return db;
+  if (!dbInstance) {
+    dbInstance = SQLite.openDatabaseSync('myapp.db');
+    console.log('Database path:', dbInstance.databasePath);
+  }
+  return dbInstance;
 };
 
 export const createTables = async (db: SQLite.SQLiteDatabase): Promise<void> => {
@@ -91,7 +96,7 @@ export const createTables = async (db: SQLite.SQLiteDatabase): Promise<void> => 
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS reading_sessions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        book_id INTEGER NOT NULL,
+        book_id INTEGER,
         start_time TEXT NOT NULL,
         end_time TEXT,
         duration INTEGER GENERATED ALWAYS AS (
