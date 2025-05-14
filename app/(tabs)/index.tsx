@@ -17,9 +17,9 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import BookCarousel, { Book } from '../../src/components/BookCarousel';
-import SearchModal from '../../src/components/SearchModal';
-import SessionButton from '../../src/components/SessionButton';
+import BookCarousel, { Book } from '../../components/BookCarousel';
+import SearchModal from '../../components/SearchModal';
+import SessionButton from '../../components/SessionButton';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);

@@ -1,8 +1,13 @@
 // src/services/bookApi.ts
 
 /**
- * bookApi – wrapper minimale per cercare libri online (Google Books + Open Library)
+ *  In questo file definiamo le funzioni per effettuare:
+ *    - ricerca di libri remoti (Google Books e Open Library)
+ *    - ricerca di libri locali (SQLite)
+ *    - operazioni CRUD su libri locali
  */
+
+
 export interface RemoteBook {
   title: string;
   authors: string[];
@@ -76,7 +81,7 @@ export async function searchRemoteBooks(query: string): Promise<RemoteBook[]> {
 }
 
 // ---------------- LOCAL SEARCH ------------------
-import { getDBConnection } from '../../utils/database';
+import { getDBConnection } from '../utils/database';
 export interface LocalBook {
   id: number;
   title: string;

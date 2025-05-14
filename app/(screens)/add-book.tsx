@@ -17,8 +17,8 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import SearchModal from '../../src/components/SearchModal';
-import { RemoteBook } from '../../src/services/bookApi';
+import SearchModal from '../../components/SearchModal';
+import { RemoteBook } from '../../services/bookApi';
 
 interface authorRow {
   id: number;
