@@ -49,7 +49,7 @@ export default function HomeScreen() {
 
     const query = (status: string) =>
       db.getAllAsync(
-        `SELECT b.id, b.title, b.cover_url as coverUrl
+        `SELECT b.id, b.title, b.cover_url
            FROM books b
            JOIN reading_status rs ON rs.book_id = b.id
           WHERE rs.status = ?

@@ -1,29 +1,26 @@
 // app/(tabs)/book-details.tsx
-import React, { useEffect, useState } from 'react';
-import {
-  SafeAreaView,
-  View,
-  Text,
-  Image,
-  StyleSheet,
-  ScrollView,
-  Button,
-  Modal,
-  TextInput,
-  Alert,
-  TouchableOpacity,
-} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as SQLite from 'expo-sqlite';
+import React, { useEffect, useState } from 'react';
+import {
+  Alert,
+  Button,
+  Image,
+  Modal,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { Book } from '../../services/bookApi';
 
-interface BookDetails {
+interface BookDetails extends Omit<Book, 'reading_status'> {
   id: number;
-  title: string;
   author: string;
-  description: string;
-  coverUrl?: string;
-  publication?: number;
-status: 'to_read' | 'reading' | 'completed';
+  status: 'to_read' | 'reading' | 'completed';
 }
 
 interface NoteRow {
@@ -50,7 +47,7 @@ export default function BookDetailsScreen() {
       await db.execAsync('PRAGMA foreign_keys = ON;');
 
       const row = await db.getFirstAsync(
-        `SELECT b.id, b.title, b.description, b.cover_url AS coverUrl,
+        `SELECT b.id, b.title, b.description, b.cover_url,
                 b.publication, a.name AS author, rs.status
            FROM books b
            JOIN authors a ON a.id = b.author_id
@@ -148,7 +145,7 @@ export default function BookDetailsScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <ScrollView contentContainerStyle={styles.container}>
-        {book.coverUrl && <Image source={{ uri: book.coverUrl }} style={styles.cover} />}
+        {book.cover_url && <Image source={{ uri: book.cover_url }} style={styles.cover} />}
         <Text style={styles.title}>{book.title}</Text>
         <Text style={styles.author}>{book.author}</Text>
         {book.publication && <Text style={styles.pub}>Pubblicato: {book.publication}</Text>}

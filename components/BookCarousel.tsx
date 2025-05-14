@@ -2,22 +2,18 @@
 // app/(components)/BookCarousel.tsx
 import React from 'react';
 import {
-  FlatList,
-  Image,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    FlatList,
+    Image,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
 /**
- * Book type
+ * Import the Book interface from bookApi
  */
-export interface Book {
-  id: number;
-  title: string;
-  coverUrl: string;
-}
+import { Book } from '../services/bookApi';
 
 interface Props {
   books: Book[];
@@ -41,15 +37,15 @@ export default function BookCarousel({ books, onPress }: Props) {
     <FlatList
       data={books}
       horizontal
-      keyExtractor={(item) => item.id.toString()}
+      keyExtractor={(item) => (item.id || 0).toString()}
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.listContent}
       renderItem={({ item }) => (
         <TouchableOpacity
           style={styles.card}
-          onPress={() => onPress(item.id)}
+          onPress={() => item.id && onPress(item.id)}
         >
-          <Image source={{ uri: item.coverUrl }} style={styles.cover} />
+          <Image source={{ uri: item.cover_url }} style={styles.cover} />
           <Text numberOfLines={2} style={styles.title}>
             {item.title}
           </Text>
