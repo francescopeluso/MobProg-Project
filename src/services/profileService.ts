@@ -45,14 +45,14 @@ export async function endSession(id: number): Promise<number> {
 
   const endISO = new Date().toISOString();
 
-  // 1️⃣  aggiorna solo end_time
+  // aggiorna solo end_time
   await db.runAsync(
     'UPDATE reading_sessions SET end_time = ? WHERE id = ?',
     endISO,
     id
   );
 
-  // 2️⃣  ora SQLite ha calcolato duration: la recupero
+  // ora SQLite ha calcolato duration: la recupero
   const row = await db.getFirstAsync(
     'SELECT duration FROM reading_sessions WHERE id = ?',
     id

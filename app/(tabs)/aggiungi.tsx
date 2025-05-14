@@ -33,23 +33,13 @@ export default function AggiungiScreen() {
           <Text style={styles.description}>
             Aggiungi un nuovo libro alla tua collezione tramite ricerca o inserimento manuale.
           </Text>
-          <View style={styles.buttonRow}>
-            <TouchableOpacity 
-              style={styles.actionButton}
-              onPress={() => router.push('/add-book')}
-            >
-              <Ionicons name="search-outline" size={22} color="#fff" />
-              <Text style={styles.buttonText}>Cerca Online</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.actionButton, styles.secondaryButton]}
-              onPress={() => router.push('/add-book?mode=manual')}
-            >
-              <Ionicons name="create-outline" size={22} color="#fff" />
-              <Text style={styles.buttonText}>Inserisci Manualmente</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => router.push('/add-book')}
+          >
+            <Ionicons name="add-outline" size={22} color="#fff" />
+            <Text style={styles.buttonText}>Aggiungi Libro</Text>
+          </TouchableOpacity>
         </SectionCard>
         
         <SectionCard title="Scansiona">
