@@ -2,7 +2,7 @@ import { SectionCard } from '@/components';
 import { createTables, dropTables, getDBConnection } from '@/utils/database';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function SettingsScreen() {
@@ -63,17 +63,27 @@ export default function SettingsScreen() {
           </Text>
           <TouchableOpacity 
             style={[styles.actionButton, styles.dangerButton]}
-            onPress={async () => {
-              const confirmation = confirm('Sei sicuro? Tutti i dati verranno eliminati permanentemente.');
-              if (confirmation) {
-                try {
-                  await dropTables(db);
-                  alert('Database resettato con successo.');
-                } catch (error) {
-                  console.error('Errore durante il reset del database:', error);
-                  alert('Errore durante il reset del database.');
-                }
-              }
+            onPress={() => {
+              Alert.alert(
+                "Conferma reset",
+                "Sei sicuro? Tutti i dati verranno eliminati permanentemente.",
+                [
+                  { text: "Annulla", style: "cancel" },
+                  { 
+                    text: "Conferma", 
+                    style: "destructive",
+                    onPress: async () => {
+                      try {
+                        await dropTables(db);
+                        Alert.alert('Successo', 'Database resettato con successo.');
+                      } catch (error) {
+                        console.error('Errore durante il reset del database:', error);
+                        Alert.alert('Errore', 'Errore durante il reset del database.');
+                      }
+                    }
+                  }
+                ]
+              );
             }}
           >
             <Ionicons name="trash-outline" size={22} color="#fff" />
