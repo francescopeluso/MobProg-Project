@@ -19,7 +19,7 @@ export default function Layout() {
             borderTopLeftRadius: 24,
             borderTopRightRadius: 24,
             position: 'absolute',
-            height: 80,
+            height: 90,
             paddingTop: 10,
             paddingBottom: 30,
             ...styles.shadow

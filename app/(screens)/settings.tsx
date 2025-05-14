@@ -36,58 +36,37 @@ export default function SettingsScreen() {
         </View>
         
         <SectionCard title="Gestione Database">
-          <Text style={styles.description}>
-            Inizializza il database per creare tutte le tabelle necessarie per l&apos;applicazione.
-          </Text>
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={async () => {
-              try {
-                await createTables(db);
-                alert('Database inizializzato con successo.');
-              } catch (error) {
-                console.error('Errore durante l\'inizializzazione del database:', error);
-                alert('Errore durante l\'inizializzazione del database.');
-              }
-            }}
-          >
-            <Ionicons name="refresh-outline" size={22} color="#fff" />
-            <Text style={styles.buttonText}>Inizializza Database</Text>
-          </TouchableOpacity>
-        </SectionCard>
-        
-        <SectionCard title="Reset Database">
-          <Text style={styles.description}>
-            ATTENZIONE: Questa operazione eliminerà tutti i dati dal database. 
-            L&apos;azione non può essere annullata.
-          </Text>
+            <Text style={styles.description}>
+            La reinizializzazione del database ripristina la struttura delle tabelle dell&apos;applicazione.
+            </Text>
           <TouchableOpacity 
             style={[styles.actionButton, styles.dangerButton]}
             onPress={() => {
               Alert.alert(
-                "Conferma reset",
-                "Sei sicuro? Tutti i dati verranno eliminati permanentemente.",
-                [
-                  { text: "Annulla", style: "cancel" },
-                  { 
-                    text: "Conferma", 
-                    style: "destructive",
-                    onPress: async () => {
-                      try {
-                        await dropTables(db);
-                        Alert.alert('Successo', 'Database resettato con successo.');
-                      } catch (error) {
-                        console.error('Errore durante il reset del database:', error);
-                        Alert.alert('Errore', 'Errore durante il reset del database.');
-                      }
-                    }
-                  }
-                ]
+          "Conferma reinizializzazione",
+          "Sei sicuro? Tutti i dati esistenti verranno eliminati e il database sarà ripristinato.",
+          [
+            { text: "Annulla", style: "cancel" },
+            { 
+              text: "Conferma", 
+              style: "destructive",
+              onPress: async () => {
+                try {
+            await dropTables(db);
+            await createTables(db);
+            Alert.alert('Successo', 'Database reinizializzato con successo.');
+                } catch (error) {
+            console.error('Errore durante la reinizializzazione del database:', error);
+            Alert.alert('Errore', 'Errore durante la reinizializzazione del database.');
+                }
+              }
+            }
+          ]
               );
             }}
           >
-            <Ionicons name="trash-outline" size={22} color="#fff" />
-            <Text style={styles.buttonText}>Cancella Database</Text>
+            <Ionicons name="refresh-outline" size={22} color="#fff" />
+            <Text style={styles.buttonText}>Reinizializza Database</Text>
           </TouchableOpacity>
         </SectionCard>
 
