@@ -1,38 +1,25 @@
 // app/(tabs)/book-details.tsx
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  SafeAreaView,
-  View,
-  Text,
-  Image,
-  StyleSheet,
-  ScrollView,
-  Button,
-  Modal,
-  TextInput,
-  Alert,
-  TouchableOpacity,
+    Alert,
+    Button,
+    Image,
+    Modal,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import * as SQLite from 'expo-sqlite';
+import { Book, getBookById, saveNotes, saveRating, updateReadingStatus } from '../../services/bookApi';
 
-interface BookDetails {
+interface BookDetails extends Omit<Book, 'reading_status'> {
   id: number;
-  title: string;
   author: string;
-  description: string;
-  coverUrl?: string;
-  publication?: number;
-status: 'to_read' | 'reading' | 'completed';
-}
-
-interface NoteRow {
-  book_id: number;
-  notes_text: string;
-}
-interface RatingRow {
-  book_id: number;
-  rating: number;
+  status: 'to_read' | 'reading' | 'completed';
 }
 export default function BookDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -46,95 +33,53 @@ export default function BookDetailsScreen() {
 
   useEffect(() => {
     (async () => {
-      const db = await SQLite.openDatabaseAsync('myapp.db');
-      await db.execAsync('PRAGMA foreign_keys = ON;');
-
-      const row = await db.getFirstAsync(
-        `SELECT b.id, b.title, b.description, b.cover_url AS coverUrl,
-                b.publication, a.name AS author, rs.status
-           FROM books b
-           JOIN authors a ON a.id = b.author_id
-           JOIN reading_status rs ON rs.book_id = b.id
-          WHERE b.id = ?;`,
-        Number(id)
-      ) as BookDetails;
-      if (row) {
-        setBook(row as BookDetails);
-        setStatus(row.status as any);
+      const bookData = await getBookById(Number(id));
+      
+      if (bookData) {
+        // Adatta l'oggetto Book al formato BookDetails
+        const authorString = Array.isArray(bookData.authors) 
+          ? bookData.authors.map(a => typeof a === 'string' ? a : a.name).join(', ')
+          : '';
+          
+        setBook({
+          ...bookData,
+          id: bookData.id as number,
+          author: authorString,
+          status: bookData.reading_status?.status || 'to_read'
+        });
+        
+        setStatus(bookData.reading_status?.status || 'to_read');
+        setNotes(bookData.notes || '');
+        setRating(bookData.rating?.rating || 0);
       }
-
-      const noteRow = await db.getFirstAsync(
-        'SELECT notes_text FROM notes WHERE book_id = ?;',
-        Number(id)
-      ) as NoteRow | null;
-      setNotes(noteRow?.notes_text || '');
-
-      const ratingRow = await db.getFirstAsync(
-        'SELECT rating FROM ratings WHERE book_id = ?;',
-        Number(id)
-      ) as RatingRow | null;
-      setRating(ratingRow?.rating || 0);
     })();
   }, [id]);
 
   const updateStatus = async (newStatus: typeof status) => {
-    const db = await SQLite.openDatabaseAsync('myapp.db');
-    await db.execAsync('PRAGMA foreign_keys = ON;');
-    if (newStatus === 'reading') {
-      // set reading start
-      await db.runAsync(
-        `UPDATE reading_status
-           SET status = ?, start_time = COALESCE(start_time, datetime('now'))
-         WHERE book_id = ?;`,
-        newStatus,
-        Number(id)
-      );
-    } else if (newStatus === 'completed') {
-      // set completed end
-      await db.runAsync(
-        `UPDATE reading_status
-           SET status = ?, end_time = datetime('now')
-         WHERE book_id = ?;`,
-        newStatus,
-        Number(id)
-      );
+    if (!book) return;
+    
+    const success = await updateReadingStatus(book.id, newStatus);
+    
+    if (success) {
+      setStatus(newStatus);
+      Alert.alert('Stato aggiornato', `Libro segnato come ${newStatus.replace('_', ' ')}`);
     } else {
-      // to_read: reset times
-      await db.runAsync(
-        `UPDATE reading_status
-           SET status = ?, start_time = NULL, end_time = NULL
-         WHERE book_id = ?;`,
-        newStatus,
-        Number(id)
-      );
+      Alert.alert('Errore', 'Impossibile aggiornare lo stato di lettura.');
     }
-    setStatus(newStatus);
-    Alert.alert('Stato aggiornato', `Libro segnato come ${newStatus.replace('_', ' ')}`);
   };
 
   const saveNotesAndRating = async () => {
     if (!book) return;
-    const db = await SQLite.openDatabaseAsync('myapp.db');
-    await db.execAsync('PRAGMA foreign_keys = ON;');
-
-    await db.runAsync(
-      `INSERT INTO notes (book_id, notes_text)
-         VALUES (?, ?)
-       ON CONFLICT(book_id) DO UPDATE SET notes_text=excluded.notes_text;`,
-      Number(id),
-      notes
-    );
-
-    await db.runAsync(
-      `INSERT INTO ratings (book_id, rating)
-         VALUES (?, ?)
-       ON CONFLICT(book_id) DO UPDATE SET rating=excluded.rating;`,
-      Number(id),
-      rating
-    );
-
-    Alert.alert('Salvato', 'Note e valutazione aggiornate.');
-    setShowNotesModal(false);
+    
+    const notesSuccess = await saveNotes(book.id, notes);
+    const ratingSuccess = await saveRating(book.id, rating);
+    
+    if (notesSuccess && ratingSuccess) {
+      Alert.alert('Salvato', 'Note e valutazione aggiornate.');
+      setShowNotesModal(false);
+    } else {
+      Alert.alert('Errore', 'Impossibile salvare note e valutazione.');
+    }
   };
 
   if (!book) {
@@ -148,7 +93,7 @@ export default function BookDetailsScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <ScrollView contentContainerStyle={styles.container}>
-        {book.coverUrl && <Image source={{ uri: book.coverUrl }} style={styles.cover} />}
+        {book.cover_url && <Image source={{ uri: book.cover_url }} style={styles.cover} />}
         <Text style={styles.title}>{book.title}</Text>
         <Text style={styles.author}>{book.author}</Text>
         {book.publication && <Text style={styles.pub}>Pubblicato: {book.publication}</Text>}

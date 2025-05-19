@@ -1,8 +1,17 @@
 import * as SQLite from 'expo-sqlite';
 
-// Singleton pattern for database connection
+/**
+ * Utilizziamo un pattern Singleton per la connessione al database
+ * per evitare di aprire più connessioni, e per evitare di dover
+ * passare il db come argomento a tutte le funzioni
+ * che lo utilizzano
+ */
 let dbInstance: SQLite.SQLiteDatabase | null = null;
 
+/**
+ * Restituisce l'istanza del database SQLite.
+ * Se non esiste, la crea e la restituisce.
+ */
 export const getDBConnection = () => {
   if (!dbInstance) {
     dbInstance = SQLite.openDatabaseSync('myapp.db');
@@ -11,11 +20,17 @@ export const getDBConnection = () => {
   return dbInstance;
 };
 
+/**
+ * Funzione utilizzata nella reinizializzazione del database.
+ * Elimina tutte le tabelle (dunque anche i dati) e i trigger esistenti.
+ */
 export const dropTables = async (db: SQLite.SQLiteDatabase): Promise<void> => {
   try {
-    // Disable foreign keys
+    // Disabilita il controllo delle chiavi esterne, in modo da non incorrere in errori durante il drop
     await db.execAsync(`PRAGMA foreign_keys = OFF;`);
-    // Drop all tables
+
+    // Droppa tutte le tabelle e i trigger
+    await db.execAsync(`DROP TABLE IF EXISTS book_authors;`);
     await db.execAsync(`DROP TABLE IF EXISTS authors;`);
     await db.execAsync(`DROP TABLE IF EXISTS books;`);
     await db.execAsync(`DROP TABLE IF EXISTS genres;`);
@@ -29,6 +44,7 @@ export const dropTables = async (db: SQLite.SQLiteDatabase): Promise<void> => {
     await db.execAsync(`DROP TABLE IF EXISTS lists;`);
     await db.execAsync(`DROP TABLE IF EXISTS list_items;`);
     await db.execAsync(`DROP TRIGGER IF EXISTS trg_after_book_insert;`);
+
     console.log('All tables and triggers dropped successfully');
   } catch (error) {
     console.error('Error dropping database tables:', error);
@@ -36,42 +52,55 @@ export const dropTables = async (db: SQLite.SQLiteDatabase): Promise<void> => {
   }
 };
 
+
+/**
+ * Funzione utilizzata per creare le tabelle e i trigger del database.
+ * Viene chiamata una sola volta all'avvio dell'app, o alla reinizializzazione.
+ */
 export const createTables = async (db: SQLite.SQLiteDatabase): Promise<void> => {
   try {
-    // Enable foreign keys
+    // Abilita il controllo delle chiavi esterne, in modo da garantire l'integrità referenziale
     await db.execAsync(`PRAGMA foreign_keys = ON;`);
 
-    // Table: authors
+    // TABLE: Autori
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS authors (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-        bio TEXT,
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
     `);
 
-    // Table: books
+    // TABLE: Libri
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS books (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
         description TEXT,
         cover_url TEXT,
+        editor TEXT,
         publication INTEGER,
-        author_id INTEGER NOT NULL,
+        language TEXT,
         isbn10 TEXT CHECK(length(isbn10) = 10 OR isbn10 IS NULL),
         isbn13 TEXT CHECK(length(isbn13) = 13 OR isbn13 IS NULL),
-        external_source TEXT NOT NULL DEFAULT 'manual'
-          CHECK(external_source IN ('manual','google','openlibrary')),
-        external_id TEXT,
-        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+    `);
+
+    // JUNCTION TABLE: Relazione molti-a-molti tra libri e autori
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS book_authors (
+        book_id INTEGER NOT NULL,
+        author_id INTEGER NOT NULL,
+        PRIMARY KEY (book_id, author_id),
+        FOREIGN KEY(book_id) REFERENCES books(id)
+          ON DELETE CASCADE ON UPDATE CASCADE,
         FOREIGN KEY(author_id) REFERENCES authors(id)
           ON DELETE RESTRICT ON UPDATE CASCADE
       );
     `);
 
-    // Trigger: auto-create reading_status on new book
+    // TRIGGER: Creazione automatica dello stato di lettura per ogni nuovo libro (default è da leggere)
     await db.execAsync(`
       CREATE TRIGGER IF NOT EXISTS trg_after_book_insert
       AFTER INSERT ON books
@@ -81,7 +110,7 @@ export const createTables = async (db: SQLite.SQLiteDatabase): Promise<void> => 
       END;
     `);
 
-    // Table: genres
+    // TABLE: Generi letterari
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS genres (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -91,7 +120,7 @@ export const createTables = async (db: SQLite.SQLiteDatabase): Promise<void> => 
       );
     `);
 
-    // Junction: book_genres
+    // JUNCTION TABLE: Relazione molti-a-molti tra libri e generi
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS book_genres (
         book_id INTEGER NOT NULL,
@@ -104,7 +133,7 @@ export const createTables = async (db: SQLite.SQLiteDatabase): Promise<void> => 
       );
     `);
 
-    // Table: reading_status
+    // TABLE: Stato di lettura
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS reading_status (
         book_id INTEGER PRIMARY KEY,
@@ -117,7 +146,7 @@ export const createTables = async (db: SQLite.SQLiteDatabase): Promise<void> => 
       );
     `);
 
-    // Table: reading_sessions
+    // TABLE: Sessioni di lettura
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS reading_sessions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -132,7 +161,7 @@ export const createTables = async (db: SQLite.SQLiteDatabase): Promise<void> => 
       );
     `);
 
-    // Table: notes
+    // TABLE: Note sui libri
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS notes (
         book_id INTEGER PRIMARY KEY,
@@ -142,7 +171,7 @@ export const createTables = async (db: SQLite.SQLiteDatabase): Promise<void> => 
       );
     `);
 
-    // Table: ratings
+    // TABLE: Valutazioni personali dei libri
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS ratings (
         book_id INTEGER PRIMARY KEY,
@@ -155,7 +184,7 @@ export const createTables = async (db: SQLite.SQLiteDatabase): Promise<void> => 
       );
     `);
 
-    // Table: favorites
+    // TABLE: Preferiti
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS favorites (
         book_id INTEGER PRIMARY KEY,
@@ -165,7 +194,7 @@ export const createTables = async (db: SQLite.SQLiteDatabase): Promise<void> => 
       );
     `);
 
-    // Table: wishlist
+    // TABLE: Wishlist
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS wishlist (
         book_id INTEGER PRIMARY KEY,
@@ -175,7 +204,7 @@ export const createTables = async (db: SQLite.SQLiteDatabase): Promise<void> => 
       );
     `);
 
-    // Table: lists
+    // TABLE: Liste personalizzate
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS lists (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -184,7 +213,7 @@ export const createTables = async (db: SQLite.SQLiteDatabase): Promise<void> => 
       );
     `);
 
-    // Junction: list_items
+    // JUNCTION TABLE: Relazione molti-a-molti tra liste e libri
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS list_items (
         list_id INTEGER NOT NULL,

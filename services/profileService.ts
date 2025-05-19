@@ -1,5 +1,5 @@
 // src/services/profileService.ts
-import { getDBConnection } from '../../utils/database';
+import { getDBConnection } from '../utils/database';
 
 /** ID sessione aperta o null */
 interface SessionRow {
