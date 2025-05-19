@@ -13,15 +13,15 @@ export interface Book {
   id?: number;                // facoltativo, nel fetch non ci serve poichè viene generato dal DB sull'insert
   title: string;
   description?: string;
-  cover_url?: string;        // Standardizing on cover_url as per database schema
+  cover_url?: string;
   editor?: string;
   publication?: number;
-  published?: number;        // Added from RemoteBook for compatibility
+  published?: number;  // anno pubblicazione
   isbn10?: string;
   isbn13?: string;
   created_at?: string;
-  authors?: Author[] | string[]; // Can be either Author[] for DB or string[] for remote books
-  genres?: Genre[] | string[];  // Can be either Genre[] for DB or string[] for remote
+  authors?: Author[] | string[]; // array -> un libro può avere più autori
+  genres?: Genre[] | string[];  // array -> un libro può essere di più generi
   language?: string;
   reading_status?: ReadingStatus;
   notes?: string;
