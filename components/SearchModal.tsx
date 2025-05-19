@@ -14,7 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Book, searchBooksRemote, searchLocalBooks } from '../services/bookApi';
+import { Book, searchBooksLocal, searchBooksRemote } from '../services/bookApi';
 
 export type SearchMode = 'remote' | 'local';
 
@@ -55,7 +55,7 @@ export default function SearchModal({ mode, onSelectRemote, onSelectLocal, onClo
     try {
       const res = mode === 'remote'
         ? await searchBooksRemote(q)
-        : await searchLocalBooks(q);
+        : await searchBooksLocal(q);
       console.log('[SearchModal] search results:', res.length, res);
       setResults(res);
     } catch (e) {
@@ -124,7 +124,7 @@ export default function SearchModal({ mode, onSelectRemote, onSelectLocal, onClo
             <Ionicons name="information-circle-outline" size={18} color="#f4511e" />
             <Text style={styles.searchTipText}>
               {mode === 'remote'
-                ? 'La ricerca usa Google Books e OpenLibrary come fonti'
+                ? 'La ricerca usa Google Books come fonte'
                 : 'I risultati mostrano i libri presenti nel tuo database'}
             </Text>
           </View>

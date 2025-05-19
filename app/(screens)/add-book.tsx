@@ -1,7 +1,6 @@
 // app/(tabs)/add-book.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import * as SQLite from 'expo-sqlite';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -19,12 +18,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import SearchModal from '../../components/SearchModal';
-import { Book } from '../../services/bookApi';
-
-interface authorRow {
-  id: number;
-  name: string;
-}
+import { Book, deleteBook, getBookById, insertBook, updateBook } from '../../services/bookApi';
 
 const initialForm = {
   title: '',
@@ -50,44 +44,70 @@ export default function AddBookScreen() {
     }
   }, [params.id]);
 
+  /**
+   * 
+   * @function loadBook
+   * @param id ID del libro da caricare
+   * @description Funzione per caricare i dati di un libro esistente dal database locale.
+   *              Viene utilizzata quando si modifica un libro già esistente.
+   * @returns {Promise<void>}
+   * @throws {Error} Se si verifica un errore durante il caricamento dei dati.
+   * @async
+   */
   const loadBook = async (id: number) => {
     try {
       setLoading(true);
-      const db = await SQLite.openDatabaseAsync('myapp.db');
+      const bookData = await getBookById(id);
       
-      const bookRow = await db.getFirstAsync(
-        `SELECT b.title, b.description, b.cover_url, b.publication, a.name AS author
-         FROM books b JOIN authors a ON a.id = b.author_id
-         WHERE b.id = ?`, 
-        id
-      ) as any;
-      
-      if (bookRow) {
+      if (bookData) {
+        // Estrai gli autori come una stringa separata da virgole
+        const authorString = Array.isArray(bookData.authors) 
+          ? bookData.authors.map(a => typeof a === 'string' ? a : a.name).join(', ')
+          : '';
+        
         setForm({
-          title: bookRow.title || '',
-          author: bookRow.author || '',
-          description: bookRow.description || '',
-          cover_url: bookRow.cover_url || '',
-          publication: bookRow.publication ? bookRow.publication.toString() : '',
+          title: bookData.title || '',
+          author: authorString,
+          description: bookData.description.substring(0, 300) + ' [...]' || '',
+          cover_url: bookData.cover_url || '',
+          publication: bookData.publication ? bookData.publication.toString() : '',
         });
       }
     } catch (e) {
-      console.error('Error loading book', e);
+      console.error('Error while loading book\'s data: ', e);
+      Alert.alert('Errore', 'Impossibile caricare i dati del libro.');
     } finally {
       setLoading(false);
     }
   };
 
+  /**
+   * 
+   * @function handleChange
+   * @param key Chiave del form da aggiornare
+   * @param value Valore da impostare per la chiave specificata
+   * @description Funzione per gestire il cambiamento dei valori nei campi del form.
+   *              Viene utilizzata per aggiornare lo stato del form quando l'utente modifica un campo.
+   * @returns {void}
+   */
   const handleChange = (key: keyof typeof form, value: string) => {
     setForm({ ...form, [key]: value });
   };
 
+  /**
+   * 
+   * @function handleRemoteSelect
+   * @param book Oggetto Book selezionato dalla ricerca remota
+   * @description Funzione per gestire la selezione di un libro dalla ricerca remota.
+   *              Viene utilizzata per aggiornare il form con i dati del libro selezionato.
+   * @returns {void}
+   */
   const handleRemoteSelect = (book: Book) => {
     setRemoteBook(book);
     setForm({
       title: book.title,
       author: Array.isArray(book.authors) ? book.authors.join(', ') : '',
-      description: book.description || form.description,
+      description: book.description.substring(0, 300) + ' [...]' || form.description.substring(0, 300) + ' [...]',
       cover_url: book.cover_url || '',
       publication: book.published?.toString() || book.publication?.toString() || '',
     });
@@ -95,79 +115,126 @@ export default function AddBookScreen() {
     setShowSearch(false);
   };
 
+  /**
+   * 
+   * @function handleSave
+   * @description Funzione per gestire il salvataggio del libro.
+   *              Viene utilizzata sia per aggiungere un nuovo libro che per aggiornare uno esistente.
+   * @returns {Promise<void>}
+   * @throws {Error}
+   * @async
+   */
   const handleSave = async () => {
     try {
-      const db = await SQLite.openDatabaseAsync('myapp.db');
-      await db.execAsync('PRAGMA foreign_keys = ON;');
-
-      // 1. Autore: trova o crea
-      const authorName = form.author.trim() || 'Autore Sconosciuto';
-      let row = await db.getFirstAsync('SELECT id FROM authors WHERE name = ?', authorName) as authorRow | null;
-      let authorId = row?.id;
-      if (!authorId) {
-        const ins = await db.runAsync('INSERT INTO authors (name) VALUES (?)', authorName);
-        authorId = ins.lastInsertRowId as number;
-      }
-
       // Preparazione dati comuni
       const title = form.title.trim() || 'Titolo Sconosciuto';
-      const description = form.description.trim() || null;
-      const cover_url = form.cover_url.trim() || null;
-      const publication = parseInt(form.publication, 10) || null;
-      const isbn10 = remoteBook?.isbn10 || null;
-      const isbn13 = remoteBook?.isbn13 || null;
-      const external_source = remoteBook?.source || 'manual';
-      const external_id = remoteBook?.externalId || null;
-
-      if (isEditing && params.id) {
-        // Aggiorna il libro esistente
-        await db.runAsync(
-          `UPDATE books SET 
-           title = ?, description = ?, cover_url = ?, publication = ?, author_id = ?,
-           isbn10 = ?, isbn13 = ?, external_source = ?, external_id = ?
-           WHERE id = ?;`,
-          title,
-          description,
-          cover_url,
-          publication,
-          authorId,
-          isbn10,
-          isbn13,
-          external_source,
-          external_id,
-          params.id
-        );
-
-        Alert.alert('Completato', 'Libro aggiornato con successo.');
-      } else {
-        // Inserisci nuovo libro
-        await db.runAsync(
-          `INSERT INTO books
-            (title, description, cover_url, publication, author_id,
-             isbn10, isbn13, external_source, external_id)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);`,
-          title,
-          description,
-          cover_url,
-          publication,
-          authorId,
-          isbn10,
-          isbn13,
-          external_source,
-          external_id
-        );
-
-        Alert.alert('Completato', 'Libro aggiunto con successo.');
+      const description = form.description.trim() || undefined;
+      const cover_url = form.cover_url.trim() || undefined;
+      const publication = parseInt(form.publication, 10) || undefined;
+      const isbn10 = remoteBook?.isbn10 || undefined;
+      const isbn13 = remoteBook?.isbn13 || undefined;
+      
+      // Prepara un array di autori
+      const authors = form.author.split(',')
+        .map(a => a.trim())
+        .filter(a => a.length > 0);
+      
+      if (authors.length === 0) {
+        authors.push('Autore Sconosciuto');
       }
 
-      // Reset form e torna indietro
-      setForm({ ...initialForm });
-      setRemoteBook(null);
-      router.back();
+      // Crea l'oggetto libro da salvare
+      const bookToSave: Book = {
+        title,
+        description,
+        cover_url,
+        publication,
+        isbn10,
+        isbn13,
+        authors,
+        // Includi i generi dal libro remoto se disponibili
+        genres: remoteBook?.genres || []
+      };
+
+      // Se stiamo modificando un libro esistente, aggiungi l'ID
+      if (isEditing && params.id) {
+        bookToSave.id = parseInt(params.id);
+        
+        // Aggiorna il libro esistente
+        const success = await updateBook(bookToSave);
+        if (success) {
+          Alert.alert('Completato', 'Libro aggiornato con successo.');
+          // Reset del form e torna indietro
+          setForm({ ...initialForm });
+          setRemoteBook(null);
+          router.back();
+        } else {
+          Alert.alert('Errore', 'Impossibile aggiornare il libro.');
+        }
+      } else {
+        // Inserisci nuovo libro
+        const newBookId = await insertBook(bookToSave);
+        if (newBookId) {
+          Alert.alert('Completato', 'Libro aggiunto con successo.');
+          // Reset del form e torna indietro
+          setForm({ ...initialForm });
+          setRemoteBook(null);
+          router.back();
+        } else {
+          Alert.alert('Errore', 'Impossibile aggiungere il libro.');
+        }
+      }
     } catch (e) {
-      console.error('AddBook save error', e);
-      Alert.alert('Errore', 'Impossibile salvare il libro.');
+      console.error('Errore nell\'aggiunta del libro: ', e);
+      Alert.alert('Errore', 'Impossibile salvare il libro. ' + (e instanceof Error ? e.message : ''));
     }
+  };
+
+  /**
+   * 
+   * @function handleDelete
+   * @description Funzione per gestire l'eliminazione di un libro esistente.
+   *              Mostra una conferma prima di procedere con l'eliminazione.
+   * @returns {Promise<void>}
+   * @async
+   */
+  const handleDelete = async () => {
+    // Chiedi conferma prima di eliminare
+    Alert.alert(
+      'Elimina libro',
+      'Sei sicuro di voler eliminare questo libro? Questa azione non può essere annullata.',
+      [
+        {
+          text: 'Annulla',
+          style: 'cancel',
+        },
+        {
+          text: 'Elimina',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              if (!params.id) return;
+              
+              const bookId = parseInt(params.id);
+              const success = await deleteBook(bookId);
+              
+              if (success) {
+                Alert.alert('Completato', 'Libro eliminato con successo.');
+                // Reset del form e torna indietro
+                setForm({ ...initialForm });
+                setRemoteBook(null);
+                router.back();
+              } else {
+                Alert.alert('Errore', 'Impossibile eliminare il libro.');
+              }
+            } catch (e) {
+              console.error('Errore nell\'eliminazione del libro: ', e);
+              Alert.alert('Errore', 'Impossibile eliminare il libro. ' + (e instanceof Error ? e.message : ''));
+            }
+          }
+        }
+      ]
+    );
   };
 
   const insets = useSafeAreaInsets();
@@ -350,7 +417,7 @@ export default function AddBookScreen() {
             </View>
             <TextInput
               style={[styles.input, styles.textArea]}
-              value={form.description}
+              value={form.description.substring(0, 300) + ' [...]'}
               onChangeText={(t) => handleChange('description', t)}
               placeholder="Breve descrizione della trama"
               placeholderTextColor="#bbb"
@@ -372,15 +439,33 @@ export default function AddBookScreen() {
       </ScrollView>
       
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-        <TouchableOpacity 
-          style={styles.saveButton}
-          onPress={handleSave}
-        >
-          <Ionicons name="save-outline" size={22} color="#fff" />
-          <Text style={styles.saveButtonText}>
-            {isEditing ? 'Aggiorna libro' : 'Salva libro'}
-          </Text>
-        </TouchableOpacity>
+        {isEditing ? (
+          <View style={styles.footerButtons}>
+            <TouchableOpacity 
+              style={styles.deleteButton}
+              onPress={handleDelete}
+            >
+              <Ionicons name="trash-outline" size={22} color="#fff" />
+              <Text style={styles.deleteButtonText}>Elimina</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.saveButton}
+              onPress={handleSave}
+            >
+              <Ionicons name="save-outline" size={22} color="#fff" />
+              <Text style={styles.saveButtonText}>Aggiorna</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity 
+            style={styles.saveButton}
+            onPress={handleSave}
+          >
+            <Ionicons name="save-outline" size={22} color="#fff" />
+            <Text style={styles.saveButtonText}>Salva libro</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <Modal
@@ -624,6 +709,26 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   saveButtonText: {
+    fontSize: 16,
+    color: '#fff',
+    marginLeft: 8,
+    fontWeight: '500',
+  },
+  footerButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#e74c3c',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    flex: 0.48,
+  },
+  deleteButtonText: {
     fontSize: 16,
     color: '#fff',
     marginLeft: 8,

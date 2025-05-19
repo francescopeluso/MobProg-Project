@@ -2,24 +2,24 @@ import { SectionCard } from '@/components';
 import { createTables, getDBConnection } from '@/utils/database';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
-import * as SQLite from 'expo-sqlite';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  LayoutAnimation,
-  Modal,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  UIManager,
-  View,
+    ActivityIndicator,
+    LayoutAnimation,
+    Modal,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    UIManager,
+    View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import BookCarousel, { Book } from '../../components/BookCarousel';
+import BookCarousel from '../../components/BookCarousel';
 import SearchModal from '../../components/SearchModal';
 import SessionButton from '../../components/SessionButton';
+import { Book, getBooksByStatus } from '../../services/bookApi';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -44,29 +44,14 @@ export default function HomeScreen() {
 
   /* Fetch lists every time screen gains focus */
   const fetchLists = useCallback(async () => {
-    const db = await SQLite.openDatabaseAsync('myapp.db');
-    await db.execAsync('PRAGMA foreign_keys = ON;');
-
-    const query = (status: string) =>
-      db.getAllAsync(
-        `SELECT b.id, b.title, b.cover_url
-           FROM books b
-           JOIN reading_status rs ON rs.book_id = b.id
-          WHERE rs.status = ?
-          ORDER BY ${status === 'reading' ? 'rs.start_time DESC' : 'b.title'};`,
-        status
-      ) as Promise<Book[]>;
-
-    const [tr, rd, cp] = await Promise.all([
-      query('to_read'),
-      query('reading'),
-      query('completed'),
-    ]);
+    const toReadBooks = await getBooksByStatus('to_read');
+    const readingBooks = await getBooksByStatus('reading');
+    const completedBooks = await getBooksByStatus('completed');
 
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setToRead(tr);
-    setReading(rd);
-    setCompleted(cp);
+    setToRead(toReadBooks);
+    setReading(readingBooks);
+    setCompleted(completedBooks);
     setSuggested([]); // TODO suggeriti
   }, []);
 
