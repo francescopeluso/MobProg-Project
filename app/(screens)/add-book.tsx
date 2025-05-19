@@ -107,7 +107,7 @@ export default function AddBookScreen() {
     setForm({
       title: book.title,
       author: Array.isArray(book.authors) ? book.authors.join(', ') : '',
-      description: book.description.substring(0, 300) + ' [...]' || form.description,
+      description: book.description ? book.description.substring(0, 300) + ' [...]' : form.description,
       cover_url: book.cover_url || '',
       publication: book.published?.toString() || book.publication?.toString() || '',
     });
