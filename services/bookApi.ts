@@ -9,6 +9,7 @@
  */
 
 import { getDBConnection } from '../utils/database';
+
 export interface Book {
   id?: number;                // facoltativo, nel fetch non ci serve poichè viene generato dal DB sull'insert
   title: string;
