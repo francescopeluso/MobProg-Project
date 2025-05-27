@@ -68,7 +68,7 @@ export default function AddBookScreen() {
         setForm({
           title: bookData.title || '',
           author: authorString,
-          description: bookData.description.substring(0, 300) + ' [...]' || '',
+          description: bookData.description ? bookData.description.substring(0, 300) + ' [...]' : '',
           cover_url: bookData.cover_url || '',
           publication: bookData.publication ? bookData.publication.toString() : '',
         });
@@ -107,7 +107,7 @@ export default function AddBookScreen() {
     setForm({
       title: book.title,
       author: Array.isArray(book.authors) ? book.authors.join(', ') : '',
-      description: book.description.substring(0, 300) + ' [...]' || form.description.substring(0, 300) + ' [...]',
+      description: book.description ? book.description.substring(0, 300) + ' [...]' : form.description,
       cover_url: book.cover_url || '',
       publication: book.published?.toString() || book.publication?.toString() || '',
     });
@@ -417,7 +417,7 @@ export default function AddBookScreen() {
             </View>
             <TextInput
               style={[styles.input, styles.textArea]}
-              value={form.description.substring(0, 300) + ' [...]'}
+              value={form.description}
               onChangeText={(t) => handleChange('description', t)}
               placeholder="Breve descrizione della trama"
               placeholderTextColor="#bbb"

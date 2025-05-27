@@ -93,7 +93,7 @@ export default function ProfiloScreen() {
           <View style={styles.headerTop}>
             <View>
               <Text style={styles.title}>Profilo</Text>
-              <Text style={styles.subtitle}>Track your reading journey</Text>
+              <Text style={styles.subtitle}>Traccia le tue attività di lettura</Text>
             </View>
             <TouchableOpacity 
               style={styles.settingsButton} 

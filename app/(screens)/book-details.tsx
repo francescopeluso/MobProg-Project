@@ -96,7 +96,7 @@ export default function BookDetailsScreen() {
         {book.cover_url && <Image source={{ uri: book.cover_url }} style={styles.cover} />}
         <Text style={styles.title}>{book.title}</Text>
         <Text style={styles.author}>{book.author}</Text>
-        {book.publication && <Text style={styles.pub}>Pubblicato: {book.publication}</Text>}
+        {book.publication && <Text style={styles.pub}>Pubblicato nel {book.publication}</Text>}
         <Text style={styles.desc}>{book.description}</Text>
 
         {/* Status selector */}
