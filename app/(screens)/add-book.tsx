@@ -152,7 +152,8 @@ export default function AddBookScreen() {
         isbn10,
         isbn13,
         authors,
-        // Includi i generi dal libro remoto se disponibili
+        editor: remoteBook?.editor,
+        language: remoteBook?.language,
         genres: remoteBook?.genres || []
       };
 
@@ -176,6 +177,7 @@ export default function AddBookScreen() {
         const newBookId = await insertBook(bookToSave);
         if (newBookId) {
           Alert.alert('Completato', 'Libro aggiunto con successo.');
+          
           // Reset del form e torna indietro
           setForm({ ...initialForm });
           setRemoteBook(null);

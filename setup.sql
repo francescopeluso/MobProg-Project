@@ -21,25 +21,36 @@ CREATE TABLE IF NOT EXISTS books (
   title            TEXT    NOT NULL,
   description      TEXT,
   cover_url        TEXT,
+  editor           TEXT,
   publication      INTEGER,
-  author_id        INTEGER NOT NULL,
+  language         TEXT,
   isbn10           TEXT    CHECK(length(isbn10) = 10 OR isbn10 IS NULL),
   isbn13           TEXT    CHECK(length(isbn13) = 13 OR isbn13 IS NULL),
   external_source  TEXT    NOT NULL DEFAULT 'manual' 
                          CHECK(external_source IN ('manual','google','openlibrary')),
   external_id      TEXT,
-  created_at       TEXT    NOT NULL DEFAULT (datetime('now')),
-  FOREIGN KEY(author_id) REFERENCES authors(id)
-    ON DELETE RESTRICT
-    ON UPDATE CASCADE
+  created_at       TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 
 CREATE INDEX IF NOT EXISTS idx_book_title
   ON books(title);
 CREATE INDEX IF NOT EXISTS idx_book_created_at
   ON books(created_at);
-CREATE INDEX IF NOT EXISTS idx_books_author_id
-  ON books(author_id);
+
+-- --------------------------------------------------
+-- Junction: book_authors (books ↔ authors M:N)
+-- --------------------------------------------------
+CREATE TABLE IF NOT EXISTS book_authors (
+  book_id   INTEGER NOT NULL,
+  author_id INTEGER NOT NULL,
+  PRIMARY KEY (book_id, author_id),
+  FOREIGN KEY(book_id) REFERENCES books(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  FOREIGN KEY(author_id) REFERENCES authors(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+);
 
 -- --------------------------------------------------
 -- Trigger: auto-create reading_status on new book
