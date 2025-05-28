@@ -72,7 +72,7 @@ export default function SettingsScreen() {
 
         <SectionCard title="Informazioni App">
           <Text style={styles.description}>
-            BookTrack è un&apos;applicazione per gestire la tua libreria personale, e tenere
+            Readit è un&apos;applicazione per gestire la tua libreria personale, e tenere
             traccia dei tuoi progressi di lettura.
           </Text>
           <Text style={styles.description}>
