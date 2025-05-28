@@ -76,7 +76,7 @@ export default function HomeScreen() {
           styles.contentContainer,
           {
             paddingTop: 0,
-            paddingBottom: 16 + insets.bottom
+            paddingBottom: 70 + insets.bottom
           }
         ]}
         scrollIndicatorInsets={{ right: 1 }}
