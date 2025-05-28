@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
@@ -12,69 +13,87 @@ import {
   StatBox
 } from '@/components';
 
+import {
+  getGenreDistribution,
+  getLatestBookRatings,
+  getMonthlyReadingData,
+  getRatingStatistics,
+  getReadingStatistics,
+  getWeeklyProgressData,
+  type BookRating,
+  type GenreData,
+  type MonthlyData,
+  type ProgressData,
+  type RatingStats,
+  type ReadingStats
+} from '@/services/statisticsService';
+
 export default function ProfiloScreen() {
   const insets = useSafeAreaInsets();
   
-  // Dati per il grafico a barre
-  const barData = [
-    { value: 10, label: 'Gen', frontColor: '#f4511e' },
-    { value: 6, label: 'Feb', frontColor: '#f4511e' },
-    { value: 8, label: 'Mar', frontColor: '#f4511e' },
-    { value: 12, label: 'Apr', frontColor: '#f4511e' },
-    { value: 4, label: 'Mag', frontColor: '#f4511e' },
-    { value: 2, label: 'Giu', frontColor: '#f4511e' },
-  ];
-  
-  // Dati per il grafico a torta
-  const pieData = [
-    { value: 50, color: '#f4511e', text: '50%', label: 'Narrativa' },
-    { value: 30, color: '#ffb347', text: '30%', label: 'Saggistica' },
-    { value: 20, color: '#4caf50', text: '20%', label: 'Fantasy' },
-  ];
+  // Stati per i dati delle statistiche
+  const [readingStats, setReadingStats] = useState<ReadingStats>({
+    booksRead: 0,
+    booksReading: 0,
+    booksToRead: 0,
+    totalBooks: 0
+  });
+  const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
+  const [genreData, setGenreData] = useState<GenreData[]>([]);
+  const [weeklyData, setWeeklyData] = useState<ProgressData[]>([]);
+  const [bookRatings, setBookRatings] = useState<BookRating[]>([]);
+  const [ratingStats, setRatingStats] = useState<RatingStats>({
+    averageRating: 0,
+    totalRatings: 0,
+    ratingsDistribution: {}
+  });
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Dati per il grafico a linee (progressione letture)
-  const lineData = [
-    { value: 2, dataPointText: '2', label: 'Lun' },
-    { value: 5, dataPointText: '5', label: 'Mar' },
-    { value: 4, dataPointText: '4', label: 'Mer' },
-    { value: 8, dataPointText: '8', label: 'Gio' },
-    { value: 6, dataPointText: '6', label: 'Ven' },
-    { value: 10, dataPointText: '10', label: 'Sab' },
-  ];
+  // Carica tutti i dati delle statistiche
+  const loadStatistics = async () => {
+    try {
+      setLoading(true);
+      
+      const [
+        stats,
+        monthly,
+        genres,
+        weekly,
+        ratings,
+        ratingStatsData
+      ] = await Promise.all([
+        getReadingStatistics(),
+        getMonthlyReadingData(),
+        getGenreDistribution(),
+        getWeeklyProgressData(),
+        getLatestBookRatings(),
+        getRatingStatistics()
+      ]);
 
-  // Valutazioni di libri
-  const bookRatings = [
-    { 
-      title: "Dune", 
-      author: "Frank Herbert", 
-      rating: 5,
-      comment: "Un capolavoro della fantascienza, worldbuilding incredibile."
-    },
-    { 
-      title: "1984", 
-      author: "George Orwell", 
-      rating: 4,
-      comment: "Inquietante e sempre attuale, una lettura necessaria."
-    },
-    { 
-      title: "Il nome della rosa", 
-      author: "Umberto Eco", 
-      rating: 4,
-      comment: "Complesso ma affascinante. Richiede attenzione."
-    },
-    { 
-      title: "Fahrenheit 451", 
-      author: "Ray Bradbury", 
-      rating: 3,
-      comment: "Premesse interessanti ma ritmo altalenante."
-    },
-    { 
-      title: "La storia infinita", 
-      author: "Michael Ende", 
-      rating: 5,
-      comment: "Magico e coinvolgente, un classico senza tempo."
+      setReadingStats(stats);
+      setMonthlyData(monthly);
+      setGenreData(genres);
+      setWeeklyData(weekly);
+      setBookRatings(ratings);
+      setRatingStats(ratingStatsData);
+    } catch (error) {
+      console.error('Errore nel caricamento delle statistiche:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  // Gestisce il refresh pull-to-refresh
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadStatistics();
+    setRefreshing(false);
+  };
+
+  useEffect(() => {
+    loadStatistics();
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -87,6 +106,14 @@ export default function ProfiloScreen() {
             paddingBottom: 16 + insets.bottom
           }
         ]}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#f4511e']}
+            tintColor="#f4511e"
+          />
+        }
       >
         {/* Header */}
         <View style={[styles.header, { marginTop: insets.top }]}>
@@ -104,44 +131,77 @@ export default function ProfiloScreen() {
           </View>
         </View>
 
-        {/* Statistiche di lettura */}
-        <SectionCard title="Le tue statistiche">
-          <View style={styles.statsRow}>
-            <StatBox value={42} label="Libri letti" />
-            <StatBox value={7} label="In corso" />
-            <StatBox value={15} label="Da leggere" />
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#f4511e" />
+            <Text style={styles.loadingText}>Caricamento statistiche...</Text>
           </View>
-          
-          <MonthlyReadingChart data={barData} />
-        </SectionCard>
+        ) : (
+          <>
+            {/* Statistiche di lettura */}
+            <SectionCard title="Le tue statistiche">
+              <View style={styles.statsRow}>
+                <StatBox value={readingStats.booksRead} label="Libri letti" />
+                <StatBox value={readingStats.booksReading} label="In corso" />
+                <StatBox value={readingStats.booksToRead} label="Da leggere" />
+              </View>
+              
+              {monthlyData.length > 0 ? (
+                <MonthlyReadingChart data={monthlyData} />
+              ) : (
+                <Text style={styles.noDataText}>Nessuna lettura completata negli ultimi 6 mesi</Text>
+              )}
+            </SectionCard>
 
-        {/* Statistiche libreria */}
-        <SectionCard title="La tua libreria">
-          <GenreChart data={pieData} />
-          
-          <ReadingProgressChart data={lineData} />
-        </SectionCard>
+            {/* Statistiche libreria */}
+            <SectionCard title="La tua libreria">
+              {genreData.length > 0 ? (
+                <GenreChart data={genreData} />
+              ) : (
+                <Text style={styles.noDataText}>Nessun genere disponibile</Text>
+              )}
+              
+              {weeklyData.some(d => d.value > 0) ? (
+                <ReadingProgressChart data={weeklyData} />
+              ) : (
+                <Text style={styles.noDataText}>Nessuna sessione di lettura questa settimana</Text>
+              )}
+            </SectionCard>
 
-        {/* Valutazioni */}
-        <SectionCard title="Valutazioni">
-          <View style={styles.ratingBox}>
-            <Text style={styles.ratingValue}>4.2</Text>
-            <Text style={styles.ratingLabel}>/ 5</Text>
-          </View>
-          
-          <Text style={styles.chartTitle}>Ultime 5 valutazioni</Text>
-          <View style={styles.ratingsGrid}>
-            {bookRatings.map((book, index) => (
-              <BookRatingCard 
-                key={index}
-                title={book.title}
-                author={book.author}
-                rating={book.rating}
-                comment={book.comment}
-              />
-            ))}
-          </View>
-        </SectionCard>
+            {/* Valutazioni */}
+            <SectionCard title="Valutazioni">
+              {ratingStats.totalRatings > 0 ? (
+                <>
+                  <View style={styles.ratingBox}>
+                    <Text style={styles.ratingValue}>
+                      {ratingStats.averageRating.toFixed(1)}
+                    </Text>
+                    <Text style={styles.ratingLabel}>/ 5</Text>
+                  </View>
+                  
+                  <Text style={styles.chartTitle}>
+                    {bookRatings.length > 0 ? `Ultime ${bookRatings.length} valutazioni` : 'Nessuna valutazione recente'}
+                  </Text>
+                  {bookRatings.length > 0 && (
+                    <View style={styles.ratingsGrid}>
+                      {bookRatings.map((book, index) => (
+                        <BookRatingCard 
+                          key={`${book.title}-${index}`}
+                          title={book.title}
+                          author={book.author}
+                          rating={book.rating}
+                          comment={book.comment}
+                        />
+                      ))}
+                    </View>
+                  )}
+                </>
+              ) : (
+                <Text style={styles.noDataText}>Nessuna valutazione disponibile</Text>
+              )}
+            </SectionCard>
+          </>
+        )}
       </ScrollView>
     </View>
   );
@@ -215,5 +275,23 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     color: '#555',
     textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 50,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+  },
+  noDataText: {
+    textAlign: 'center',
+    color: '#999',
+    fontSize: 14,
+    fontStyle: 'italic',
+    paddingVertical: 20,
   },
 });

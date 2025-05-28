@@ -1,3 +1,8 @@
+-- --------------------------------------------------
+-- Abilitiamo il supporto ai vincoli di integrità
+-- referenziale nel database SQLite
+-- --------------------------------------------------
+
 PRAGMA foreign_keys = ON;
 
 -- --------------------------------------------------
