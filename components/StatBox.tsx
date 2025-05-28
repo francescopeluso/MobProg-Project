@@ -1,3 +1,4 @@
+import { BorderRadius, Colors, Spacing, Typography } from '@/constants/styles';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -19,19 +20,19 @@ const styles = StyleSheet.create({
   statBox: {
     alignItems: 'center',
     flex: 1,
-    backgroundColor: '#f8f9fa',
-    padding: 15,
-    borderRadius: 12,
+    backgroundColor: Colors.surfaceVariant,
+    padding: Spacing.lg,
+    borderRadius: BorderRadius.lg,
     marginHorizontal: 5,
   },
   statValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#f4511e',
+    fontSize: Typography.fontSize.xxxl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.secondary,
   },
   statLabel: {
-    fontSize: 12,
-    color: '#666',
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textSecondary,
     marginTop: 4,
   },
 });

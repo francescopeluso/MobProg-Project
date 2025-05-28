@@ -1,5 +1,5 @@
 
-// app/(components)/BookCarousel.tsx
+import { BorderRadius, Colors, CommonStyles, Shadows, Spacing, Typography } from '@/constants/styles';
 import React from 'react';
 import {
     FlatList,
@@ -28,7 +28,7 @@ export default function BookCarousel({ books, onPress }: Props) {
   if (books.length === 0) {
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>Nessun libro da mostrare</Text>
+        <Text style={CommonStyles.emptyText}>Nessun libro da mostrare</Text>
       </View>
     );
   }
@@ -57,38 +57,29 @@ export default function BookCarousel({ books, onPress }: Props) {
 
 const styles = StyleSheet.create({
   emptyContainer: {
-    padding: 16,
+    padding: Spacing.lg,
     alignItems: 'center',
   },
-  emptyText: {
-    color: '#888',
-    fontSize: 14,
-    fontStyle: 'italic',
-  },
   listContent: {
-    paddingVertical: 8,
+    paddingVertical: Spacing.sm,
   },
   card: {
-    marginRight: 16,
+    marginRight: Spacing.lg,
     width: 110,
   },
   cover: {
     width: 110,
     height: 165,
-    borderRadius: 8,
-    backgroundColor: '#eee',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderRadius: BorderRadius.md,
+    backgroundColor: Colors.surfaceVariant,
+    ...Shadows.medium,
   },
   title: {
-    marginTop: 8,
-    fontSize: 13,
-    fontWeight: '500',
+    marginTop: Spacing.sm,
+    fontSize: Typography.fontSize.sm + 1,
+    fontWeight: Typography.fontWeight.medium,
     textAlign: 'center',
-    color: '#444',
+    color: Colors.textPrimary,
   },
 });
 

@@ -1,3 +1,4 @@
+import { Colors, Spacing, Typography } from '@/constants/styles';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { BarChart } from 'react-native-gifted-charts';
@@ -13,7 +14,7 @@ const MonthlyReadingChart: React.FC<MonthlyReadingChartProps> = ({ data }) => {
       <BarChart
         data={data.map(item => ({ 
           ...item,
-          frontColor: item.frontColor || '#f4511e' 
+          frontColor: item.frontColor || Colors.secondary 
         }))}
         barWidth={22}
         spacing={18}
@@ -21,8 +22,8 @@ const MonthlyReadingChart: React.FC<MonthlyReadingChartProps> = ({ data }) => {
         hideRules
         xAxisThickness={1}
         yAxisThickness={0}
-        yAxisTextStyle={{ color: '#888' }}
-        xAxisLabelTextStyle={{ color: '#888', fontSize: 11 }}
+        yAxisTextStyle={{ color: Colors.textTertiary }}
+        xAxisLabelTextStyle={{ color: Colors.textTertiary, fontSize: 11 }}
         noOfSections={4}
         maxValue={12}
       />
@@ -33,13 +34,13 @@ const MonthlyReadingChart: React.FC<MonthlyReadingChartProps> = ({ data }) => {
 const styles = StyleSheet.create({
   chartContainer: {
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: Spacing.sm,
   },
   chartTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 16,
-    color: '#555',
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.medium,
+    marginBottom: Spacing.lg,
+    color: Colors.textSecondary,
     textAlign: 'center',
   },
 });

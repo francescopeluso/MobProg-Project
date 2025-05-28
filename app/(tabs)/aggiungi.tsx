@@ -1,5 +1,6 @@
 import { SectionCard } from '@/components';
 import { getTabContentBottomPadding } from '@/constants/layout';
+import { Colors, CommonStyles } from '@/constants/styles';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
@@ -10,10 +11,10 @@ export default function AggiungiScreen() {
   const insets = useSafeAreaInsets();
   
   return (
-    <View style={styles.container}>
+    <View style={CommonStyles.container}>
       <ScrollView
         contentContainerStyle={[
-          styles.contentContainer,
+          CommonStyles.contentContainer,
           {
             paddingTop: 0,
             paddingBottom: getTabContentBottomPadding(insets.bottom)
@@ -21,11 +22,11 @@ export default function AggiungiScreen() {
         ]}
       >
         {/* Header */}
-        <View style={[styles.header, { marginTop: insets.top }]}>
-          <View style={styles.headerTop}>
+        <View style={[CommonStyles.header, { marginTop: insets.top }]}>
+          <View style={CommonStyles.headerTop}>
             <View>
-              <Text style={styles.title}>Aggiungi</Text>
-              <Text style={styles.subtitle}>Arricchisci la tua collezione</Text>
+              <Text style={CommonStyles.title}>Aggiungi</Text>
+              <Text style={CommonStyles.subtitle}>Arricchisci la tua collezione</Text>
             </View>
           </View>
         </View>
@@ -35,11 +36,11 @@ export default function AggiungiScreen() {
             Aggiungi un nuovo libro alla tua collezione tramite ricerca o inserimento manuale.
           </Text>
           <TouchableOpacity 
-            style={styles.actionButton}
+            style={CommonStyles.secondaryButton}
             onPress={() => router.push('/add-book')}
           >
-            <Ionicons name="add-outline" size={22} color="#fff" />
-            <Text style={styles.buttonText}>Aggiungi Libro</Text>
+            <Ionicons name="add-outline" size={22} color={Colors.textOnPrimary} />
+            <Text style={CommonStyles.secondaryButtonText}>Aggiungi Libro</Text>
           </TouchableOpacity>
         </SectionCard>
         
@@ -48,11 +49,11 @@ export default function AggiungiScreen() {
             Scansiona il codice a barre di un libro per aggiungerlo rapidamente.
           </Text>
           <TouchableOpacity 
-            style={styles.actionButton}
+            style={CommonStyles.primaryButton}
             onPress={() => router.push('/scan')}
           >
-            <Ionicons name="barcode-outline" size={22} color="#fff" />
-            <Text style={styles.buttonText}>Scansiona Codice</Text>
+            <Ionicons name="barcode-outline" size={22} color={Colors.textOnPrimary} />
+            <Text style={CommonStyles.primaryButtonText}>Scansiona Codice</Text>
           </TouchableOpacity>
         </SectionCard>
       </ScrollView>
@@ -61,69 +62,10 @@ export default function AggiungiScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  contentContainer: {
-    padding: 16,
-  },
-  header: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-  },
   description: {
     fontSize: 16,
-    color: '#666',
+    color: Colors.textSecondary,
     marginBottom: 16,
     lineHeight: 22,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f4511e',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    marginBottom: 10,
-    flex: 1,
-    marginHorizontal: 4,
-  },
-  secondaryButton: {
-    backgroundColor: '#4A90E2',
-  },
-  buttonText: {
-    fontSize: 16,
-    color: '#fff',
-    marginLeft: 8,
-    fontWeight: '500',
   },
 });

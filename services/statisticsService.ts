@@ -128,7 +128,7 @@ export async function getMonthlyReadingData(): Promise<MonthlyData[]> {
     result.push({
       value: stat?.count || 0,
       label: monthNames[monthNum],
-      frontColor: '#f4511e'
+      frontColor: '#4A90E2'
     });
   }
 
@@ -157,7 +157,7 @@ export async function getGenreDistribution(): Promise<GenreData[]> {
     LIMIT 5
   `) as any[];
 
-  const colors = ['#f4511e', '#ffb347', '#4caf50', '#2196f3', '#9c27b0'];
+  const colors = ['#4A90E2', '#9F7AEA', '#38B2AC', '#ED64A6', '#48BB78'];
   const total = genreStats.reduce((sum, genre) => sum + genre.count, 0);
   
   return genreStats.map((genre, index) => {

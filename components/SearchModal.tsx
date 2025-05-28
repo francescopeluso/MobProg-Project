@@ -1,9 +1,11 @@
 // src/components/SearchModal.tsx
+import { Colors, CommonStyles } from '@/constants/styles';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
+  Dimensions,
   FlatList,
   Image,
   Keyboard,
@@ -40,8 +42,9 @@ export default function SearchModal({ mode, onSelectRemote, onSelectLocal, onClo
     }).start();
   }, [fadeAnim]);
 
-  // Define doSearch first
-  const doSearch = async (q: string) => {
+  // definiamo doSearch qui per evitare problemi di dipendenze
+  // e per poterlo usare nel useEffect senza creare un loop infinito
+  const doSearch = useCallback(async (q: string) => {
     console.log('[SearchModal] doSearch called with query:', q);
     if (!q.trim()) {
       console.log('[SearchModal] empty query, clearing results');
@@ -63,13 +66,13 @@ export default function SearchModal({ mode, onSelectRemote, onSelectLocal, onClo
       setResults([]);
     }
     setLoading(false);
-  };
+  }, [mode]);
 
   // Then use it in the effect
   useEffect(() => {
     const timeout = setTimeout(() => doSearch(query), 400);
     return () => clearTimeout(timeout);
-  }, [query]); // Listed doSearch as dependency will cause infinite loop since it's recreated on each render
+  }, [query, doSearch]);
 
   const handleSelect = (item: Book) => {
     console.log('[SearchModal] item selected:', item);
@@ -112,7 +115,7 @@ export default function SearchModal({ mode, onSelectRemote, onSelectLocal, onClo
         
         <View style={styles.searchTips}>
           <View style={styles.searchTip}>
-            <Ionicons name="search-outline" size={18} color="#f4511e" />
+            <Ionicons name="search-outline" size={18} color={Colors.primary} />
             <Text style={styles.searchTipText}>
               {mode === 'remote' 
                 ? 'Per risultati migliori, usa titoli esatti o ISBN'
@@ -121,7 +124,7 @@ export default function SearchModal({ mode, onSelectRemote, onSelectLocal, onClo
           </View>
           
           <View style={styles.searchTip}>
-            <Ionicons name="information-circle-outline" size={18} color="#f4511e" />
+            <Ionicons name="information-circle-outline" size={18} color={Colors.primary} />
             <Text style={styles.searchTipText}>
               {mode === 'remote'
                 ? 'La ricerca usa Google Books come fonte'
@@ -134,7 +137,7 @@ export default function SearchModal({ mode, onSelectRemote, onSelectLocal, onClo
   };
 
   return (
-    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+    <Animated.View style={[styles.modalContainer, { opacity: fadeAnim }]}>
       <SafeAreaView style={styles.safe}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>
@@ -144,7 +147,7 @@ export default function SearchModal({ mode, onSelectRemote, onSelectLocal, onClo
 
         <View style={styles.searchBarContainer}>
           <View style={styles.searchBar}>
-            <Ionicons name="search" size={20} color="#888" style={styles.searchIcon} />
+            <Ionicons name="search" size={20} color={Colors.textTertiary} style={styles.searchIcon} />
             <TextInput
               placeholder={
                 mode === 'remote'
@@ -159,10 +162,16 @@ export default function SearchModal({ mode, onSelectRemote, onSelectLocal, onClo
               style={styles.input}
               autoFocus
               returnKeyType="search"
+              blurOnSubmit={false}
+              clearButtonMode="never"
+              textContentType="none"
+              autoComplete="off"
+              autoCorrect={false}
+              spellCheck={false}
             />
             {query.length > 0 && (
               <TouchableOpacity onPress={() => setQuery('')} style={styles.clearBtn}>
-                <Ionicons name="close-circle" size={20} color="#aaa" />
+                <Ionicons name="close-circle" size={20} color={Colors.textTertiary} />
               </TouchableOpacity>
             )}
           </View>
@@ -176,9 +185,9 @@ export default function SearchModal({ mode, onSelectRemote, onSelectLocal, onClo
         </View>
 
         {loading && (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#f4511e" />
-            <Text style={styles.loadingText}>Ricerca in corso...</Text>
+          <View style={CommonStyles.loadingContainer}>
+            <ActivityIndicator size="large" color={Colors.secondary} />
+            <Text style={CommonStyles.loadingText}>Ricerca in corso...</Text>
           </View>
         )}
 
@@ -187,9 +196,12 @@ export default function SearchModal({ mode, onSelectRemote, onSelectLocal, onClo
         <FlatList
           data={results}
           keyExtractor={(item, idx) =>
-            ((item.id ?? item.externalId ?? idx).toString())
+            ((item.id ?? idx).toString())
           }
           contentContainerStyle={styles.listContainer}
+          style={styles.flatListStyle}
+          showsVerticalScrollIndicator={true}
+          keyboardShouldPersistTaps="handled"
           renderItem={({ item }) => (
             <TouchableOpacity 
               style={styles.item} 
@@ -248,7 +260,7 @@ export default function SearchModal({ mode, onSelectRemote, onSelectLocal, onClo
               </View>
             ) : query.trim().length === 0 && searchedOnce ? (
               <View style={styles.emptyContainer}>
-                <Ionicons name="book-outline" size={50} color="#ddd" />
+                <Ionicons name="book-outline" size={50} color={Colors.textTertiary} />
                 <Text style={styles.emptySearch}>
                   Inserisci un termine di ricerca
                 </Text>
@@ -262,26 +274,40 @@ export default function SearchModal({ mode, onSelectRemote, onSelectLocal, onClo
 }
 
 const styles = StyleSheet.create({
+  modalContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: Colors.background,
+    width: Dimensions.get('window').width,
+    height: Dimensions.get('window').height,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: Colors.background,
   },
   safe: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: Colors.background,
+    flexDirection: 'column',
+    width: '100%',
+    height: '100%',
   },
   header: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.surface,
     paddingTop: 15,
     paddingBottom: 10,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: Colors.border,
+    flexShrink: 0, // L'header non deve mai ridursi
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: Colors.textPrimary,
     textAlign: 'center',
   },
   searchBarContainer: {
@@ -289,36 +315,50 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.surface,
+    minHeight: 60,
+    maxHeight: 60, // Altezza fissa per evitare cambiamenti
+    flexShrink: 0,
   },
   searchBar: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f1f1f1',
+    backgroundColor: Colors.surfaceVariant,
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    height: 40, // Altezza fissa invece di minHeight
+    minWidth: 200,
   },
   searchIcon: {
     marginRight: 8,
+    flexShrink: 0, // Non si riduce mai
   },
   input: {
     flex: 1,
     fontSize: 16,
     paddingVertical: 0,
-    color: '#333',
+    color: Colors.textPrimary,
+    minWidth: 120, // Larghezza minima garantita
+    // Rimuoviamo width: '100%' che causa conflitti con flex
   },
   clearBtn: {
     padding: 5,
+    marginLeft: 4, // Margine sinistro ridotto
+    flexShrink: 0, // Non si riduce mai
   },
   closeBtn: {
     marginLeft: 12,
     paddingVertical: 8,
     paddingHorizontal: 5,
+    minWidth: 70, // Larghezza minima per il pulsante Annulla
+    flexShrink: 0, // Non si riduce mai
   },
   cancelText: {
-    color: '#f4511e',
+    color: Colors.primary,
     fontSize: 16,
     fontWeight: '500',
   },
@@ -328,33 +368,37 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 8,
-    color: '#666',
+    color: Colors.textSecondary,
     fontSize: 14,
   },
   listContainer: {
     paddingBottom: 24,
+  },
+  flatListStyle: {
+    flex: 1,
+    width: '100%',
   },
   item: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 16,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.surface,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: Colors.border,
   },
   coverImage: {
     width: 50,
     height: 75,
     borderRadius: 4,
-    backgroundColor: '#eee',
+    backgroundColor: Colors.surfaceVariant,
     marginRight: 12,
   },
   noCoverContainer: {
     width: 50,
     height: 75,
     borderRadius: 4,
-    backgroundColor: '#eee',
+    backgroundColor: Colors.surfaceVariant,
     marginRight: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -369,23 +413,23 @@ const styles = StyleSheet.create({
   title: {
     fontWeight: '600',
     fontSize: 16,
-    color: '#333',
+    color: Colors.textPrimary,
     marginBottom: 4,
   },
   subtitle: {
-    color: '#666',
+    color: Colors.textSecondary,
     fontSize: 14,
   },
   sourceTag: {
     marginTop: 4,
-    backgroundColor: '#f0f7ff',
+    backgroundColor: Colors.accentLight,
     alignSelf: 'flex-start',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 4,
   },
   sourceText: {
-    color: '#4A90E2',
+    color: Colors.primary,
     fontSize: 12,
     fontWeight: '500',
   },
@@ -399,30 +443,30 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 8,
     fontSize: 16,
-    color: '#666',
+    color: Colors.textSecondary,
     fontWeight: '500',
   },
   emptyTip: {
     textAlign: 'center',
-    color: '#888',
+    color: Colors.textTertiary,
     fontSize: 14,
     marginBottom: 16,
   },
   emptySearch: {
     textAlign: 'center',
     marginTop: 16,
-    color: '#888',
+    color: Colors.textTertiary,
     fontSize: 16,
   },
   retryButton: {
-    backgroundColor: '#f4511e',
+    backgroundColor: Colors.primary,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 8,
     marginTop: 16,
   },
   retryText: {
-    color: 'white',
+    color: Colors.textOnPrimary,
     fontWeight: '500',
   },
   searchGuide: {
@@ -432,19 +476,19 @@ const styles = StyleSheet.create({
   searchGuideTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: Colors.textPrimary,
     marginTop: 16,
     marginBottom: 8,
   },
   searchGuideText: {
     fontSize: 16,
-    color: '#666',
+    color: Colors.textSecondary,
     textAlign: 'center',
     marginBottom: 24,
   },
   searchTips: {
     width: '100%',
-    backgroundColor: '#fff',
+    backgroundColor: Colors.surface,
     borderRadius: 12,
     padding: 16,
     shadowColor: '#000',
@@ -460,7 +504,7 @@ const styles = StyleSheet.create({
   },
   searchTipText: {
     fontSize: 14,
-    color: '#555',
+    color: Colors.textSecondary,
     marginLeft: 8,
     flex: 1,
   },

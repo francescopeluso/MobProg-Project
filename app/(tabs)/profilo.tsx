@@ -13,6 +13,7 @@ import {
 } from '@/components';
 
 import { getTabContentBottomPadding } from '@/constants/layout';
+import { Colors, CommonStyles, Typography } from '@/constants/styles';
 import { useStatistics } from '@/hooks/useStatistics';
 
 export default function ProfiloScreen() {
@@ -30,10 +31,10 @@ export default function ProfiloScreen() {
   } = useStatistics();
 
   return (
-    <View style={styles.container}>
+    <View style={CommonStyles.container}>
       <ScrollView 
         contentContainerStyle={[
-          styles.contentContainer,
+          CommonStyles.contentContainer,
           {
             // Applica padding sui lati ma non in alto
             paddingTop: 0,
@@ -42,29 +43,29 @@ export default function ProfiloScreen() {
         ]}
       >
         {/* Header */}
-        <View style={[styles.header, { marginTop: insets.top }]}>
-          <View style={styles.headerTop}>
+        <View style={[CommonStyles.header, { marginTop: insets.top }]}>
+          <View style={CommonStyles.headerTop}>
             <View>
-              <Text style={styles.title}>Profilo</Text>
-              <Text style={styles.subtitle}>
+              <Text style={CommonStyles.title}>Profilo</Text>
+              <Text style={CommonStyles.subtitle}>
                 Traccia le tue attività di lettura
               </Text>
             </View>
-            <View style={styles.headerActions}>
+            <View style={CommonStyles.headerActions}>
               <TouchableOpacity 
-                style={styles.settingsButton} 
+                style={CommonStyles.iconButton} 
                 onPress={() => router.push('/(screens)/settings')}
               >
-                <Ionicons name="settings-outline" size={24} color="#f4511e" />
+                <Ionicons name="settings-outline" size={24} color={Colors.secondary} />
               </TouchableOpacity>
             </View>
           </View>
         </View>
 
         {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#f4511e" />
-            <Text style={styles.loadingText}>Caricamento statistiche...</Text>
+          <View style={CommonStyles.loadingContainer}>
+            <ActivityIndicator size="large" color={Colors.secondary} />
+            <Text style={CommonStyles.loadingText}>Caricamento statistiche...</Text>
           </View>
         ) : (
           <>
@@ -79,7 +80,7 @@ export default function ProfiloScreen() {
               {monthlyData.length > 0 ? (
                 <MonthlyReadingChart data={monthlyData} />
               ) : (
-                <Text style={styles.noDataText}>Nessuna lettura completata negli ultimi 6 mesi</Text>
+                <Text style={CommonStyles.emptyText}>Nessuna lettura completata negli ultimi 6 mesi</Text>
               )}
             </SectionCard>
 
@@ -88,13 +89,13 @@ export default function ProfiloScreen() {
               {genreData.length > 0 ? (
                 <GenreChart data={genreData} />
               ) : (
-                <Text style={styles.noDataText}>Nessun genere disponibile</Text>
+                <Text style={CommonStyles.emptyText}>Nessun genere disponibile</Text>
               )}
               
               {weeklyData.some(d => d.value > 0) ? (
                 <ReadingProgressChart data={weeklyData} />
               ) : (
-                <Text style={styles.noDataText}>Nessuna sessione di lettura questa settimana</Text>
+                <Text style={CommonStyles.emptyText}>Nessuna sessione di lettura questa settimana</Text>
               )}
             </SectionCard>
 
@@ -127,7 +128,7 @@ export default function ProfiloScreen() {
                   )}
                 </>
               ) : (
-                <Text style={styles.noDataText}>Nessuna valutazione disponibile</Text>
+                <Text style={CommonStyles.emptyText}>Nessuna valutazione disponibile</Text>
               )}
             </SectionCard>
           </>
@@ -138,46 +139,6 @@ export default function ProfiloScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  contentContainer: {
-    padding: 16,
-  },
-  header: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start'
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-  },
-  settingsButton: {
-    padding: 5,
-  },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -191,41 +152,23 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   ratingValue: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#f4511e',
+    fontSize: Typography.fontSize.huge + 8,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.secondary,
   },
   ratingLabel: {
-    fontSize: 20,
-    color: '#555',
+    fontSize: Typography.fontSize.xl,
+    color: Colors.textSecondary,
     marginLeft: 4,
   },
   ratingsGrid: {
     marginTop: 10,
   },
   chartTitle: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.medium,
     marginBottom: 16,
-    color: '#555',
+    color: Colors.textSecondary,
     textAlign: 'center',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 50,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666',
-  },
-  noDataText: {
-    textAlign: 'center',
-    color: '#999',
-    fontSize: 14,
-    fontStyle: 'italic',
-    paddingVertical: 20,
   },
 });

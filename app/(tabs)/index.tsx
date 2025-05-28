@@ -1,5 +1,6 @@
 import { SectionCard } from '@/components';
 import { getTabContentBottomPadding } from '@/constants/layout';
+import { Colors, CommonStyles } from '@/constants/styles';
 import { createTables, getDBConnection } from '@/utils/database';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
@@ -71,10 +72,10 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={CommonStyles.container}>
       <ScrollView 
         contentContainerStyle={[
-          styles.contentContainer,
+          CommonStyles.contentContainer,
           {
             paddingTop: 0,
             paddingBottom: getTabContentBottomPadding(insets.bottom)
@@ -83,18 +84,18 @@ export default function HomeScreen() {
         scrollIndicatorInsets={{ right: 1 }}
       >
         {/* Header */}
-        <View style={[styles.header, { marginTop: insets.top }]}>
-          <View style={styles.headerTop}>
+        <View style={[CommonStyles.header, { marginTop: insets.top }]}>
+          <View style={CommonStyles.headerTop}>
             <View>
-              <Text style={styles.title}>La tua libreria</Text>
-              <Text style={styles.subtitle}>Scopri i tuoi libri</Text>
+              <Text style={CommonStyles.title}>La tua libreria</Text>
+              <Text style={CommonStyles.subtitle}>Scopri i tuoi libri</Text>
             </View>
-            <View style={styles.headerActions}>
+            <View style={CommonStyles.headerActions}>
               <TouchableOpacity
-                style={styles.iconButton}
+                style={CommonStyles.iconButton}
                 onPress={() => setShowSearch(true)}
               >
-                <Ionicons name="search-outline" size={24} color="#f4511e" />
+                <Ionicons name="search-outline" size={24} color={Colors.primary} />
               </TouchableOpacity>
               <SessionButton variant="compact" />
             </View>
