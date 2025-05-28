@@ -1,14 +1,13 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { AntDesign } from '@expo/vector-icons'
+import { AntDesign, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { AnimatePresence, MotiView } from 'moti';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Dimensions,
   Image,
-  ImageBackground,
   Keyboard,
   Modal,
   Pressable,
@@ -19,11 +18,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Easing } from 'react-native-reanimated'
+import { Easing } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AnimatePresence, MotiView } from 'moti'
 import SearchModal from '../../components/SearchModal';
-import { Book, deleteBook, getBookById, insertBook, updateBook, updateReadingStatus, saveRating, saveNotes } from '../../services/bookApi';
+import { Book, deleteBook, getBookById, insertBook, saveNotes, saveRating, updateBook, updateReadingStatus } from '../../services/bookApi';
 
 const initialForm = {
   title: '',
@@ -94,7 +92,7 @@ export default function AddBookScreen() {
       const labels = ['Terribile','Scarso','Discreto','Buono','Ottimo']
       setComment(labels[rating - 1])
     }
-  }, [rating])
+  }, [rating, comment])
 
   /**
    * 
@@ -201,30 +199,20 @@ export default function AddBookScreen() {
    * @async
    */
   const handleSave = async () => {
-  try {
-    // 1. Prepara i campi standard
-    const title = form.title.trim() || 'Titolo Sconosciuto';
-    const description = form.description.trim() || undefined;
-    const cover_url = form.cover_url.trim() || undefined;
-    const publication = parseInt(form.publication, 10) || undefined;
-    const isbn10 = remoteBook?.isbn10;
-    const isbn13 = remoteBook?.isbn13;
-    const authors = form.author
-      .split(',')
-      .map(a => a.trim())
-      .filter(Boolean);
-    if (!authors.length) authors.push('Autore Sconosciuto');
-    const bookToSave: Book = {
-      title,
-      description,
-      cover_url,
-      publication,
-      isbn10,
-      isbn13,
-      authors,
-      genres: selectedGenres.length > 0 ? selectedGenres : remoteBook?.genres || []
-    };
-
+    try {
+      // 1. Prepara i campi standard
+      const title = form.title.trim() || 'Titolo Sconosciuto';
+      const description = form.description.trim() || undefined;
+      const cover_url = form.cover_url.trim() || undefined;
+      const publication = parseInt(form.publication, 10) || undefined;
+      const isbn10 = remoteBook?.isbn10;
+      const isbn13 = remoteBook?.isbn13;
+      const authors = form.author
+        .split(',')
+        .map(a => a.trim())
+        .filter(Boolean);
+      if (!authors.length) authors.push('Autore Sconosciuto');
+      
       // Crea l'oggetto libro da salvare
       const bookToSave: Book = {
         title,
@@ -236,67 +224,63 @@ export default function AddBookScreen() {
         authors,
         editor: remoteBook?.editor,
         language: remoteBook?.language,
-        genres: remoteBook?.genres || []
+        genres: selectedGenres.length > 0 ? selectedGenres : remoteBook?.genres || []
       };
+
+      let bookId: number;
 
       // Se stiamo modificando un libro esistente, aggiungi l'ID
       if (isEditing && params.id) {
         bookToSave.id = parseInt(params.id);
+        bookId = bookToSave.id;
         
         // Aggiorna il libro esistente
         const success = await updateBook(bookToSave);
-        if (success) {
-          Alert.alert('Completato', 'Libro aggiornato con successo.');
-          // Reset del form e torna indietro
-          setForm({ ...initialForm });
-          setRemoteBook(null);
-          router.back();
-        } else {
+        if (!success) {
           Alert.alert('Errore', 'Impossibile aggiornare il libro.');
+          return;
         }
       } else {
         // Inserisci nuovo libro
         const newBookId = await insertBook(bookToSave);
-        if (newBookId) {
-          Alert.alert('Completato', 'Libro aggiunto con successo.');
-          
-          // Reset del form e torna indietro
-          setForm({ ...initialForm });
-          setRemoteBook(null);
-          router.back();
-        } else {
+        if (!newBookId) {
           Alert.alert('Errore', 'Impossibile aggiungere il libro.');
+          return;
         }
+        bookId = newBookId;
       }
-    } catch (e) {
-      console.error('Errore nell\'aggiunta del libro: ', e);
-      Alert.alert('Errore', 'Impossibile salvare il libro. ' + (e instanceof Error ? e.message : ''));
-    }
 
-    // 3. Salva lo stato di lettura
-    await updateReadingStatus(bookId, activeStatus);
-    // 4. Salva la valutazione
-    if (rating > 0) {
-    await saveRating(bookId, rating, comment);
-    }
-    if (note.trim().length > 0) {
-      await saveNotes(bookId, note);
-    }
-    setIsDirty(false); 
+      // 2. Salva lo stato di lettura
+      await updateReadingStatus(bookId, activeStatus);
+      
+      // 3. Salva la valutazione se presente
+      if (rating > 0) {
+        await saveRating(bookId, rating, comment);
+      }
+      
+      // 4. Salva le note se presenti
+      if (note.trim().length > 0) {
+        await saveNotes(bookId, note);
+      }
 
-    // 5. Messaggio di conferma e reset
-    Alert.alert('Completato', isEditing ? 'Libro aggiornato.' : 'Libro aggiunto.');
-    setForm({ ...initialForm });
-    setRemoteBook(null);
-    setRating(0);
-    setComment('');
-    router.back();
+      // 5. Reset dello stato e navigazione
+      setIsDirty(false);
+      setForm({ ...initialForm });
+      setRemoteBook(null);
+      setRating(0);
+      setComment('');
+      setNote('');
+      setSelectedGenres([]);
+      
+      // 6. Messaggio di conferma e ritorno alla schermata precedente
+      Alert.alert('Completato', isEditing ? 'Libro aggiornato con successo.' : 'Libro aggiunto con successo.');
+      router.back();
 
-  } catch (err: any) {
-    console.error(err);
-    Alert.alert('Errore', err.message || 'Qualcosa è andato storto.');
-  }
-};
+    } catch (err: any) {
+      console.error('Errore nel salvataggio del libro:', err);
+      Alert.alert('Errore', err.message || 'Qualcosa è andato storto durante il salvataggio.');
+    }
+  };
 
   /**
    * 
@@ -353,7 +337,7 @@ export default function AddBookScreen() {
     return;
   }
   const res = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    mediaTypes: ['images'],
     allowsEditing: true,
     aspect: [3, 4],
     quality: 1,
@@ -384,7 +368,7 @@ export default function AddBookScreen() {
     <View style={styles.coverPlaceholder}>
       <Ionicons name="book-outline" size={42} color="#bbb" />
       <Text style={styles.coverPlaceholderText}>
-        Clicca per selezionare un'immagine dalla galleria 
+        Clicca per selezionare un&apos;immagine dalla galleria 
       </Text>
     </View>
   );

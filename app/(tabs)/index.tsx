@@ -1,19 +1,20 @@
 import { SectionCard } from '@/components';
+import { getTabContentBottomPadding } from '@/constants/layout';
 import { createTables, getDBConnection } from '@/utils/database';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-    ActivityIndicator,
-    LayoutAnimation,
-    Modal,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    UIManager,
-    View,
+  ActivityIndicator,
+  LayoutAnimation,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  UIManager,
+  View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BookCarousel from '../../components/BookCarousel';
@@ -76,7 +77,7 @@ export default function HomeScreen() {
           styles.contentContainer,
           {
             paddingTop: 0,
-            paddingBottom: 70 + insets.bottom
+            paddingBottom: getTabContentBottomPadding(insets.bottom)
           }
         ]}
         scrollIndicatorInsets={{ right: 1 }}

@@ -1,4 +1,5 @@
 import { SectionCard } from '@/components';
+import { getTabContentBottomPadding } from '@/constants/layout';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
@@ -15,7 +16,7 @@ export default function AggiungiScreen() {
           styles.contentContainer,
           {
             paddingTop: 0,
-            paddingBottom: 16 + insets.bottom
+            paddingBottom: getTabContentBottomPadding(insets.bottom)
           }
         ]}
       >

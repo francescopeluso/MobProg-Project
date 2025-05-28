@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
@@ -13,87 +12,22 @@ import {
   StatBox
 } from '@/components';
 
-import {
-  getGenreDistribution,
-  getLatestBookRatings,
-  getMonthlyReadingData,
-  getRatingStatistics,
-  getReadingStatistics,
-  getWeeklyProgressData,
-  type BookRating,
-  type GenreData,
-  type MonthlyData,
-  type ProgressData,
-  type RatingStats,
-  type ReadingStats
-} from '@/services/statisticsService';
+import { getTabContentBottomPadding } from '@/constants/layout';
+import { useStatistics } from '@/hooks/useStatistics';
 
 export default function ProfiloScreen() {
   const insets = useSafeAreaInsets();
   
-  // Stati per i dati delle statistiche
-  const [readingStats, setReadingStats] = useState<ReadingStats>({
-    booksRead: 0,
-    booksReading: 0,
-    booksToRead: 0,
-    totalBooks: 0
-  });
-  const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
-  const [genreData, setGenreData] = useState<GenreData[]>([]);
-  const [weeklyData, setWeeklyData] = useState<ProgressData[]>([]);
-  const [bookRatings, setBookRatings] = useState<BookRating[]>([]);
-  const [ratingStats, setRatingStats] = useState<RatingStats>({
-    averageRating: 0,
-    totalRatings: 0,
-    ratingsDistribution: {}
-  });
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-
-  // Carica tutti i dati delle statistiche
-  const loadStatistics = async () => {
-    try {
-      setLoading(true);
-      
-      const [
-        stats,
-        monthly,
-        genres,
-        weekly,
-        ratings,
-        ratingStatsData
-      ] = await Promise.all([
-        getReadingStatistics(),
-        getMonthlyReadingData(),
-        getGenreDistribution(),
-        getWeeklyProgressData(),
-        getLatestBookRatings(),
-        getRatingStatistics()
-      ]);
-
-      setReadingStats(stats);
-      setMonthlyData(monthly);
-      setGenreData(genres);
-      setWeeklyData(weekly);
-      setBookRatings(ratings);
-      setRatingStats(ratingStatsData);
-    } catch (error) {
-      console.error('Errore nel caricamento delle statistiche:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Gestisce il refresh pull-to-refresh
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await loadStatistics();
-    setRefreshing(false);
-  };
-
-  useEffect(() => {
-    loadStatistics();
-  }, []);
+  // Utilizziamo il hook personalizzato per le statistiche
+  const {
+    readingStats,
+    monthlyData,
+    genreData,
+    weeklyData,
+    bookRatings,
+    ratingStats,
+    loading
+  } = useStatistics();
 
   return (
     <View style={styles.container}>
@@ -103,31 +37,27 @@ export default function ProfiloScreen() {
           {
             // Applica padding sui lati ma non in alto
             paddingTop: 0,
-            paddingBottom: 16 + insets.bottom
+            paddingBottom: getTabContentBottomPadding(insets.bottom)
           }
         ]}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={['#f4511e']}
-            tintColor="#f4511e"
-          />
-        }
       >
         {/* Header */}
         <View style={[styles.header, { marginTop: insets.top }]}>
           <View style={styles.headerTop}>
             <View>
               <Text style={styles.title}>Profilo</Text>
-              <Text style={styles.subtitle}>Traccia le tue attività di lettura</Text>
+              <Text style={styles.subtitle}>
+                Traccia le tue attività di lettura
+              </Text>
             </View>
-            <TouchableOpacity 
-              style={styles.settingsButton} 
-              onPress={() => router.push('/(screens)/settings')}
-            >
-              <Ionicons name="settings-outline" size={24} color="#f4511e" />
-            </TouchableOpacity>
+            <View style={styles.headerActions}>
+              <TouchableOpacity 
+                style={styles.settingsButton} 
+                onPress={() => router.push('/(screens)/settings')}
+              >
+                <Ionicons name="settings-outline" size={24} color="#f4511e" />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -230,6 +160,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start'
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   title: {
     fontSize: 28,
