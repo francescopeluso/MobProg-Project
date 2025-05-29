@@ -1,4 +1,4 @@
-// src/components/SessionButton.tsx
+import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/styles';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import {
@@ -143,7 +143,7 @@ export default function SessionButton({ variant = 'default' }: Props) {
         <Ionicons
           name={active ? 'book' : 'book-outline'}
           size={24}
-          color={active ? '#D0021B' : '#4A90E2'}
+          color={active ? Colors.error : Colors.primary}
         />
       </TouchableOpacity>
     );
@@ -157,7 +157,7 @@ export default function SessionButton({ variant = 'default' }: Props) {
       <Ionicons 
         name={active ? "stop-circle-outline" : "play-circle-outline"} 
         size={22} 
-        color="#fff" 
+        color={Colors.textOnPrimary} 
         style={styles.btnIcon} 
       />
       <Text style={styles.txt}>{active ? 'Termina Sessione' : 'Inizia Sessione'}</Text>
@@ -167,27 +167,23 @@ export default function SessionButton({ variant = 'default' }: Props) {
 
 const styles = StyleSheet.create({
   btn: { 
-    padding: 14,
-    borderRadius: 10,
+    padding: Spacing.md,
+    borderRadius: BorderRadius.md,
     alignSelf: 'center', 
-    marginVertical: 16,
+    marginVertical: Spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+    ...Shadows.small,
   },
-  startBtn: { backgroundColor: '#f4511e' },
-  stopBtn: { backgroundColor: '#D0021B' },
+  startBtn: { backgroundColor: Colors.primary },
+  stopBtn: { backgroundColor: Colors.error },
   btnIcon: {
-    marginRight: 8,
+    marginRight: Spacing.sm,
   },
   txt: { 
-    color: '#fff', 
-    fontWeight: 'bold',
-    fontSize: 16,
+    color: Colors.textOnPrimary, 
+    fontWeight: Typography.fontWeight.bold,
+    fontSize: Typography.fontSize.lg,
   },
 });

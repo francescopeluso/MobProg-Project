@@ -1,3 +1,4 @@
+import { Colors } from '@/constants/styles';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -11,8 +12,8 @@ interface RatingStarsProps {
 const RatingStars: React.FC<RatingStarsProps> = ({ 
   rating, 
   size = 18, 
-  activeColor = '#f4511e', 
-  inactiveColor = '#eee' 
+  activeColor = Colors.secondary, 
+  inactiveColor = Colors.borderLight
 }) => {
   return (
     <View style={styles.ratingContainer}>

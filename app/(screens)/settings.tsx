@@ -1,4 +1,5 @@
 import { SectionCard } from '@/components';
+import { Colors, CommonStyles } from '@/constants/styles';
 import { createTables, dropTables, getDBConnection } from '@/utils/database';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -10,27 +11,26 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.container}>
+    <View style={CommonStyles.container}>
       <ScrollView 
         contentContainerStyle={[
-          styles.scrollContainer,
+          CommonStyles.contentContainer,
           {
             // Applica padding sui lati ma non in alto
             paddingTop: 0,
             paddingBottom: 16 + insets.bottom,
-            paddingHorizontal: 16
           }
         ]}
       >
-        <View style={[styles.header, { marginTop: insets.top }]}>
+        <View style={[CommonStyles.header, { marginTop: insets.top }]}>
           <View style={styles.headerRow}>
             <TouchableOpacity 
-              style={styles.backButton} 
+              style={CommonStyles.iconButton} 
               onPress={() => router.back()}
             >
-              <Ionicons name="arrow-back" size={24} color="#f4511e" />
+              <Ionicons name="arrow-back" size={24} color={Colors.secondary} />
             </TouchableOpacity>
-            <Text style={styles.title}>Impostazioni</Text>
+            <Text style={CommonStyles.title}>Impostazioni</Text>
             <View style={{width: 24}} />
           </View>
         </View>
@@ -40,7 +40,7 @@ export default function SettingsScreen() {
             La reinizializzazione del database ripristina la struttura delle tabelle dell&apos;applicazione.
             </Text>
           <TouchableOpacity 
-            style={[styles.actionButton, styles.dangerButton]}
+            style={[CommonStyles.secondaryButton, styles.dangerButton]}
             onPress={() => {
               Alert.alert(
           "Conferma reinizializzazione",
@@ -66,13 +66,13 @@ export default function SettingsScreen() {
             }}
           >
             <Ionicons name="refresh-outline" size={22} color="#fff" />
-            <Text style={styles.buttonText}>Reinizializza Database</Text>
+            <Text style={CommonStyles.secondaryButtonText}>Reinizializza Database</Text>
           </TouchableOpacity>
         </SectionCard>
 
         <SectionCard title="Informazioni App">
           <Text style={styles.description}>
-            BookTrack è un&apos;applicazione per gestire la tua libreria personale, e tenere
+            Readit è un&apos;applicazione per gestire la tua libreria personale, e tenere
             traccia dei tuoi progressi di lettura.
           </Text>
           <Text style={styles.description}>
@@ -89,60 +89,19 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  scrollContainer: {
-    flexGrow: 1,
-  },
-  header: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  backButton: {
-    padding: 8,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-  },
   description: {
     fontSize: 16,
-    color: '#666',
+    color: Colors.textSecondary,
     marginBottom: 16,
     lineHeight: 22,
   },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#f4511e',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-  },
   dangerButton: {
-    backgroundColor: '#dc3545',
-  },
-  buttonText: {
-    fontSize: 16,
-    color: '#fff',
-    marginLeft: 8,
-    fontWeight: '500',
+    backgroundColor: Colors.error,
   },
   authors: {
     fontSize: 14,
@@ -150,5 +109,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     textAlign: 'center',
     fontStyle: 'italic',
+    color: Colors.textSecondary,
   },
 });

@@ -533,6 +533,7 @@ export async function deleteBook(id: number): Promise<boolean> {
   try {
     await db.execAsync('PRAGMA foreign_keys = ON;');
     await db.runAsync('DELETE FROM books WHERE id = ?', id);
+    
     return true;
   } catch (error) {
     console.error('Error deleting book:', error);
@@ -629,6 +630,7 @@ export async function updateReadingStatus(bookId: number, status: 'to_read' | 'r
         status, bookId
       );
     }
+    
     return true;
   } catch (error) {
     console.error('Error updating reading status:', error);
@@ -689,6 +691,7 @@ export async function saveRating(bookId: number, rating: number, comment?: strin
            rated_at = datetime('now')`,
       bookId, rating, comment || null
     );
+    
     return true;
   } catch (error) {
     console.error('Error saving rating:', error);

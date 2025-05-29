@@ -1,14 +1,13 @@
-import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { AntDesign } from '@expo/vector-icons'
+import { AntDesign, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { AnimatePresence, MotiView } from 'moti';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Dimensions,
   Image,
-  ImageBackground,
   Keyboard,
   Modal,
   Pressable,
@@ -22,8 +21,10 @@ import {
 import { Easing } from 'react-native-reanimated'; 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AnimatePresence, MotiView } from 'moti'; 
+
 import SearchModal from '../../components/SearchModal';
-import { Book, deleteBook, getBookById, insertBook, updateBook, updateReadingStatus, saveRating, saveNotes } from '../../services/bookApi';
+import { Colors } from '../../constants/styles';
+import { Book, deleteBook, getBookById, insertBook, saveNotes, saveRating, updateBook, updateReadingStatus } from '../../services/bookApi';
 
 const initialForm = {
   title: '',
@@ -95,7 +96,7 @@ export default function AddBookScreen() {
       const labels = ['Terribile','Scarso','Discreto','Buono','Ottimo']
       setComment(labels[rating - 1])
     }
-  }, [rating])
+  }, [rating, comment])
 
   /**
    * 
@@ -133,6 +134,19 @@ export default function AddBookScreen() {
         setRating(bookData.rating?.rating || 0);
         setComment(bookData.rating?.comment || '');
         setNote(bookData.notes || '');
+        
+        // Set remote book data if ISBN exists to show in display
+        if (bookData.isbn10 || bookData.isbn13) {
+          setRemoteBook({
+            title: bookData.title || '',
+            authors: bookData.authors || [],
+            isbn10: bookData.isbn10,
+            isbn13: bookData.isbn13,
+            cover_url: bookData.cover_url,
+            description: bookData.description,
+            published: bookData.publication,
+          } as Book);
+        }
       }
     } catch (e) {
       console.error('Error while loading book\'s data: ', e);
@@ -215,7 +229,6 @@ export default function AddBookScreen() {
       .map(a => a.trim())
       .filter(Boolean);
     if (!authors.length) authors.push('Autore Sconosciuto');
-
       // Crea l'oggetto libro da salvare
       const bookToSave: Book = {
         title,
@@ -227,7 +240,7 @@ export default function AddBookScreen() {
         authors,
         editor: remoteBook?.editor,
         language: remoteBook?.language,
-        genres: remoteBook?.genres || []
+        genres: selectedGenres.length > 0 ? selectedGenres : remoteBook?.genres || []
       };
 
       let bookId: number;                 
@@ -316,7 +329,7 @@ export default function AddBookScreen() {
     return;
   }
   const res = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    mediaTypes: ['images'],
     allowsEditing: true,
     aspect: [3, 4],
     quality: 1,
@@ -345,9 +358,9 @@ export default function AddBookScreen() {
   }
   return (
     <View style={styles.coverPlaceholder}>
-      <Ionicons name="book-outline" size={42} color="#bbb" />
+      <Ionicons name="book-outline" size={56} color="#4A90E2" />
       <Text style={styles.coverPlaceholderText}>
-        Clicca per selezionare un'immagine dalla galleria 
+        Tocca per aggiungere copertina
       </Text>
     </View>
   );
@@ -356,7 +369,7 @@ export default function AddBookScreen() {
   if (loading) {
     return (
       <View style={[styles.container, styles.loadingContainer]}>
-        <ActivityIndicator size="large" color="#f4511e" />
+        <ActivityIndicator size="large" color="#4A90E2" />
         <Text style={styles.loadingText}>Caricamento...</Text>
       </View>
     );
@@ -373,10 +386,10 @@ export default function AddBookScreen() {
         <View style={styles.headerRow}></View>
         <View style={styles.headerRow}>
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-            <Ionicons name="arrow-back" size={24} color="#f4511e" />
+            <Ionicons name="arrow-back" size={24} color="#4A90E2" />
           </TouchableOpacity>
           <Text style={styles.title}>
-            {isEditing ? 'Modifica Libro' : 'Aggiungi Libro'}
+            {isEditing ? 'Modifica Libro' : 'Nuovo Libro'}
           </Text>
           <TouchableOpacity style={styles.searchButton} onPress={() => setShowSearch(true)}>
             <Ionicons name="search-outline" size={22} color="#fff" />
@@ -390,38 +403,75 @@ export default function AddBookScreen() {
           { paddingBottom: 80 + insets.bottom, paddingTop: 80 + insets.top}]} // per tenere conto del footer e dell'header fissi
         showsVerticalScrollIndicator={false}
       >
-        {/* Anteprima libro e ricerca */}
-        <View style={styles.bookPreviewSection}>
-          <View style={styles.coverContainer}>
-            <Pressable onPress={pickBookImage}>
-              {renderCoverPreview()}
-            </Pressable>
+        {/* Copertina del libro (click to edit) */}
+        <View style={styles.bookDisplaySection}>
+          <View style={styles.bookCoverSection}>
+            <View style={styles.coverContainer}>
+              <Pressable onPress={pickBookImage}>
+                {renderCoverPreview()}
+              </Pressable>
+            </View>
           </View>
           
-          <View style={styles.basicInfo}>
-                <Text style={styles.bookTitle} numberOfLines={2}>{form.title || 'Titolo'}</Text>
-                <Text style={styles.bookAuthor} numberOfLines={1}>{form.author || 'Nome Autore'}</Text>
-            {remoteBook && (remoteBook.isbn10 || remoteBook.isbn13) && (
-              <View style={styles.isbnContainer}>
-                {remoteBook.isbn10 && (
-                  <View style={styles.isbnTag}>
-                    <Text style={styles.isbnLabel}>ISBN-10:</Text>
-                    <Text style={styles.isbnValue}>{remoteBook.isbn10}</Text>
+          <View style={styles.bookInfoSection}>
+            <View style={styles.bookMetadata}>
+              <Text style={styles.bookTitle} numberOfLines={3}>
+                {form.title || 'Titolo del Libro'}
+              </Text>
+              <Text style={styles.bookAuthor} numberOfLines={2}>
+                {form.author || 'Nome Autore'}
+              </Text>
+              
+              {/* contenitore dei tags per anno, generi, ecc... */}
+              <View style={styles.tagsContainer}>
+                {form.publication && (
+                  <View style={styles.infoTag}>
+                    <Ionicons name="calendar-outline" size={14} color="#4A90E2" />
+                    <Text style={styles.tagText}>{form.publication}</Text>
                   </View>
                 )}
                 
-                {remoteBook.isbn13 && (
-                  <View style={styles.isbnTag}>
-                    <Text style={styles.isbnLabel}>ISBN-13:</Text>
-                    <Text style={styles.isbnValue}>{remoteBook.isbn13}</Text>
+                {selectedGenres.map((genre) => (
+                  <View key={genre} style={styles.infoTag}>
+                    <Ionicons name="bookmark-outline" size={14} color="#9F7AEA" />
+                    <Text style={[styles.tagText, { color: '#9F7AEA' }]}>{genre}</Text>
+                  </View>
+                ))}
+                
+                {remoteBook?.isbn13 ? (
+                  <View style={styles.infoTag}>
+                    <Ionicons name="barcode-outline" size={14} color="#38B2AC" />
+                    <Text style={[styles.tagText, { color: '#38B2AC' }]}>{remoteBook.isbn13}</Text>
+                  </View>
+                ) : remoteBook?.isbn10 && (
+                  <View style={styles.infoTag}>
+                    <Ionicons name="barcode-outline" size={14} color="#38B2AC" />
+                    <Text style={[styles.tagText, { color: '#38B2AC' }]}>{remoteBook.isbn10}</Text>
+                  </View>
+                )}
+                
+                {/* placeholders se non ci sono tags */}
+                {!form.publication && selectedGenres.length === 0 && !remoteBook?.isbn10 && !remoteBook?.isbn13 && (
+                  <View style={[styles.infoTag, { backgroundColor: '#F8F9FA', borderColor: '#E9ECEF' }]}>
+                    <Ionicons name="information-circle-outline" size={14} color="#6C757D" />
+                    <Text style={[styles.tagText, { color: '#6C757D', fontStyle: 'italic' }]}>Compila i campi per vedere i dettagli</Text>
                   </View>
                 )}
               </View>
-            )}
+              
+              {remoteBook && (
+                <View style={styles.sourceTagContainer}>
+                  <View style={styles.sourceTag}>
+                    <Ionicons name="cloud-download-outline" size={14} color="#4A90E2" />
+                    <Text style={styles.sourceText}>Dati da ricerca online</Text>
+                  </View>
+                </View>
+              )}
+            </View>
           </View>
         </View>
 
- {/* Status selector */}
+ {/* selettore status */}
   <View style={styles.tabRow}>
   {STATI.map(s => {
     const label = s === 'to_read' ? 'Da leggere' 
@@ -656,7 +706,7 @@ export default function AddBookScreen() {
               <MotiView style={styles.ratingContainer}>
                 <Text style={[styles.label, {marginBottom: 16}]}>Aggiungi una Valutazione</Text>
                 <View style={styles.starsRow}>
-                  {[0,1,2,3,4].map((s,i) => (
+                  {[1,2,3,4,5].map((s,i) => (
                     <Pressable key={s} onPress={() => {
                       setRating(s);
                       setIsDirty(true);    
@@ -669,7 +719,7 @@ export default function AddBookScreen() {
                         <AntDesign
                           name={s <= rating ? 'star' : 'staro'}
                           size={32}
-                          color={s <= rating ? '#f5a623' : '#DDD'}
+                          color={s <= rating ? Colors.secondary : '#DDD'}
                           style={{ marginHorizontal: 4 }}
                         />
                       </MotiView>
@@ -810,6 +860,107 @@ const styles = StyleSheet.create({
       contentContainer: {
       padding: 16,
       },
+      bookDisplaySection: {
+        backgroundColor: '#fff',
+        borderRadius: 16,
+        padding: 20,
+        marginBottom: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 4,
+      },
+      bookCoverSection: {
+        alignItems: 'center',
+        marginBottom: 20,
+      },
+      bookInfoSection: {
+        flex: 1,
+      },
+      bookMetadata: {
+        alignItems: 'center',
+      },
+      publicationContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        backgroundColor: '#F0F7FF',
+        borderRadius: 8,
+      },
+      publicationText: {
+        fontSize: 14,
+        color: '#4A90E2',
+        fontWeight: '500',
+        marginLeft: 6,
+      },
+      genresPreviewContainer: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        marginTop: 12,
+        paddingHorizontal: 12,
+      },
+      genresPreview: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        marginLeft: 8,
+        flex: 1,
+      },
+      genrePreviewPill: {
+        backgroundColor: '#E8F4FF',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        marginRight: 6,
+        marginBottom: 4,
+      },
+      genrePreviewText: {
+        fontSize: 12,
+        color: '#4A90E2',
+        fontWeight: '500',
+      },
+      moreGenresText: {
+        fontSize: 12,
+        color: '#666',
+        fontStyle: 'italic',
+      },
+      sourceTagContainer: {
+        marginTop: 12,
+        alignItems: 'center',
+      },
+      tagsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+        marginTop: 16,
+        paddingHorizontal: 8,
+      },
+      infoTag: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F0F7FF',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 16,
+        marginRight: 8,
+        marginBottom: 8,
+        borderWidth: 1,
+        borderColor: '#E0EFFF',
+        shadowColor: '#4A90E2',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
+      },
+      tagText: {
+        fontSize: 13,
+        color: '#4A90E2',
+        fontWeight: '500',
+        marginLeft: 4,
+      },
       bookPreviewSection: {
       flexDirection: 'column',
       alignItems: 'center',
@@ -818,10 +969,10 @@ const styles = StyleSheet.create({
       coverContainer: {
       alignItems: 'center', 
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.3,
-      shadowRadius: 4,
-      elevation: 3,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.25,
+      shadowRadius: 8,
+      elevation: 6,
       },
       coverPreview: {
       width: '100%',
@@ -829,25 +980,29 @@ const styles = StyleSheet.create({
       borderRadius: 8,
     },
   coverPlaceholder: {
-    width: 110,
-    height: 165,
-    borderRadius: 8,
+    width: 140,
+    height: 210,
+    borderRadius: 12,
     backgroundColor: '#f1f1f1',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 10,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: '#e0e0e0',
+    borderStyle: 'dashed',
   },
   coverPlaceholderText: {
     color: '#999',
-    fontSize: 12,
+    fontSize: 13,
     textAlign: 'center',
     marginTop: 8,
+    fontWeight: '500',
   },
   cover: {
-    width: 110,
-    height: 165,
+    width: 140,
+    height: 210,
     backgroundColor: '#4A90E2',
-    borderRadius: 8,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',   
@@ -857,18 +1012,20 @@ const styles = StyleSheet.create({
     alignItems: 'center', 
   },
   bookTitle: {
-    fontSize: 30,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 4,
-    marginTop: 10, 
-    textTransform: 'capitalize',
+    marginBottom: 6,
+    marginTop: 16, 
+    textAlign: 'center',
+    lineHeight: 28,
   },
   bookAuthor: {
-    fontSize: 16,
+    fontSize: 18,
     color: '#666',
     marginBottom: 8,
-    textTransform: 'capitalize'
+    textAlign: 'center',
+    fontWeight: '500',
   },
   placeholderText: {
     fontStyle: 'italic',
@@ -877,17 +1034,20 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   sourceTag: {
-    backgroundColor: '#f0f7ff',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 4,
-    marginBottom: 8,
+    backgroundColor: '#E8F4FF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#D0E7FF',
   },
   sourceText: {
     color: '#4A90E2',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '500',
+    marginLeft: 6,
   },
   formSection: {
     backgroundColor: '#fff',
@@ -939,27 +1099,32 @@ const styles = StyleSheet.create({
   isbnContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginTop: 8,
+    marginTop: 12,
+    justifyContent: 'center',
   },
   isbnTag: {
     flexDirection: 'row',
-    backgroundColor: '#fff4e8',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 6,
+    backgroundColor: '#F0F7FF',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
     marginRight: 8,
     marginBottom: 8,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E8F4FF',
   },
   isbnLabel: {
     fontSize: 13,
-    fontWeight: '500',
-    color: '#f4511e',
-    marginRight: 4,
+    fontWeight: '600',
+    color: '#4A90E2',
+    marginRight: 6,
+    marginLeft: 4,
   },
   isbnValue: {
     fontSize: 13,
     color: '#666',
+    fontWeight: '500',
   },
   tipContainer: {
     flexDirection: 'row',

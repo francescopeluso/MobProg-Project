@@ -143,7 +143,7 @@ export default function ScanScreen() {
   if (hasPermission === null) {
     return (
       <View style={[styles.container, styles.centered]}>
-        <ActivityIndicator size="large" color="#f4511e" />
+        <ActivityIndicator size="large" color="#4A90E2" />
         <Text style={styles.statusText}>Richiesta di autorizzazione alla fotocamera...</Text>
       </View>
     );
@@ -186,7 +186,7 @@ export default function ScanScreen() {
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons name="arrow-back" size={24} color="#f4511e" />
+          <Ionicons name="arrow-back" size={24} color="#4A90E2" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Scansiona ISBN</Text>
         <View style={styles.placeholder} />
@@ -232,7 +232,7 @@ export default function ScanScreen() {
           <Ionicons
             name={scanning ? "pause-circle-outline" : "play-circle-outline"}
             size={28}
-            color="#f4511e"
+            color="#4A90E2"
           />
           <Text style={styles.footerButtonText}>
             {scanning ? "Pausa" : "Riprendi"}
@@ -243,7 +243,7 @@ export default function ScanScreen() {
           style={styles.footerButton}
           onPress={() => router.push("/add-book")}
         >
-          <Ionicons name="add-circle-outline" size={28} color="#f4511e" />
+          <Ionicons name="add-circle-outline" size={28} color="#4A90E2" />
           <Text style={styles.footerButtonText}>Manuale</Text>
         </TouchableOpacity>
       </View>
@@ -262,7 +262,7 @@ function ScannedBookView({ book, onConfirm, onCancel }: ScannedBookProps) {
           style={styles.backButton}
           onPress={onCancel}
         >
-          <Ionicons name="arrow-back" size={24} color="#f4511e" />
+          <Ionicons name="arrow-back" size={24} color="#4A90E2" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Libro trovato</Text>
         <View style={styles.placeholder} />
@@ -366,7 +366,7 @@ function ScannedBookView({ book, onConfirm, onCancel }: ScannedBookProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#F5F7FF',
   },
   centered: {
     justifyContent: 'center',
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#eaeaea',
+    borderBottomColor: '#E2E8F0',
   },
   headerTitle: {
     fontSize: 20,
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
   },
   pausedScannerView: {
     flex: 1,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#E8F2FF',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
     width: 250,
     height: 100,
     borderWidth: 2,
-    borderColor: '#f4511e',
+    borderColor: '#4A90E2',
     backgroundColor: 'transparent',
     borderRadius: 10,
   },
@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#fff',
     borderTopWidth: 1,
-    borderTopColor: '#eaeaea',
+    borderTopColor: '#E2E8F0',
   },
   footerButton: {
     alignItems: 'center',
@@ -485,7 +485,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   permissionButton: {
-    backgroundColor: '#f4511e',
+    backgroundColor: '#4A90E2',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
@@ -515,7 +515,7 @@ const styles = StyleSheet.create({
     width: 120,
     height: 180,
     borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#E8F2FF',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -544,7 +544,7 @@ const styles = StyleSheet.create({
   },
   isbnTag: {
     flexDirection: 'row',
-    backgroundColor: '#fff4e8',
+    backgroundColor: '#EBF8FF',
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 6,
@@ -555,7 +555,7 @@ const styles = StyleSheet.create({
   isbnLabel: {
     fontSize: 13,
     fontWeight: '500',
-    color: '#f4511e',
+    color: '#4A90E2',
     marginRight: 4,
   },
   isbnValue: {
@@ -599,7 +599,7 @@ const styles = StyleSheet.create({
   },
   genreText: {
     fontSize: 13,
-    color: '#4A6FA5',
+    color: '#4A90E2',
   },
   confirmFooter: {
     flexDirection: 'row',
@@ -607,7 +607,7 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: '#fff',
     borderTopWidth: 1,
-    borderTopColor: '#eaeaea',
+    borderTopColor: '#E2E8F0',
   },
   cancelButton: {
     paddingVertical: 12,
@@ -628,7 +628,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
-    backgroundColor: '#f4511e',
+    backgroundColor: '#4A90E2',
     width: '60%',
     alignItems: 'center',
   },

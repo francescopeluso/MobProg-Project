@@ -1,3 +1,4 @@
+import { Colors, CommonStyles, Spacing, Typography } from '@/constants/styles';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { PieChart } from 'react-native-gifted-charts';
@@ -12,9 +13,9 @@ const GenreChart: React.FC<GenreChartProps> = ({ data }) => {
     return (
       <View style={styles.chartContainer}>
         <Text style={styles.chartTitle}>Generi più letti</Text>
-        <View style={styles.noDataContainer}>
-          <Text style={styles.noDataText}>Nessun dato disponibile</Text>
-          <Text style={styles.noDataSubtext}>Inizia a leggere per vedere i tuoi generi preferiti</Text>
+        <View style={CommonStyles.emptyState}>
+          <Text style={CommonStyles.emptyText}>Nessun dato disponibile</Text>
+          <Text style={CommonStyles.emptyText}>Inizia a leggere per vedere i tuoi generi preferiti</Text>
         </View>
       </View>
     );
@@ -59,29 +60,29 @@ const GenreChart: React.FC<GenreChartProps> = ({ data }) => {
 const styles = StyleSheet.create({
   chartContainer: {
     alignItems: 'center',
-    marginTop: 10,
-    paddingHorizontal: 16,
+    marginTop: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
   },
   chartTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 20,
-    color: '#555',
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.medium,
+    marginBottom: Spacing.xl,
+    color: Colors.textSecondary,
     textAlign: 'center',
   },
   pieChartContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
+    marginBottom: Spacing.xxl,
   },
   centerLabel: {
     alignItems: 'center',
     justifyContent: 'center',
   },
   centerLabelText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#666',
+    fontSize: Typography.fontSize.xs,
+    fontWeight: Typography.fontWeight.medium,
+    color: Colors.textSecondary,
   },
   legendContainer: {
     width: '100%',
@@ -92,49 +93,30 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 6,
-    paddingHorizontal: 8,
-    marginBottom: 4,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.sm,
+    marginBottom: Spacing.xs,
+    backgroundColor: Colors.surfaceVariant,
+    borderRadius: Spacing.sm,
   },
   legendDot: {
     width: 12,
     height: 12,
     borderRadius: 6,
-    marginRight: 12,
+    marginRight: Spacing.md,
   },
   legendLabel: {
-    fontSize: 14,
-    color: '#444',
+    fontSize: Typography.fontSize.md,
+    color: Colors.textPrimary,
     flex: 1,
-    fontWeight: '500',
+    fontWeight: Typography.fontWeight.medium,
   },
   legendPerc: {
-    fontSize: 14,
-    color: '#f4511e',
-    fontWeight: '600',
+    fontSize: Typography.fontSize.md,
+    color: Colors.secondary,
+    fontWeight: Typography.fontWeight.semibold,
     minWidth: 40,
     textAlign: 'right',
-  },
-  noDataContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-    paddingHorizontal: 20,
-  },
-  noDataText: {
-    fontSize: 16,
-    color: '#666',
-    fontWeight: '500',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  noDataSubtext: {
-    fontSize: 14,
-    color: '#999',
-    textAlign: 'center',
-    lineHeight: 20,
   },
 });
 

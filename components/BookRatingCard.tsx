@@ -1,3 +1,4 @@
+import { BorderRadius, Colors, Spacing, Typography } from '@/constants/styles';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import RatingStars from './RatingStars';
@@ -22,25 +23,25 @@ const BookRatingCard: React.FC<BookRatingCardProps> = ({ title, author, rating, 
 
 const styles = StyleSheet.create({
   ratingCard: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    padding: 12,
+    backgroundColor: Colors.surfaceVariant,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
     marginBottom: 10,
   },
   bookTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.medium,
+    color: Colors.textPrimary,
   },
   bookAuthor: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: Typography.fontSize.md,
+    color: Colors.textSecondary,
     marginTop: 2,
     marginBottom: 2,
   },
   bookComment: {
-    fontSize: 14,
-    color: '#555', 
+    fontSize: Typography.fontSize.md,
+    color: Colors.textSecondary, 
     marginTop: 6,
     fontStyle: 'italic',
     lineHeight: 18

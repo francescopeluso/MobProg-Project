@@ -1,3 +1,4 @@
+import { Colors, Spacing, Typography } from '@/constants/styles';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
@@ -16,15 +17,15 @@ const ReadingProgressChart: React.FC<ReadingProgressChartProps> = ({
       <Text style={styles.chartTitle}>{title}</Text>
       <LineChart
         data={data}
-        color="#f4511e"
+        color={Colors.secondary}
         thickness={3}
         maxValue={12}
         noOfSections={4}
-        yAxisTextStyle={{ color: '#888' }}
-        xAxisLabelTextStyle={{ color: '#888', fontSize: 11 }}
+        yAxisTextStyle={{ color: Colors.textTertiary }}
+        xAxisLabelTextStyle={{ color: Colors.textTertiary, fontSize: 11 }}
         hideDataPoints={false}
-        dataPointsColor="#f4511e"
-        startFillColor="#f4511e"
+        dataPointsColor={Colors.secondary}
+        startFillColor={Colors.secondary}
         startOpacity={0.2}
         endOpacity={0.0}
         initialSpacing={20}
@@ -38,13 +39,13 @@ const ReadingProgressChart: React.FC<ReadingProgressChartProps> = ({
 const styles = StyleSheet.create({
   chartContainer: {
     alignItems: 'center',
-    marginTop: 30,
+    marginTop: Spacing.xxxl,
   },
   chartTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 16,
-    color: '#555',
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.medium,
+    marginBottom: Spacing.lg,
+    color: Colors.textSecondary,
     textAlign: 'center',
   },
 });
