@@ -18,8 +18,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Easing } from 'react-native-reanimated';
+import { Easing } from 'react-native-reanimated'; 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AnimatePresence, MotiView } from 'moti'; 
+
 import SearchModal from '../../components/SearchModal';
 import { Colors } from '../../constants/styles';
 import { Book, deleteBook, getBookById, insertBook, saveNotes, saveRating, updateBook, updateReadingStatus } from '../../services/bookApi';
@@ -55,10 +57,9 @@ export default function AddBookScreen() {
   const [showCategoryModal, setShowCategoryModal] = useState(false)
   // per la bottom‐sheet delle note
   const [note, setNote] = useState('')
-  // lista categorie custom
-  const [categories, setCategories] = useState<string[]>([])
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
-  const [newCategory, setNewCategory] = useState('')
+  // wishlist o preferiti
+  const [isInWishlist, setIsInWishlist] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false); 
   // lista generi e selezione
   const GENRES = ['Giallo','Rosa','Azione','Fantasy','Storico']
   const [selectedGenres, setSelectedGenres] = useState<string[]>([])
@@ -76,10 +77,12 @@ export default function AddBookScreen() {
       prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g]
   )}; 
 
-  const toggleCategory = (c: string) =>
-    setSelectedCategories(prev =>
-      prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c]
-  )
+  const categories = [
+    { icon: 'chevron-down-outline',    color: '#BBB'   },
+    { icon: 'heart',  color: '#FFA0CC' },
+    { icon: 'cart',    color: '#79E18F' },
+  ] as const;
+  
 
   useEffect(() => {
     if (params.id) {
@@ -213,20 +216,19 @@ export default function AddBookScreen() {
    * @async
    */
   const handleSave = async () => {
-    try {
-      // 1. Prepara i campi standard
-      const title = form.title.trim() || 'Titolo Sconosciuto';
-      const description = form.description.trim() || undefined;
-      const cover_url = form.cover_url.trim() || undefined;
-      const publication = parseInt(form.publication, 10) || undefined;
-      const isbn10 = remoteBook?.isbn10;
-      const isbn13 = remoteBook?.isbn13;
-      const authors = form.author
-        .split(',')
-        .map(a => a.trim())
-        .filter(Boolean);
-      if (!authors.length) authors.push('Autore Sconosciuto');
-      
+  try {
+    // 1. Prepara i campi standard
+    const title = form.title.trim() || 'Titolo Sconosciuto';
+    const description = form.description.trim() || undefined;
+    const cover_url = form.cover_url.trim() || undefined;
+    const publication = parseInt(form.publication, 10) || undefined;
+    const isbn10 = remoteBook?.isbn10;
+    const isbn13 = remoteBook?.isbn13;
+    const authors = form.author
+      .split(',')
+      .map(a => a.trim())
+      .filter(Boolean);
+    if (!authors.length) authors.push('Autore Sconosciuto');
       // Crea l'oggetto libro da salvare
       const bookToSave: Book = {
         title,
@@ -241,60 +243,36 @@ export default function AddBookScreen() {
         genres: selectedGenres.length > 0 ? selectedGenres : remoteBook?.genres || []
       };
 
-      let bookId: number;
+      let bookId: number;                 
 
-      // Se stiamo modificando un libro esistente, aggiungi l'ID
-      if (isEditing && params.id) {
-        bookToSave.id = parseInt(params.id);
-        bookId = bookToSave.id;
-        
-        // Aggiorna il libro esistente
-        const success = await updateBook(bookToSave);
-        if (!success) {
-          Alert.alert('Errore', 'Impossibile aggiornare il libro.');
-          return;
-        }
-      } else {
-        // Inserisci nuovo libro
-        const newBookId = await insertBook(bookToSave);
-        if (!newBookId) {
-          Alert.alert('Errore', 'Impossibile aggiungere il libro.');
-          return;
-        }
-        bookId = newBookId;
-      }
-
-      // 2. Salva lo stato di lettura
-      await updateReadingStatus(bookId, activeStatus);
-      
-      // 3. Salva la valutazione se presente
-      if (rating > 0) {
-        await saveRating(bookId, rating, comment);
-      }
-      
-      // 4. Salva le note se presenti
-      if (note.trim().length > 0) {
-        await saveNotes(bookId, note);
-      }
-
-      // 5. Reset dello stato e navigazione
-      setIsDirty(false);
-      setForm({ ...initialForm });
-      setRemoteBook(null);
-      setRating(0);
-      setComment('');
-      setNote('');
-      setSelectedGenres([]);
-      
-      // 6. Messaggio di conferma e ritorno alla schermata precedente
-      Alert.alert('Completato', isEditing ? 'Libro aggiornato con successo.' : 'Libro aggiunto con successo.');
-      router.back();
-
-    } catch (err: any) {
-      console.error('Errore nel salvataggio del libro:', err);
-      Alert.alert('Errore', err.message || 'Qualcosa è andato storto durante il salvataggio.');
+    if (isEditing && params.id) {
+      bookToSave.id = +params.id;
+      const ok = await updateBook(bookToSave);
+      if (!ok) throw new Error('updateBook fallito');
+      bookId = +params.id;         
+    } else {
+      const newId = await insertBook(bookToSave);
+      if (!newId) throw new Error('insertBook fallito');
+      bookId = newId;                  
     }
-  };
+
+    // adesso posso usarlo per salvare lo stato, rating e note:
+    await updateReadingStatus(bookId, activeStatus);
+    if (rating > 0)  await saveRating(bookId, rating, comment);
+    if (note.trim()) await saveNotes(bookId, note);
+
+    setIsDirty(false);
+    Alert.alert('Completato', isEditing ? 'Libro aggiornato.' : 'Libro aggiunto.');
+    // reset + back
+    setForm({ ...initialForm });
+    setRemoteBook(null);
+    router.back();
+
+  } catch (err: any) {
+    console.error(err);
+    Alert.alert('Errore', err.message || 'Qualcosa è andato storto.');
+  }
+}; 
 
   /**
    * 
@@ -627,19 +605,41 @@ export default function AddBookScreen() {
               <Ionicons name="create-outline" size={24} color="#fff" />
             </Pressable>
 
-            {/* Categorie */}
-            <Pressable
-              onPress={() => setShowCategoryModal(true)}
-              style={styles.iconButton}
-            >
-              <Ionicons name="layers-outline" size={24} color="#fff" />
-            </Pressable>
-
             <Pressable 
               onPress={() => setShowRating(v => !v)} 
               style={styles.iconButton}
             >
               <Ionicons name="star" size={20} color="#fff" />
+            </Pressable>
+
+            {/* Preferiti o Wishlist */}
+            <Pressable
+              onPress={() => {
+                if(!isInWishlist && !isFavorite) {
+                            setIsInWishlist(true);
+                } else if (isInWishlist && !isFavorite) {
+                  setIsInWishlist(false);
+                  setIsFavorite(true);
+                } else {
+                  setIsFavorite(false);
+                }
+                setIsDirty(true);
+              }}
+              style={[ styles.iconButton, 
+                isFavorite || isInWishlist
+                  ? { backgroundColor: '#4A90E2' }
+                  : { backgroundColor: '#BBB' }
+              ]}
+            >
+              <Ionicons
+                name={
+                  isInWishlist   ? 'cart'      :
+                  isFavorite     ? 'heart'     :
+                                  'cart-outline'
+                }
+                size={24}
+                color="#fff"
+              />
             </Pressable>
           </View>
 
@@ -700,60 +700,6 @@ export default function AddBookScreen() {
             </View>
           </Modal>
 
-          {/* CATEGORY MODAL */}
-          <Modal visible={showCategoryModal} transparent animationType="none">
-            <View style={styles.modalOverlay}>
-              <MotiView {...entry} transition={entryTransition} style={styles.modalContent}>
-                <Pressable onPress={() => setShowCategoryModal(false)} style={styles.closeIcon}>
-                  <Ionicons name="close" size={24} color="#333" />
-                </Pressable>
-                <Text style={styles.label}>Categorie</Text>
-                <View style={styles.genreRow}>
-                  {categories.map(c => (
-                    <Pressable
-                      key={c}
-                      onPress={() => toggleCategory(c)}
-                      style={[
-                        styles.genrePill,
-                        selectedCategories.includes(c) && styles.genreSelected,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.genreText,
-                          selectedCategories.includes(c) && styles.genreTextSelected,
-                        ]}
-                      >
-                        {c}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-                <View style={{ flexDirection: 'row', width: '100%', marginTop: 12, gap: 8 }}>
-                  <TextInput
-                    style={[styles.input, { flex: 1, marginBottom: 0 }]}
-                    placeholder="Nuova categoria"
-                    placeholderTextColor="#666"
-                    value={newCategory}
-                    onChangeText={setNewCategory}
-                  />
-                  <Pressable
-                    style={[styles.genrePill, styles.genreSelected, { backgroundColor: '#4A90E2', borderRadius: 8}]}
-                    onPress={() => {
-                      const t = newCategory.trim();
-                      if (t && !categories.includes(t)) {
-                        setCategories(prev => [...prev, t]);
-                        setSelectedCategories(prev => [...prev, t]);
-                      }
-                      setNewCategory('');
-                    }}
-                  >
-                    <Text style={styles.addCategoryButton}>Aggiungi</Text>
-                  </Pressable>
-                </View>
-              </MotiView>
-            </View>
-          </Modal>
           </View>
           {showRating && (
             <View style={styles.formSection}>

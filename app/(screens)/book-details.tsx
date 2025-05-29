@@ -43,10 +43,8 @@ export default function BookDetailsScreen() {
   const [tempComment, setTempComment] = useState('');
   const [tempNotes, setTempNotes] = useState('');
   const insets = useSafeAreaInsets();
-  
-  const handleBack = () => {
-    router.back();
-  };
+  const [inWishlist, setInWishlist] = useState(false);
+  const [favorite, setFavorite]     = useState(false);
 
   const loadBook = useCallback(async () => {
     try {
@@ -64,6 +62,8 @@ export default function BookDetailsScreen() {
           status: bookData.reading_status?.status || 'to_read'
         });
         
+        setInWishlist(bookData.is_in_wishlist ?? false);
+        setFavorite(bookData.is_favorite ?? false);
         setStatus(bookData.reading_status?.status || 'to_read');
         setComment(bookData.rating?.comment || '');
         setRating(bookData.rating?.rating || 0);
@@ -198,32 +198,50 @@ export default function BookDetailsScreen() {
         end={[1, 1]}
         style={[styles.headerGradient, { paddingTop: insets.top }]}
       >
-        <View style={styles.headerContent}>
-          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-            <Ionicons name="arrow-back" size={24} color="#fff" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.editButton} 
-            onPress={() => router.push({ pathname: '/add-book', params: { id: book.id.toString() } })}
-          >
-            <Ionicons name="create-outline" size={24} color="#fff" />
+      <View
+        style={[
+          styles.header,
+          { paddingTop: insets.top }
+        ]}
+      >
+        <View style={styles.headerRow}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color="#f4511e" />
           </TouchableOpacity>
         </View>
-      </LinearGradient>
+        <Text style={styles.bookTitle}>{book.title}</Text>
+        <Text style={styles.bookAuthor}>{book.author}</Text>
+        {book.publication && <Text style={styles.pub}>Pubblicato: {book.publication}</Text>}
 
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Book Hero Section */}
-        <View style={styles.heroSection}>
-          <View style={styles.bookImageContainer}>
-            {book.cover_url ? (
-              <Image source={{ uri: book.cover_url }} style={styles.bookImage} />
-            ) : (
-              <View style={styles.placeholderImage}>
-                <Ionicons name="book-outline" size={64} color={Colors.textTertiary} />
+<View style={{ flexDirection: 'row', marginVertical: 8 }}>
+  {inWishlist && (
+    <Ionicons name="cart"  size={24} color="#4A90E2" style={{ marginRight: 12 }} />
+  )}
+  {favorite   && (
+    <Ionicons name="heart" size={24} color="#f4511e" />
+  )}
+</View>
+
+        {/* ——— Valutazione salvata (solo se rating > 0) ——— */}
+        {rating > 0 && (
+          <View style={styles.savedRatingContainer}>
+            {/* Stelline */}
+            <View style={styles.starsRow}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <View key={i}>
+                <MotiView
+                  from={{ scale: 0.5, opacity: 0 }}
+                        animate={{ scale: rating === i ? 1.3 : 1, opacity: 1 }}
+                        transition={{ type: 'spring', damping: 10, mass: 0.8, delay: i * 150 }}
+                  style={{ marginHorizontal: 4 }}
+                >
+                  <AntDesign
+                    name={i <= rating ? 'star' : 'staro'}
+                    size={30}
+                    color={i <= rating ? '#f5a623' : '#DDD'}
+                    style={{ marginHorizontal: 4 }}
+                  />
+                </MotiView>
               </View>
             )}
             
