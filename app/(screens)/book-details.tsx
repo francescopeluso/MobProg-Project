@@ -168,6 +168,10 @@ export default function BookDetailsScreen() {
     }
   };
 
+  const handleBack = () => {
+    router.back();
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -191,97 +195,81 @@ export default function BookDetailsScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header with gradient background */}
-      <LinearGradient
-        colors={[Colors.primary, Colors.primaryDark]}
-        start={[0, 0]}
-        end={[1, 1]}
-        style={[styles.headerGradient, { paddingTop: insets.top }]}
-      >
-      <View
-        style={[
-          styles.header,
-          { paddingTop: insets.top }
-        ]}
-      >
-        <View style={styles.headerRow}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color="#f4511e" />
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.bookTitle}>{book.title}</Text>
-        <Text style={styles.bookAuthor}>{book.author}</Text>
-        {book.publication && <Text style={styles.pub}>Pubblicato: {book.publication}</Text>}
-
-<View style={{ flexDirection: 'row', marginVertical: 8 }}>
-  {inWishlist && (
-    <Ionicons name="cart"  size={24} color="#4A90E2" style={{ marginRight: 12 }} />
-  )}
-  {favorite   && (
-    <Ionicons name="heart" size={24} color="#f4511e" />
-  )}
-</View>
-
-        {/* ——— Valutazione salvata (solo se rating > 0) ——— */}
-        {rating > 0 && (
-          <View style={styles.savedRatingContainer}>
-            {/* Stelline */}
-            <View style={styles.starsRow}>
-            {Array.from({ length: 5 }).map((_, i) => (
-              <View key={i}>
-                <MotiView
-                  from={{ scale: 0.5, opacity: 0 }}
-                        animate={{ scale: rating === i ? 1.3 : 1, opacity: 1 }}
-                        transition={{ type: 'spring', damping: 10, mass: 0.8, delay: i * 150 }}
-                  style={{ marginHorizontal: 4 }}
-                >
-                  <AntDesign
-                    name={i <= rating ? 'star' : 'staro'}
-                    size={30}
-                    color={i <= rating ? '#f5a623' : '#DDD'}
-                    style={{ marginHorizontal: 4 }}
-                  />
-                </MotiView>
-              </View>
-            )}
-            
-            {/* Floating Status Badge */}
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(status) }]}>
-              <Ionicons 
-                name={getStatusIcon(status)} 
-                size={16} 
-                color="#fff" 
-              />
-            </View>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        {/* Header with gradient background */}
+        <LinearGradient
+          colors={[Colors.primary, Colors.primaryDark]}
+          start={[0, 0]}
+          end={[1, 1]}
+          style={[styles.headerGradient, { paddingTop: insets.top }]}
+        >
+          <View style={styles.headerContent}>
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+              <Ionicons name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.editButton} onPress={() => router.push(`/add-book?id=${book.id}`)}>
+              <Ionicons name="create-outline" size={24} color="#fff" />
+            </TouchableOpacity>
           </View>
-
-          <View style={styles.bookInfo}>
-            <Text style={styles.bookTitle}>{book.title}</Text>
-            <Text style={styles.bookAuthor}>{book.author}</Text>
-            
-            {/* Book Metadata Tags */}
-            <View style={styles.metadataContainer}>
-              {book.publication && (
-                <View style={styles.metadataTag}>
-                  <Ionicons name="calendar-outline" size={14} color={Colors.primary} />
-                  <Text style={styles.metadataText}>{book.publication}</Text>
+          
+          <View style={styles.heroSection}>
+            <View style={styles.bookImageContainer}>
+              {book.cover_url ? (
+                <Image source={{ uri: book.cover_url }} style={styles.bookImage} />
+              ) : (
+                <View style={styles.placeholderImage}>
+                  <Ionicons name="book" size={48} color={Colors.textSecondary} />
                 </View>
               )}
               
-              {book.genres && book.genres.length > 0 && (
-                <View style={styles.metadataTag}>
-                  <Ionicons name="bookmark-outline" size={14} color={Colors.accent} />
-                  <Text style={styles.metadataText}>
-                    {Array.isArray(book.genres) 
-                      ? book.genres.slice(0, 2).map(g => typeof g === 'string' ? g : g.name).join(', ')
-                      : ''
-                    }
-                  </Text>
-                </View>
-              )}
+              {/* Floating Status Badge */}
+              <View style={[styles.statusBadge, { backgroundColor: getStatusColor(status) }]}>
+                <Ionicons 
+                  name={getStatusIcon(status)} 
+                  size={16} 
+                  color="#fff" 
+                />
+              </View>
+            </View>
+
+            <View style={styles.bookInfo}>
+              <Text style={styles.bookTitle}>{book.title}</Text>
+              <Text style={styles.bookAuthor}>{book.author}</Text>
+              
+              {/* Book Metadata Tags */}
+              <View style={styles.metadataContainer}>
+                {book.publication && (
+                  <View style={styles.metadataTag}>
+                    <Ionicons name="calendar-outline" size={14} color={Colors.primary} />
+                    <Text style={styles.metadataText}>{book.publication}</Text>
+                  </View>
+                )}
+                
+                {book.genres && book.genres.length > 0 && (
+                  <View style={styles.metadataTag}>
+                    <Ionicons name="bookmark-outline" size={14} color={Colors.accent} />
+                    <Text style={styles.metadataText}>
+                      {Array.isArray(book.genres) 
+                        ? book.genres.slice(0, 2).map(g => typeof g === 'string' ? g : g.name).join(', ')
+                        : ''
+                      }
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              {/* Wishlist and Favorite indicators */}
+              <View style={{ flexDirection: 'row', marginVertical: 8 }}>
+                {inWishlist && (
+                  <Ionicons name="cart" size={24} color="#4A90E2" style={{ marginRight: 12 }} />
+                )}
+                {favorite && (
+                  <Ionicons name="heart" size={24} color="#f4511e" />
+                )}
+              </View>
             </View>
           </View>
-        </View>
+        </LinearGradient>
 
         {/* Rating Section */}
         {rating > 0 && (
