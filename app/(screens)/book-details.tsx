@@ -32,10 +32,8 @@ export default function BookDetailsScreen() {
   const [rating, setRating] = useState(0);
   const [showNotesModal, setShowNotesModal] = useState(false);
   const insets = useSafeAreaInsets();
-  
-  const handleBack = () => {
-      router.back();
-  };
+  const [inWishlist, setInWishlist] = useState(false);
+  const [favorite, setFavorite]     = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -53,6 +51,8 @@ export default function BookDetailsScreen() {
           status: bookData.reading_status?.status || 'to_read'
         });
         
+        setInWishlist(bookData.is_in_wishlist ?? false);
+        setFavorite(bookData.is_favorite ?? false);
         setStatus(bookData.reading_status?.status || 'to_read');
         setComment(bookData.rating?.comment || '');
         setRating(bookData.rating?.rating || 0);
@@ -97,7 +97,7 @@ export default function BookDetailsScreen() {
         ]}
       >
         <View style={styles.headerRow}>
-          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color="#f4511e" />
           </TouchableOpacity>
           <Text style={styles.title}>
@@ -114,6 +114,16 @@ export default function BookDetailsScreen() {
         <Text style={styles.bookTitle}>{book.title}</Text>
         <Text style={styles.bookAuthor}>{book.author}</Text>
         {book.publication && <Text style={styles.pub}>Pubblicato: {book.publication}</Text>}
+
+<View style={{ flexDirection: 'row', marginVertical: 8 }}>
+  {inWishlist && (
+    <Ionicons name="cart"  size={24} color="#4A90E2" style={{ marginRight: 12 }} />
+  )}
+  {favorite   && (
+    <Ionicons name="heart" size={24} color="#f4511e" />
+  )}
+</View>
+
         {/* ——— Valutazione salvata (solo se rating > 0) ——— */}
         {rating > 0 && (
           <View style={styles.savedRatingContainer}>
