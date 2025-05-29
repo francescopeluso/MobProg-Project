@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as React from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 export default function Layout() {
   return (
@@ -44,9 +44,29 @@ export default function Layout() {
           name="aggiungi"
           options={{
             title: 'Aggiungi',
-            tabBarIcon: ({color, size}) => (
-              <Ionicons name="add-circle-outline" size={size} color={color} />
+            tabBarIcon: ({focused, size}) => (
+              <View style={{
+                backgroundColor: focused ? '#4A90E2' : '#6BA3E8',
+                borderRadius: 20,
+                width: 40,
+                height: 40,
+                justifyContent: 'center',
+                alignItems: 'center',
+                marginTop: -5
+              }}>
+                <Ionicons 
+                  name="add" 
+                  size={24} 
+                  color="white" 
+                />
+              </View>
             ),
+            tabBarLabelStyle: {
+              fontSize: 12,
+              fontWeight: '500',
+              marginTop: 4,
+              color: '#4A90E2'
+            }
           }}
         />
         <Tabs.Screen

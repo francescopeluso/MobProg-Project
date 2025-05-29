@@ -176,11 +176,9 @@ CREATE TABLE IF NOT EXISTS favorites (
 -- Table: wishlist (toggle)
 -- --------------------------------------------------
 CREATE TABLE IF NOT EXISTS wishlist (
-  book_id    INTEGER PRIMARY KEY,
-  added_at   TEXT    NOT NULL DEFAULT (datetime('now')),
-  FOREIGN KEY(book_id) REFERENCES books(id)
-    ON DELETE CASCADE
-    ON UPDATE CASCADE
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  book_title TEXT NOT NULL,
+  added_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 -- --------------------------------------------------
