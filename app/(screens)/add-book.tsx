@@ -19,9 +19,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Easing } from 'react-native-reanimated'
+import { Easing } from 'react-native-reanimated'; 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AnimatePresence, MotiView } from 'moti'
+import { AnimatePresence, MotiView } from 'moti'; 
 import SearchModal from '../../components/SearchModal';
 import { Book, deleteBook, getBookById, insertBook, updateBook, updateReadingStatus, saveRating, saveNotes } from '../../services/bookApi';
 
@@ -215,16 +215,6 @@ export default function AddBookScreen() {
       .map(a => a.trim())
       .filter(Boolean);
     if (!authors.length) authors.push('Autore Sconosciuto');
-    const bookToSave: Book = {
-      title,
-      description,
-      cover_url,
-      publication,
-      isbn10,
-      isbn13,
-      authors,
-      genres: selectedGenres.length > 0 ? selectedGenres : remoteBook?.genres || []
-    };
 
       // Crea l'oggetto libro da salvare
       const bookToSave: Book = {
@@ -240,64 +230,36 @@ export default function AddBookScreen() {
         genres: remoteBook?.genres || []
       };
 
-      // Se stiamo modificando un libro esistente, aggiungi l'ID
-      if (isEditing && params.id) {
-        bookToSave.id = parseInt(params.id);
-        
-        // Aggiorna il libro esistente
-        const success = await updateBook(bookToSave);
-        if (success) {
-          Alert.alert('Completato', 'Libro aggiornato con successo.');
-          // Reset del form e torna indietro
-          setForm({ ...initialForm });
-          setRemoteBook(null);
-          router.back();
-        } else {
-          Alert.alert('Errore', 'Impossibile aggiornare il libro.');
-        }
-      } else {
-        // Inserisci nuovo libro
-        const newBookId = await insertBook(bookToSave);
-        if (newBookId) {
-          Alert.alert('Completato', 'Libro aggiunto con successo.');
-          
-          // Reset del form e torna indietro
-          setForm({ ...initialForm });
-          setRemoteBook(null);
-          router.back();
-        } else {
-          Alert.alert('Errore', 'Impossibile aggiungere il libro.');
-        }
-      }
-    } catch (e) {
-      console.error('Errore nell\'aggiunta del libro: ', e);
-      Alert.alert('Errore', 'Impossibile salvare il libro. ' + (e instanceof Error ? e.message : ''));
+      let bookId: number;                 
+
+    if (isEditing && params.id) {
+      bookToSave.id = +params.id;
+      const ok = await updateBook(bookToSave);
+      if (!ok) throw new Error('updateBook fallito');
+      bookId = +params.id;         
+    } else {
+      const newId = await insertBook(bookToSave);
+      if (!newId) throw new Error('insertBook fallito');
+      bookId = newId;                  
     }
 
-    // 3. Salva lo stato di lettura
+    // adesso posso usarlo per salvare lo stato, rating e note:
     await updateReadingStatus(bookId, activeStatus);
-    // 4. Salva la valutazione
-    if (rating > 0) {
-    await saveRating(bookId, rating, comment);
-    }
-    if (note.trim().length > 0) {
-      await saveNotes(bookId, note);
-    }
-    setIsDirty(false); 
+    if (rating > 0)  await saveRating(bookId, rating, comment);
+    if (note.trim()) await saveNotes(bookId, note);
 
-    // 5. Messaggio di conferma e reset
+    setIsDirty(false);
     Alert.alert('Completato', isEditing ? 'Libro aggiornato.' : 'Libro aggiunto.');
+    // reset + back
     setForm({ ...initialForm });
     setRemoteBook(null);
-    setRating(0);
-    setComment('');
     router.back();
 
   } catch (err: any) {
     console.error(err);
     Alert.alert('Errore', err.message || 'Qualcosa è andato storto.');
   }
-};
+}; 
 
   /**
    * 
