@@ -48,7 +48,7 @@ export default function AggiungiScreen() {
           </Text>
           <TouchableOpacity 
             style={styles.actionButton}
-            onPress={() => {/* Implementa la funzionalità di scansione */}}
+            onPress={() => router.push('/scan')}
           >
             <Ionicons name="barcode-outline" size={22} color="#fff" />
             <Text style={styles.buttonText}>Scansiona Codice</Text>

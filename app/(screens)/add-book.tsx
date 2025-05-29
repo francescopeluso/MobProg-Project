@@ -226,17 +226,52 @@ export default function AddBookScreen() {
       genres: selectedGenres.length > 0 ? selectedGenres : remoteBook?.genres || []
     };
 
-    // 2. Decide se è UPDATE o INSERT
-    let bookId: number;
-    if (isEditing && params.id) {
-      bookToSave.id = +params.id;
-      const ok = await updateBook(bookToSave);
-      if (!ok) throw new Error('updateBook fallito');
-      bookId = +params.id;
-    } else {
-      const newId = await insertBook(bookToSave);
-      if (!newId) throw new Error('insertBook fallito');
-      bookId = newId;
+      // Crea l'oggetto libro da salvare
+      const bookToSave: Book = {
+        title,
+        description,
+        cover_url,
+        publication,
+        isbn10,
+        isbn13,
+        authors,
+        editor: remoteBook?.editor,
+        language: remoteBook?.language,
+        genres: remoteBook?.genres || []
+      };
+
+      // Se stiamo modificando un libro esistente, aggiungi l'ID
+      if (isEditing && params.id) {
+        bookToSave.id = parseInt(params.id);
+        
+        // Aggiorna il libro esistente
+        const success = await updateBook(bookToSave);
+        if (success) {
+          Alert.alert('Completato', 'Libro aggiornato con successo.');
+          // Reset del form e torna indietro
+          setForm({ ...initialForm });
+          setRemoteBook(null);
+          router.back();
+        } else {
+          Alert.alert('Errore', 'Impossibile aggiornare il libro.');
+        }
+      } else {
+        // Inserisci nuovo libro
+        const newBookId = await insertBook(bookToSave);
+        if (newBookId) {
+          Alert.alert('Completato', 'Libro aggiunto con successo.');
+          
+          // Reset del form e torna indietro
+          setForm({ ...initialForm });
+          setRemoteBook(null);
+          router.back();
+        } else {
+          Alert.alert('Errore', 'Impossibile aggiungere il libro.');
+        }
+      }
+    } catch (e) {
+      console.error('Errore nell\'aggiunta del libro: ', e);
+      Alert.alert('Errore', 'Impossibile salvare il libro. ' + (e instanceof Error ? e.message : ''));
     }
 
     // 3. Salva lo stato di lettura
