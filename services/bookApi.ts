@@ -137,32 +137,38 @@ export async function searchBooksRemote(query: string): Promise<Book[]> {
  * @async
  */
 export async function searchBooksLocal(query: string): Promise<Book[]> {
-  if (query.trim() === '') {
-    return [];
-  }
+  // Rimuoviamo questo controllo per consentire query vuote (es. ricerca solo per categoria)
+  // if (query.trim() === '') {
+  //   return [];
+  // }
   
   const db = getDBConnection();
   const searchTerm = `%${query}%`;
 
   try {
     // Prima query per ottenere gli ID dei libri che corrispondono al termine di ricerca
-    const booksQuery = `
-      SELECT DISTINCT b.id
-      FROM books b
-      LEFT JOIN book_authors ba ON b.id = ba.book_id
-      LEFT JOIN authors a ON ba.author_id = a.id
-      LEFT JOIN book_genres bg ON b.id = bg.book_id
-      LEFT JOIN genres g ON bg.genre_id = g.id
-      WHERE b.title LIKE ? 
-         OR b.isbn10 LIKE ? 
-         OR b.isbn13 LIKE ?
-         OR a.name LIKE ? 
-         OR g.name LIKE ?
-      ORDER BY b.title
-    `;
+    const booksQuery = query.trim() === '' 
+      ? `SELECT DISTINCT b.id FROM books b ORDER BY b.title` // Query per ottenere tutti i libri
+      : `
+        SELECT DISTINCT b.id
+        FROM books b
+        LEFT JOIN book_authors ba ON b.id = ba.book_id
+        LEFT JOIN authors a ON ba.author_id = a.id
+        LEFT JOIN book_genres bg ON b.id = bg.book_id
+        LEFT JOIN genres g ON bg.genre_id = g.id
+        WHERE b.title LIKE ? 
+           OR b.isbn10 LIKE ? 
+           OR b.isbn13 LIKE ?
+           OR a.name LIKE ? 
+           OR g.name LIKE ?
+        ORDER BY b.title
+      `;
     
-    const matchingBooks = await db.getAllAsync(booksQuery, 
-      searchTerm, searchTerm, searchTerm, searchTerm, searchTerm) as {id: number}[];
+    // Eseguiamo la query appropriata in base al fatto che la query sia vuota o no
+    const matchingBooks = query.trim() === '' 
+      ? await db.getAllAsync(booksQuery) as {id: number}[]
+      : await db.getAllAsync(booksQuery, 
+          searchTerm, searchTerm, searchTerm, searchTerm, searchTerm) as {id: number}[];
     
     if (matchingBooks.length === 0) {
       return [];
