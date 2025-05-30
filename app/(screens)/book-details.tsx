@@ -45,12 +45,9 @@ export default function BookDetailsScreen() {
   const insets = useSafeAreaInsets();
   const [inWishlist, setInWishlist] = useState(false);
   const [favorite, setFavorite]     = useState(false);
-  const [isTextLong, setIsTextLong] = useState(false);
 
-  useEffect(() => {
-    setIsTextLong(false)
-  }, [notes]) 
-
+  const isNotesLong = notes.length > 200; 
+  const previewNotes = isNotesLong ? notes.substring(0,200) + '[...]' : notes; 
   const loadBook = useCallback(async () => {
     try {
       setLoading(true);
@@ -177,13 +174,6 @@ export default function BookDetailsScreen() {
     router.back();
   };
 
-  useEffect(() => {
-    // Pre-estimate text length - if notes contain newlines or are long enough
-    // to likely exceed 3 lines, set isTextLong to true
-    const hasMultipleLines = notes?.includes('\n') && (notes.match(/\n/g) || []).length >= 2;
-    const isLikelyLong = notes?.length > 180; // ~60 chars per line as estimate
-    setIsTextLong(hasMultipleLines || isLikelyLong);
-  }, [notes]);
 
   if (loading) {
     return (
@@ -253,26 +243,26 @@ export default function BookDetailsScreen() {
               <Text style={styles.bookAuthor}>{book.author}</Text>
               
               {/* Book Metadata Tags */}
-              <View style={styles.metadataContainer}>
+                <View style={styles.metadataContainer}>
                 {book.publication && (
                   <View style={styles.metadataTag}>
-                    <Ionicons name="calendar-outline" size={14} color={Colors.primary} />
-                    <Text style={styles.metadataText}>{book.publication}</Text>
+                  <Ionicons name="calendar-outline" size={14} color={Colors.primary} />
+                  <Text style={[styles.metadataText, {color: Colors.primary}]}>{book.publication}</Text>
                   </View>
                 )}
                 
                 {book.genres && book.genres.length > 0 && (
                   <View style={styles.metadataTag}>
-                    <Ionicons name="bookmark-outline" size={14} color={Colors.accent} />
-                    <Text style={styles.metadataText}>
-                      {Array.isArray(book.genres) 
-                        ? book.genres.slice(0, 2).map(g => typeof g === 'string' ? g : g.name).join(', ')
-                        : ''
-                      }
-                    </Text>
+                  <Ionicons name="bookmark-outline" size={14} color={Colors.accent} />
+                  <Text style={[styles.metadataText, {color: Colors.accent} ]}>
+                    {Array.isArray(book.genres) 
+                    ? book.genres.map(g => typeof g === 'string' ? g : g.name).join(', ')
+                    : ''
+                    }
+                  </Text>
                   </View>
                 )}
-              </View>
+                </View>
             </View>
         
         {/* Rating Section */}
@@ -359,22 +349,17 @@ export default function BookDetailsScreen() {
         )}
 
           {/* Note */}
-          {book.notes && (
+          {notes.length > 0 && (
           <View style={styles.descriptionSection}>
             <Text style={styles.sectionTitle}>Le tue note</Text>
 
-            <Text
-              style={styles.description}
-              numberOfLines={3}
-              onTextLayout={e => {
-                // Set isTextLong based on actual rendered lines
-                setIsTextLong(e.nativeEvent.lines.length > 3);
-              }}
-            >
-              {book.notes}
+            {/* Anteprima a 200 caratteri */}
+            <Text style={styles.description}>
+              {previewNotes}
             </Text>
 
-            {isTextLong && (
+            {/* “Leggi tutto” se veramente ci sono più di 200 caratteri */}
+            {isNotesLong && (
               <TouchableOpacity onPress={() => setShowNotesModal(true)}>
                 <Text style={styles.expandText}>Leggi tutto</Text>
               </TouchableOpacity>
@@ -432,7 +417,6 @@ export default function BookDetailsScreen() {
                 onChangeText={setTempComment}
                 placeholder="Scrivi la tua opinione..."
                 multiline
-                numberOfLines={3}
               />
             </View>
 
@@ -532,7 +516,7 @@ const styles = StyleSheet.create({
   // Container styles
   container: { 
     flex: 1,
-    backgroundColor: Colors.background
+    backgroundColor: Colors.background, 
   },
   
   // Header styles
@@ -578,6 +562,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xxxl,
     paddingHorizontal: Spacing.lg,
     borderRadius: BorderRadius.lg, 
+    ...Shadows.large,
   },
   bookImageContainer: {
     position: 'relative',
@@ -632,17 +617,18 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.xl,
   },
   metadataTag: {
-    backgroundColor: Colors.surfaceVariant,
+    backgroundColor: '#F0F7FF',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E0EFFF',
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.xs,
-    borderRadius: 999,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.xs,
   },
   metadataText: {
     fontSize: Typography.fontSize.sm,
-    color: Colors.textSecondary,
   },
 
   // Rating section
@@ -770,9 +756,10 @@ const styles = StyleSheet.create({
   },
 
   expandText: {
-    fontSize: Typography.fontSize.sm,
+    fontSize: Typography.fontSize.md,
     color: Colors.primary,
     fontWeight: Typography.fontWeight.medium,
+    marginTop: Spacing.md, 
   },
 
   // Modal styles
