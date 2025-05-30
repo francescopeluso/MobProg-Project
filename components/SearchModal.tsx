@@ -1,7 +1,7 @@
 // src/components/SearchModal.tsx
 import { Colors, CommonStyles } from '@/constants/styles';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -18,6 +18,7 @@ import {
   View,
 } from 'react-native';
 import { Book, searchBooksLocal, searchBooksRemote } from '../services/bookApi';
+import { getDBConnection } from '../utils/database';
 
 export type SearchMode = 'remote' | 'local';
 export type FilterType = null | 'to_read' | 'reading' | 'completed' | 'favorites' | 'genres';
@@ -45,6 +46,8 @@ export default function SearchModal({ mode, onSelectRemote, onSelectLocal, onClo
   const [sortBy, setSortBy] = useState<SortType>('title');
   const [showGenreSelector, setShowGenreSelector] = useState(false);
   const [isFilterLoading, setIsFilterLoading] = useState(false);  // Nuovo stato per gestire il caricamento dei filtri
+  const [genres, setGenres] = useState<string[]>([]);  // Aggiungi questo stato per memorizzare i generi disponibili
+  const genreSelectorAnim = useRef(new Animated.Value(0)).current;
   
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -308,7 +311,7 @@ export default function SearchModal({ mode, onSelectRemote, onSelectLocal, onClo
       { id: 'reading', label: 'In lettura', icon: 'bookmark-outline' },
       { id: 'completed', label: 'Completati', icon: 'checkmark-circle-outline' },
       { id: 'favorites', label: 'Preferiti', icon: 'heart-outline' },
-      { id: 'genres', label: 'Generi', icon: 'list-outline' },
+      { id: 'genres', label: activeGenre || 'Generi', icon: 'list-outline' },
     ];
     
     return (
@@ -334,20 +337,21 @@ export default function SearchModal({ mode, onSelectRemote, onSelectLocal, onClo
               onPress={() => {
                 // Evita di ricaricare se è già lo stesso filtro
                 if (activeFilter === filter.id && 
-                    !(filter.id === 'genres' && !showGenreSelector)) {
+                    !(filter.id === 'genres')) {
                   return;
                 }
                 
                 if (filter.id === 'genres') {
+                  // Sempre toggle del selettore per il filtro generi
                   setShowGenreSelector(!showGenreSelector);
                   setActiveFilter('genres');
                 } else {
                   setActiveFilter(filter.id as FilterType);
                   setShowGenreSelector(false);
                   setActiveGenre(null);
+                  // Passa true per indicare che è un cambio di filtro
+                  doSearch(query, true);
                 }
-                // Passa true per indicare che è un cambio di filtro
-                doSearch(query, true);
               }}
             >
               {isFilterLoading && 
@@ -375,12 +379,88 @@ export default function SearchModal({ mode, onSelectRemote, onSelectLocal, onClo
                    (filter.id === 'genres' && activeGenre)) && 
                    styles.filterChipTextActive
                 ]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
               >
                 {filter.id === 'genres' && activeGenre ? activeGenre : filter.label}
               </Text>
+              {filter.id === 'genres' && (
+                <Ionicons
+                  name={showGenreSelector ? "chevron-up" : "chevron-down"}
+                  size={16}
+                  color={(activeGenre) ? Colors.textOnPrimary : Colors.textPrimary}
+                  style={{marginLeft: 4}}
+                />
+              )}
             </TouchableOpacity>
           ))}
         </ScrollView>
+        
+        {/* Selettore generi che appare quando showGenreSelector è true */}
+        {showGenreSelector && (
+          <Animated.View 
+            style={[
+              styles.genreSelectorContainer,
+              {
+                opacity: genreSelectorAnim,
+                transform: [{
+                  translateY: genreSelectorAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [-20, 0]
+                  })
+                }]
+              }
+            ]}
+          >
+            <Text style={styles.genreSelectorTitle}>Seleziona un genere:</Text>
+            <View style={styles.genreList}>
+              {genres.length > 0 ? (
+                genres.map(genre => (
+                  <TouchableOpacity
+                    key={genre}
+                    style={[
+                      styles.genreOption,
+                      activeGenre === genre && styles.genreOptionActive
+                    ]}
+                    onPress={() => {
+                      setActiveGenre(genre);
+                      setShowGenreSelector(false);
+                      doSearch(query, true);
+                    }}
+                  >
+                    <Text 
+                      style={[
+                        styles.genreOptionText,
+                        activeGenre === genre && styles.genreOptionTextActive
+                      ]}
+                    >
+                      {genre}
+                    </Text>
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <Text style={styles.emptyGenresText}>
+                  Nessun genere disponibile. Aggiungi libri con generi per visualizzarli qui.
+                </Text>
+              )}
+            </View>
+            {activeGenre && (
+              <TouchableOpacity
+                style={styles.clearGenreButton}
+                onPress={() => {
+                  setActiveGenre(null);
+                  setShowGenreSelector(false);
+                  if (activeFilter === 'genres') {
+                    setActiveFilter(null);
+                  }
+                  doSearch(query, true);
+                }}
+              >
+                <Text style={styles.clearGenreText}>Rimuovi filtro per genere</Text>
+              </TouchableOpacity>
+            )}
+          </Animated.View>
+        )}
       </View>
     );
   };
@@ -432,6 +512,47 @@ export default function SearchModal({ mode, onSelectRemote, onSelectLocal, onClo
     );
   };
 
+  // Nuovo useEffect per caricare i generi disponibili
+  useEffect(() => {
+    if (mode === 'local') {
+      const loadGenres = async () => {
+        try {
+          const db = getDBConnection();
+          const genreRows = await db.getAllAsync(
+            `SELECT DISTINCT name FROM genres ORDER BY name`
+          ) as {name: string}[];
+          
+          const extractedGenres = genreRows.map(row => row.name);
+          console.log('Generi caricati:', extractedGenres);
+          setGenres(extractedGenres);
+        } catch (error) {
+          console.error('Error loading genres:', error);
+        }
+      };
+      
+      loadGenres();
+    }
+  }, [mode]);
+  
+  // Gestisci animazione del selettore generi
+  useEffect(() => {
+    if (showGenreSelector) {
+      // Mostra il selettore con animazione
+      Animated.timing(genreSelectorAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      // Nascondi il selettore con animazione
+      Animated.timing(genreSelectorAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [showGenreSelector, genreSelectorAnim]);
+  
   return (
     <Animated.View style={[styles.modalContainer, { opacity: fadeAnim }]}>
       <SafeAreaView style={styles.safe}>
@@ -903,5 +1024,64 @@ const styles = StyleSheet.create({
     marginRight: 4,
     height: 16,
     width: 16,
+  },
+  genreSelectorContainer: {
+    backgroundColor: Colors.surfaceVariant,
+    marginTop: 8,
+    borderRadius: 12,
+    padding: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    marginBottom: 8,
+  },
+  genreSelectorTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.textPrimary,
+    marginBottom: 8,
+  },
+  genreList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  genreOption: {
+    backgroundColor: Colors.surface,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginRight: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  genreOptionActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  genreOptionText: {
+    fontSize: 13,
+    color: Colors.textPrimary,
+  },
+  genreOptionTextActive: {
+    color: Colors.textOnPrimary,
+  },
+  emptyGenresText: {
+    color: Colors.textTertiary,
+    fontStyle: 'italic',
+    padding: 8,
+  },
+  clearGenreButton: {
+    alignSelf: 'center',
+    marginTop: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  clearGenreText: {
+    color: Colors.primary,
+    fontSize: 13,
+    fontWeight: '500',
   },
 });
