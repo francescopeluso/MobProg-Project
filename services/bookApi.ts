@@ -343,13 +343,13 @@ export async function getBookById(id: number): Promise<Book | null> {
             n.notes_text as notes,
             r.rating, r.comment, r.rated_at as ratedAt,
             CASE WHEN f.book_id IS NOT NULL THEN 1 ELSE 0 END as isFavorite,
-            CASE WHEN w.book_id IS NOT NULL THEN 1 ELSE 0 END as isInWishlist
+            CASE WHEN w.id IS NOT NULL THEN 1 ELSE 0 END as isInWishlist
       FROM books b
       LEFT JOIN reading_status rs ON b.id = rs.book_id
       LEFT JOIN notes n ON b.id = n.book_id
       LEFT JOIN ratings r ON b.id = r.book_id
       LEFT JOIN favorites f ON b.id = f.book_id
-      LEFT JOIN wishlist w ON b.id = w.book_id
+      LEFT JOIN wishlist w ON b.id = w.id
       WHERE b.id = ?`,
     id
   ) as any | null;

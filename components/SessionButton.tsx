@@ -60,7 +60,28 @@ export default function SessionButton({ variant = 'default' }: Props) {
     if (!sessionId) return;
     try {      
       const seconds = await getDurationToNow(sessionId);
-      Alert.alert('Termina sessione', `Hai letto per ${seconds} secondi.`, [
+      // Helper function to format time
+      const formatTime = (totalSeconds: number) => {
+        if (totalSeconds < 60) {
+          return `${totalSeconds} second${totalSeconds === 1 ? 'o' : 'i'}`;
+        } else if (totalSeconds < 3600) {
+          const minutes = Math.floor(totalSeconds / 60);
+          const seconds = totalSeconds % 60;
+          return `${minutes} minut${minutes === 1 ? 'o' : 'i'}${seconds > 0 ? ` e ${seconds} second${seconds === 1 ? 'o' : 'i'}` : ''}`;
+        } else {
+          const hours = Math.floor(totalSeconds / 3600);
+          const minutes = Math.floor((totalSeconds % 3600) / 60);
+          const seconds = totalSeconds % 60;
+          
+          let result = `${hours} or${hours === 1 ? 'a' : 'e'}`;
+          if (minutes > 0) result += ` ${minutes} minut${minutes === 1 ? 'o' : 'i'}`;
+          if (seconds > 0) result += ` e ${seconds} second${seconds === 1 ? 'o' : 'i'}`;
+          
+          return result;
+        }
+      };
+
+      Alert.alert('Termina sessione', `Hai letto per ${formatTime(seconds)}.`, [
         { text: 'Continua', style: 'cancel' },
         {
           text: 'Salva',
