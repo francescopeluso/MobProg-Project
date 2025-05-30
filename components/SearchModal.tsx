@@ -49,6 +49,9 @@ export default function SearchModal({ mode, onSelectRemote, onSelectLocal, onClo
   const [genres, setGenres] = useState<string[]>([]);  // Aggiungi questo stato per memorizzare i generi disponibili
   const genreSelectorAnim = useRef(new Animated.Value(0)).current;
   
+  // Aggiungi un ref per memorizzare l'ultima query cercata
+  const lastQueryRef = useRef('');
+  
   useEffect(() => {
     Animated.timing(fadeAnim, {
       toValue: 1,
@@ -228,18 +231,28 @@ export default function SearchModal({ mode, onSelectRemote, onSelectLocal, onClo
     }
   }, [mode, applyFiltersAndSort]);
 
-  // Then use it in the effect
+  // Modifica l'useEffect che gestisce la ricerca
   useEffect(() => {
+    // Evita ricerche duplicate
+    if (query === lastQueryRef.current) {
+      return;
+    }
+    
     if (query.trim() === '' && mode === 'local' && allBooks.length > 0) {
       // Se abbiamo già i libri e la query è vuota, filtriamo localmente
       const filteredBooks = applyFiltersAndSort(allBooks);
       setResults(filteredBooks);
+      lastQueryRef.current = query; // Aggiorna il riferimento alla query
       return;
     }
     
-    const timeout = setTimeout(() => doSearch(query), 400);
+    const timeout = setTimeout(() => {
+      lastQueryRef.current = query; // Salva la query prima di eseguire la ricerca
+      doSearch(query);
+    }, 400);
+    
     return () => clearTimeout(timeout);
-  }, [query, doSearch, mode, allBooks, applyFiltersAndSort]);
+  }, [query, mode]); // Rimuovi dipendenze problematiche che causano il ciclo
 
   const handleSelect = (item: Book) => {
     console.log('[SearchModal] item selected:', item);
@@ -745,7 +758,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     backgroundColor: Colors.surface,
     minHeight: 60,
-    maxHeight: 60, // Altezza fissa per evitare cambiamenti
+    maxHeight: 60,
     flexShrink: 0,
   },
   searchBar: {
@@ -754,29 +767,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.surfaceVariant,
     borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingHorizontal: 12,  // Rimosso paddingVertical
     borderWidth: 1,
     borderColor: 'transparent',
-    height: 40, // Altezza fissa invece di minHeight
+    height: 40,
     minWidth: 200,
   },
   searchIcon: {
     marginRight: 8,
-    flexShrink: 0, // Non si riduce mai
+    flexShrink: 0,
   },
   input: {
     flex: 1,
     fontSize: 16,
-    paddingVertical: 0,
+    height: 40,  // Altezza esplicita che corrisponde al contenitore
+    paddingVertical: 0,  // Zero padding verticale
     color: Colors.textPrimary,
-    minWidth: 120, // Larghezza minima garantita
-    // Rimuoviamo width: '100%' che causa conflitti con flex
+    minWidth: 120,
   },
   clearBtn: {
-    padding: 5,
-    marginLeft: 4, // Margine sinistro ridotto
-    flexShrink: 0, // Non si riduce mai
+    height: 40,  // Altezza fissa uguale alla barra di ricerca
+    width: 30,   // Larghezza fissa per un'area di tocco adeguata
+    alignItems: 'center',  // Centra orizzontalmente
+    justifyContent: 'center',  // Centra verticalmente
+    marginLeft: 4,
+    flexShrink: 0,
   },
   closeBtn: {
     marginLeft: 12,
