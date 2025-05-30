@@ -753,14 +753,14 @@ export async function toggleWishlist(bookId: number, isInWishlist: boolean): Pro
   try {
     if (isInWishlist) {
       await db.runAsync(
-        `INSERT OR IGNORE INTO wishlist (book_id)
+        `INSERT OR IGNORE INTO wishlist (id)
          VALUES (?)`,
         bookId
       );
     } else {
       await db.runAsync(
         `DELETE FROM wishlist
-         WHERE book_id = ?`,
+         WHERE id = ?`,
         bookId
       );
     }
@@ -871,7 +871,7 @@ export async function deleteComment(bookId: number): Promise<boolean> {
   const db = getDBConnection();
   try {
     await db.runAsync(
-      `DELETE FROM comment WHERE book_id = ?`,
+      `DELETE FROM notes WHERE book_id = ?`,
       bookId
     );
     return true;

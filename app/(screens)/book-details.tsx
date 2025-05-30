@@ -17,8 +17,11 @@ import {
   View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import RecommendationCarousel from '../../components/RecommendationCarousel';
+import RecommendationDetailModal from '../../components/RecommendationDetailModal';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '../../constants/styles';
-import { Book, getBookById, saveNotes, saveRating, updateReadingStatus } from '../../services/bookApi';
+import { Book, getBookById, saveRating, updateReadingStatus } from '../../services/bookApi';
+import { getAuthorRecommendations, getGenreRecommendations, getSimilarBookRecommendations } from '../../services/recommendationApi';
 
 interface BookDetails extends Omit<Book, 'reading_status'> {
   id: number;
@@ -41,10 +44,19 @@ export default function BookDetailsScreen() {
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [tempRating, setTempRating] = useState(0);
   const [tempComment, setTempComment] = useState('');
-  const [tempNotes, setTempNotes] = useState('');
   const insets = useSafeAreaInsets();
   const [inWishlist, setInWishlist] = useState(false);
   const [favorite, setFavorite]     = useState(false);
+
+  // Stati per le raccomandazioni
+  const [authorRecommendations, setAuthorRecommendations] = useState<Book[]>([]);
+  const [genreRecommendations, setGenreRecommendations] = useState<Book[]>([]);
+  const [similarRecommendations, setSimilarRecommendations] = useState<Book[]>([]);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
+  
+  // Stati per il modal dei dettagli delle raccomandazioni
+  const [showRecommendationModal, setShowRecommendationModal] = useState(false);
+  const [selectedRecommendation, setSelectedRecommendation] = useState<Book | null>(null);
 
   const isNotesLong = notes.length > 200; 
   const previewNotes = isNotesLong ? notes.substring(0,200) + '[...]' : notes; 
@@ -72,7 +84,6 @@ export default function BookDetailsScreen() {
         setNotes(bookData.notes || '');
         setTempComment(bookData.rating?.comment || '');
         setTempRating(bookData.rating?.rating || 0);
-        setTempNotes(bookData.notes || '');
       }
     } catch (loadError) {
       console.error('Error loading book:', loadError);
@@ -82,9 +93,52 @@ export default function BookDetailsScreen() {
     }
   }, [id]);
 
+  // Funzione per caricare le raccomandazioni
+  const loadRecommendations = useCallback(async () => {
+    if (!book) return;
+    
+    try {
+      setLoadingRecommendations(true);
+      
+      // Carica raccomandazioni dello stesso autore
+      if (book.author) {
+        const authorRecs = await getAuthorRecommendations(book.author);
+        setAuthorRecommendations(authorRecs.slice(0, 10));
+      }
+      
+      // Carica raccomandazioni per genere
+      if (book.genres && book.genres.length > 0) {
+        const firstGenre = Array.isArray(book.genres) 
+          ? (typeof book.genres[0] === 'string' ? book.genres[0] : book.genres[0].name)
+          : book.genres;
+        if (firstGenre) {
+          const genreRecs = await getGenreRecommendations(firstGenre);
+          setGenreRecommendations(genreRecs.slice(0, 10));
+        }
+      }
+      
+      // Carica libri simili
+      if (book.title) {
+        const similarRecs = await getSimilarBookRecommendations(book.title);
+        setSimilarRecommendations(similarRecs.slice(0, 10));
+      }
+      
+    } catch (error) {
+      console.error('Errore nel caricamento delle raccomandazioni:', error);
+    } finally {
+      setLoadingRecommendations(false);
+    }
+  }, [book]);
+
   useEffect(() => {
     loadBook();
   }, [loadBook]);
+
+  useEffect(() => {
+    if (book) {
+      loadRecommendations();
+    }
+  }, [book, loadRecommendations]);
 
   const updateStatus = async (newStatus: typeof status) => {
     if (!book) return;
@@ -125,23 +179,7 @@ export default function BookDetailsScreen() {
     }
   };
 
-  const handleSaveNotes = async () => {
-    if (!book) return;
-    
-    try {
-      const success = await saveNotes(book.id, tempNotes);
-      if (success) {
-        setNotes(tempNotes);
-        setShowNotesModal(false);
-        Alert.alert('Successo', 'Note salvate');
-      } else {
-        Alert.alert('Errore', 'Impossibile salvare le note.');
-      }
-    } catch (saveError) {
-      console.error('Error saving notes:', saveError);
-      Alert.alert('Errore', 'Errore durante il salvataggio.');
-    }
-  };
+
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -174,6 +212,16 @@ export default function BookDetailsScreen() {
     router.back();
   };
 
+  const handleRecommendationPress = (recommendedBook: Book) => {
+    if (recommendedBook.id) {
+      // Il libro è già nel database, naviga ai suoi dettagli
+      router.push(`/book-details?id=${recommendedBook.id}`);
+    } else {
+      // Il libro non è nel database, mostra i dettagli nel modal
+      setSelectedRecommendation(recommendedBook);
+      setShowRecommendationModal(true);
+    }
+  };
 
   if (loading) {
     return (
@@ -226,16 +274,16 @@ export default function BookDetailsScreen() {
               )}
               
               {/* Floating Favorite or Wishlist */}
-                {inWishlist && (
-                  <View style={[styles.statusBadge, { backgroundColor:'#79E18F' }]}>
+              {inWishlist && (
+                <View style={[styles.statusBadge, { backgroundColor:'#79E18F' }]}>
                   <Ionicons name="cart" size={24} color="#fff" style={{ margin: 13, marginLeft: 12, marginRight: 15 }} />
-                  </View>
-                )}
-                {favorite && (
-                  <View style={[styles.statusBadge, { backgroundColor: '#FFA0CC' }]}>
+                </View>
+              )}
+              {favorite && (
+                <View style={[styles.statusBadge, { backgroundColor: '#FFA0CC' }]}>
                   <Ionicons name="heart" size={24} color="#fff" style={{ margin: 13}}  />
-                  </View>
-                )}
+                </View>
+              )}
             </View>
 
             <View style={styles.bookInfo}>
@@ -243,27 +291,29 @@ export default function BookDetailsScreen() {
               <Text style={styles.bookAuthor}>{book.author}</Text>
               
               {/* Book Metadata Tags */}
-                <View style={styles.metadataContainer}>
+              <View style={styles.metadataContainer}>
                 {book.publication && (
                   <View style={styles.metadataTag}>
-                  <Ionicons name="calendar-outline" size={14} color={Colors.primary} />
-                  <Text style={[styles.metadataText, {color: Colors.primary}]}>{book.publication}</Text>
+                    <Ionicons name="calendar-outline" size={14} color={Colors.primary} />
+                    <Text style={[styles.metadataText, {color: Colors.primary}]}>{book.publication}</Text>
                   </View>
                 )}
                 
                 {book.genres && book.genres.length > 0 && (
                   <View style={styles.metadataTag}>
-                  <Ionicons name="bookmark-outline" size={14} color={Colors.accent} />
-                  <Text style={[styles.metadataText, {color: Colors.accent} ]}>
-                    {Array.isArray(book.genres) 
-                    ? book.genres.map(g => typeof g === 'string' ? g : g.name).join(', ')
-                    : ''
-                    }
-                  </Text>
+                    <Ionicons name="bookmark-outline" size={14} color={Colors.accent} />
+                    <Text style={[styles.metadataText, {color: Colors.accent} ]}>
+                      {Array.isArray(book.genres) 
+                        ? book.genres.map(g => typeof g === 'string' ? g : g.name).join(', ')
+                        : ''
+                      }
+                    </Text>
                   </View>
                 )}
-                </View>
+              </View>
             </View>
+          </View>
+        </LinearGradient>
         
         {/* Rating Section */}
         {rating > 0 && (
@@ -304,41 +354,39 @@ export default function BookDetailsScreen() {
         </View>
         )}
 
-
-        <View style={[{width: '97%'}]}>
         {/* Status Selection */}
         <View style={styles.statusSection}>
           <Text style={styles.sectionTitle}>Stato di Lettura</Text>
           <View style={styles.statusGrid}>
             {(['to_read', 'reading', 'completed'] as const).map((s) => (
-              <TouchableOpacity
-                key={s}
-                style={[
-                  styles.statusCard,
-                  status === s && styles.statusCardActive,
-                ]}
-                onPress={() => updateStatus(s)}
-              >
-                <View style={[
-                  styles.statusIconContainer,
-                  { backgroundColor: status === s ? '#fff' : getStatusColor(s) + '20' }
-                ]}>
-                  <Ionicons 
-                    name={getStatusIcon(s)} 
-                    size={24} 
-                    color={status === s ? getStatusColor(s) : getStatusColor(s)} 
-                  />
-                </View>
-                <Text style={[
-                  styles.statusText,
-                  status === s && styles.statusTextActive
-                ]}>
-                  {getStatusLabel(s)}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+            <TouchableOpacity
+              key={s}
+              style={[
+                styles.statusCard,
+                status === s && styles.statusCardActive,
+              ]}
+              onPress={() => updateStatus(s)}
+            >
+              <View style={[
+                styles.statusIconContainer,
+                { backgroundColor: status === s ? '#fff' : getStatusColor(s) + '20' }
+              ]}>
+                <Ionicons 
+                  name={getStatusIcon(s)} 
+                  size={24} 
+                  color={status === s ? getStatusColor(s) : getStatusColor(s)} 
+                />
+              </View>
+              <Text style={[
+                styles.statusText,
+                status === s && styles.statusTextActive
+              ]}>
+                {getStatusLabel(s)}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
+      </View>
 
         {/* Description */}
         {book.description && (
@@ -348,8 +396,8 @@ export default function BookDetailsScreen() {
           </View>
         )}
 
-          {/* Note */}
-          {notes.length > 0 && (
+        {/* Note */}
+        {notes.length > 0 && (
           <View style={styles.descriptionSection}>
             <Text style={styles.sectionTitle}>Le tue note</Text>
 
@@ -367,11 +415,66 @@ export default function BookDetailsScreen() {
           </View>
         )}
 
+        {/* Recommendations Section */}
+        {loadingRecommendations && (
+          <View style={styles.recommendationsLoading}>
+            <ActivityIndicator size="small" color={Colors.primary} />
+            <Text style={styles.loadingRecommendationsText}>Caricamento raccomandazioni...</Text>
           </View>
+        )}
 
-          
-        </View>
-      </LinearGradient>
+        {/* Author Recommendations */}
+        {!loadingRecommendations && authorRecommendations.length > 0 && (
+          <View style={styles.recommendationsSection}>
+            <Text style={styles.sectionTitle}>Altri libri di {book.author}</Text>
+            <RecommendationCarousel 
+              books={authorRecommendations}
+              onPress={handleRecommendationPress}
+            />
+          </View>
+        )}
+
+        {/* Genre Recommendations */}
+        {!loadingRecommendations && genreRecommendations.length > 0 && (
+          <View style={styles.recommendationsSection}>
+            <Text style={styles.sectionTitle}>
+              Libri simili per genere
+              {book.genres && book.genres.length > 0 && (
+                <Text style={styles.genreSubtitle}> ({Array.isArray(book.genres) 
+                  ? (typeof book.genres[0] === 'string' ? book.genres[0] : book.genres[0].name)
+                  : book.genres})</Text>
+              )}
+            </Text>
+            <RecommendationCarousel 
+              books={genreRecommendations}
+              onPress={handleRecommendationPress}
+            />
+          </View>
+        )}
+
+        {/* Similar Books Recommendations */}
+        {!loadingRecommendations && similarRecommendations.length > 0 && (
+          <View style={styles.recommendationsSection}>
+            <Text style={styles.sectionTitle}>Libri simili a &ldquo;{book.title}&rdquo;</Text>
+            <RecommendationCarousel 
+              books={similarRecommendations}
+              onPress={handleRecommendationPress}
+            />
+          </View>
+        )}
+
+        {/* No recommendations message */}
+        {!loadingRecommendations && 
+         authorRecommendations.length === 0 && 
+         genreRecommendations.length === 0 && 
+         similarRecommendations.length === 0 && (
+          <View style={styles.noRecommendationsContainer}>
+            <Ionicons name="bulb-outline" size={48} color={Colors.textSecondary} />
+            <Text style={styles.noRecommendationsText}>
+              Non siamo riusciti a trovare raccomandazioni per questo libro al momento.
+            </Text>
+          </View>
+        )}
       </ScrollView>
 
       {/* Rating Modal */}
@@ -469,6 +572,16 @@ export default function BookDetailsScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Recommendation Detail Modal */}
+      <RecommendationDetailModal
+        visible={showRecommendationModal}
+        book={selectedRecommendation}
+        onClose={() => {
+          setShowRecommendationModal(false);
+          setSelectedRecommendation(null);
+        }}
+      />
     </View>
   );
 }
@@ -692,6 +805,7 @@ const styles = StyleSheet.create({
 
   // Status section
   statusSection: {
+    marginTop: Spacing.xl,
     marginHorizontal: Spacing.lg,
     marginBottom: Spacing.xl,
   },
@@ -760,6 +874,46 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontWeight: Typography.fontWeight.medium,
     marginTop: Spacing.md, 
+  },
+
+  // Recommendations styles
+  recommendationsLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.xl,
+    paddingVertical: Spacing.lg,
+  },
+  loadingRecommendationsText: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textSecondary,
+    marginLeft: Spacing.sm,
+  },
+  recommendationsSection: {
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.xl,
+  },
+  genreSubtitle: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.primary,
+    fontWeight: Typography.fontWeight.medium,
+    marginTop: Spacing.md, 
+  },
+
+  noRecommendationsContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.xl,
+    paddingVertical: Spacing.xl,
+  },
+  noRecommendationsText: {
+    fontSize: Typography.fontSize.md,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    marginTop: Spacing.md,
+    lineHeight: 22,
   },
 
   // Modal styles
