@@ -4,21 +4,21 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '../../constants/styles';
 import React, { useEffect, useState, useRef } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Dimensions,
-  Image,
-  Keyboard,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Dimensions,
+    Image,
+    Keyboard,
+    Modal,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { Easing } from 'react-native-reanimated'; 
+import { Easing } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MotiView } from 'moti'; 
 import SearchModal from '../../components/SearchModal';
@@ -36,7 +36,7 @@ const commentInputRef = useRef<TextInput>(null);
 
 export default function AddBookScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ id?: string }>();
+  const params = useLocalSearchParams<{ id?: string; prefilledData?: string }>();
   const [form, setForm] = useState({ ...initialForm });
   const [remoteBook, setRemoteBook] = useState<Book | null>(null);
   const [showSearch, setShowSearch] = useState(false);
@@ -83,8 +83,17 @@ export default function AddBookScreen() {
     if (params.id) {
       setIsEditing(true);
       loadBook(parseInt(params.id));
+    } else if (params.prefilledData) {
+      // Carica i dati precompilati per una raccomandazione
+      try {
+        const bookData = JSON.parse(decodeURIComponent(params.prefilledData)) as Book;
+        loadPrefilledBook(bookData);
+      } catch (error) {
+        console.error('Errore nel parsing dei dati precompilati:', error);
+        Alert.alert('Errore', 'Impossibile caricare i dati del libro raccomandato.');
+      }
     }
-  }, [params.id]);
+  }, [params.id, params.prefilledData]);
 
   useEffect(() => {
     if (rating >= 1 && comment === '') {
@@ -156,6 +165,56 @@ export default function AddBookScreen() {
     } catch (e) {
       console.error('Error while loading book\'s data: ', e);
       Alert.alert('Errore', 'Impossibile caricare i dati del libro.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * 
+   * @function loadPrefilledBook
+   * @param bookData Dati del libro raccomandato da precompilare
+   * @description Funzione per caricare i dati precompilati di un libro raccomandato.
+   *              Viene utilizzata quando si aggiunge un libro dalla sezione raccomandazioni.
+   * @returns {void}
+   */
+  const loadPrefilledBook = (bookData: Book) => {
+    try {
+      setLoading(true);
+      
+      // Estrai gli autori come una stringa separata da virgole
+      const authorString = Array.isArray(bookData.authors) 
+        ? bookData.authors.map(a => typeof a === 'string' ? a : a.name).join(', ')
+        : '';
+      
+      setForm({
+        title: bookData.title || '',
+        author: authorString,
+        description: bookData.description ? 
+          (bookData.description.length > 300 ? 
+            bookData.description.substring(0, 300) + '...' : 
+            bookData.description) : '',
+        cover_url: bookData.cover_url || '',
+        publication: bookData.publication ? bookData.publication.toString() : '',
+      });
+      
+      // Imposta i generi se disponibili
+      if (bookData.genres && bookData.genres.length > 0) {
+        const genres = Array.isArray(bookData.genres) 
+          ? bookData.genres.map(g => typeof g === 'string' ? g : g.name)
+          : [];
+        setSelectedGenres(genres);
+      }
+      
+      // Imposta il libro remoto per mostrarlo nella UI
+      setRemoteBook(bookData);
+      
+      // Imposta isDirty a true perché ci sono dati precompilati
+      setIsDirty(true);
+      
+    } catch (e) {
+      console.error('Error while loading prefilled book data: ', e);
+      Alert.alert('Errore', 'Impossibile caricare i dati del libro raccomandato.');
     } finally {
       setLoading(false);
     }
