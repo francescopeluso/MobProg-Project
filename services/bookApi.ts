@@ -865,13 +865,16 @@ export async function deleteRating(bookId: number): Promise<boolean> {
 }
 
 /**
- * Rimuove le note di un libro
+ * Rimuove il commento della valutazione di un libro
  */
 export async function deleteComment(bookId: number): Promise<boolean> {
   const db = getDBConnection();
   try {
     await db.runAsync(
-      `DELETE FROM notes WHERE book_id = ?`,
+      `UPDATE ratings
+      SET comment = NULL
+      WHERE book_id = ?
+      `,
       bookId
     );
     return true;
