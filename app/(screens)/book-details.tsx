@@ -57,7 +57,6 @@ export default function BookDetailsScreen() {
   // Stati per il modal dei dettagli delle raccomandazioni
   const [showRecommendationModal, setShowRecommendationModal] = useState(false);
   const [selectedRecommendation, setSelectedRecommendation] = useState<Book | null>(null);
-
   const isNotesLong = notes.length > 200; 
   const previewNotes = isNotesLong ? notes.substring(0,200) + '[...]' : notes; 
   const loadBook = useCallback(async () => {
@@ -291,7 +290,7 @@ export default function BookDetailsScreen() {
               <Text style={styles.bookAuthor}>{book.author}</Text>
               
               {/* Book Metadata Tags */}
-              <View style={styles.metadataContainer}>
+                <View style={styles.metadataContainer}>
                 {book.publication && (
                   <View style={styles.metadataTag}>
                     <Ionicons name="calendar-outline" size={14} color={Colors.primary} />
@@ -354,6 +353,7 @@ export default function BookDetailsScreen() {
         </View>
         )}
 
+        <View style={[{width: '97%'}]}>
         {/* Status Selection */}
         <View style={styles.statusSection}>
           <Text style={styles.sectionTitle}>Stato di Lettura</Text>
@@ -475,6 +475,12 @@ export default function BookDetailsScreen() {
             </Text>
           </View>
         )}
+
+          </View>
+
+          
+        </View>
+      </LinearGradient>
       </ScrollView>
 
       {/* Rating Modal */}
