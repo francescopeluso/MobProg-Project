@@ -865,7 +865,10 @@ export async function deleteComment(bookId: number): Promise<boolean> {
   const db = getDBConnection();
   try {
     await db.runAsync(
-      `DELETE FROM comment WHERE book_id = ?`,
+      `UPDATE ratings
+      SET comment = NULL
+      WHERE book_id = ?
+      `,
       bookId
     );
     return true;
