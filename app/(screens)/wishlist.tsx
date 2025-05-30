@@ -184,7 +184,18 @@ export default function WishlistScreen() {
             <Text style={styles.bookTitle}>{item.bookTitle}</Text>
             <Text style={styles.dateAdded}>Aggiunto il {new Date(item.addedAt).toLocaleDateString('it-IT')}</Text>
           </View>
-          <Ionicons name="book-outline" size={24} color={Colors.secondary} />
+          <TouchableOpacity 
+            onPress={() => {
+              // Animate to show actions when icon is tapped
+              Animated.timing(translateX, {
+          toValue: -150,
+          duration: 200,
+          useNativeDriver: true,
+              }).start();
+            }}
+          >
+            <Ionicons name="book-outline" size={24} color={Colors.secondary} />
+          </TouchableOpacity>
         </Animated.View>
       </View>
     );
