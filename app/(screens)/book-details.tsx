@@ -45,6 +45,11 @@ export default function BookDetailsScreen() {
   const insets = useSafeAreaInsets();
   const [inWishlist, setInWishlist] = useState(false);
   const [favorite, setFavorite]     = useState(false);
+  const [isTextLong, setIsTextLong] = useState(false);
+
+  useEffect(() => {
+    setIsTextLong(false)
+  }, [notes]) 
 
   const loadBook = useCallback(async () => {
     try {
@@ -123,7 +128,7 @@ export default function BookDetailsScreen() {
     }
   };
 
-  const handleSaveNotes = async () => {
+  /*const handleSaveNotes = async () => {
     if (!book) return;
     
     try {
@@ -139,7 +144,7 @@ export default function BookDetailsScreen() {
       console.error('Error saving notes:', saveError);
       Alert.alert('Errore', 'Errore durante il salvataggio.');
     }
-  };
+  };*/
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -208,11 +213,11 @@ export default function BookDetailsScreen() {
               <Ionicons name="arrow-back" size={24} color="#fff" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.editButton} onPress={() => router.push(`/add-book?id=${book.id}`)}>
-              <Ionicons name="create-outline" size={24} color="#fff" />
+              <Ionicons name="create-outline" size={24} color="#4A90E2" />
             </TouchableOpacity>
           </View>
           
-          <View style={styles.heroSection}>
+          <View style={[styles.heroSection, {backgroundColor: '#fff'}]}>
             <View style={styles.bookImageContainer}>
               {book.cover_url ? (
                 <Image source={{ uri: book.cover_url }} style={styles.bookImage} />
@@ -222,14 +227,17 @@ export default function BookDetailsScreen() {
                 </View>
               )}
               
-              {/* Floating Status Badge */}
-              <View style={[styles.statusBadge, { backgroundColor: getStatusColor(status) }]}>
-                <Ionicons 
-                  name={getStatusIcon(status)} 
-                  size={16} 
-                  color="#fff" 
-                />
-              </View>
+              {/* Floating Favorite or Wishlist */}
+                {inWishlist && (
+                  <View style={[styles.statusBadge, { backgroundColor:'#79E18F' }]}>
+                  <Ionicons name="cart" size={24} color="#fff" style={{ margin: 13, marginLeft: 12, marginRight: 15 }} />
+                  </View>
+                )}
+                {favorite && (
+                  <View style={[styles.statusBadge, { backgroundColor: '#FFA0CC' }]}>
+                  <Ionicons name="heart" size={24} color="#fff" style={{ margin: 13}}  />
+                  </View>
+                )}
             </View>
 
             <View style={styles.bookInfo}>
@@ -257,70 +265,49 @@ export default function BookDetailsScreen() {
                   </View>
                 )}
               </View>
-
-              {/* Wishlist and Favorite indicators */}
-              <View style={{ flexDirection: 'row', marginVertical: 8 }}>
-                {inWishlist && (
-                  <Ionicons name="cart" size={24} color="#4A90E2" style={{ marginRight: 12 }} />
-                )}
-                {favorite && (
-                  <Ionicons name="heart" size={24} color="#f4511e" />
-                )}
-              </View>
             </View>
-          </View>
-        </LinearGradient>
-
+        
         {/* Rating Section */}
         {rating > 0 && (
-          <MotiView 
-            from={{ opacity: 0, translateY: 20 }}
-            animate={{ opacity: 1, translateY: 0 }}
-            style={styles.ratingSection}
-          >
-            <View style={styles.starsContainer}>
-              {[1, 2, 3, 4, 5].map((star) => (
+        <View style={styles.savedRatingContainer}>
+          <View style={styles.starsRow}>
+            {[1, 2, 3, 4, 5].map((star, i) => (
+              <MotiView
+                key={star}
+                from={{
+                  opacity: 0,
+                  translateX: -20,   // parte da sinistra
+                  scale: 0.5,        // parte piccola
+                }}
+                animate={{
+                  opacity: 1,
+                  translateX: 0,
+                  scale: star === rating ? 1.3 : 1,  // ingrandisci solo quella selezionata
+                }}
+                transition={{
+                  type: 'spring',
+                  damping: 8,
+                  mass: 0.5,
+                  delay: i * 100,    // sposta l’inizio di 100ms per ogni stella
+                }}
+                style={{ marginHorizontal: 4 }}     // spacing tra le stelle
+              >
                 <AntDesign
-                  key={star}
                   name={star <= rating ? 'star' : 'staro'}
-                  size={28}
-                  color={star <= rating ? Colors.warning : Colors.borderLight}
-                  style={{ marginHorizontal: 2 }}
+                  size={32}
+                  color={star <= rating ? '#f5a623' : '#DDD'}
                 />
-              ))}
-            </View>
-            {comment && (
-              <Text style={styles.ratingComment}>&ldquo;{comment}&rdquo;</Text>
-            )}
-          </MotiView>
+              </MotiView>
+            ))}
+          </View>
+          {comment.length > 0 && (
+            <Text style={styles.savedComment}>&ldquo;{comment}&rdquo;</Text>
+          )}
+        </View>
         )}
 
-        {/* Action Buttons */}
-        <View style={styles.actionSection}>
-          <View style={styles.actionRow}>
-            <TouchableOpacity 
-              style={styles.actionButton}
-              onPress={() => setShowRatingModal(true)}
-            >
-              <View style={[styles.actionIcon, { backgroundColor: Colors.warning + '20' }]}>
-                <Ionicons name="star" size={24} color={Colors.warning} />
-              </View>
-              <Text style={styles.actionText}>Valuta</Text>
-            </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => setShowNotesModal(true)}
-            >
-              <View style={[styles.actionIcon, { backgroundColor: Colors.info + '20' }]}>
-                <Ionicons name="document-text" size={24} color={Colors.info} />
-              </View>
-              <Text style={styles.actionText}>Note</Text>
-              {notes && <View style={styles.notificationDot} />}
-            </TouchableOpacity>
-          </View>
-        </View>
-
+        <View style={[{width: '97%'}]}>
         {/* Status Selection */}
         <View style={styles.statusSection}>
           <Text style={styles.sectionTitle}>Stato di Lettura</Text>
@@ -363,20 +350,36 @@ export default function BookDetailsScreen() {
           </View>
         )}
 
-        {/* Notes Preview */}
-        {notes && (
-          <View style={styles.notesPreviewSection}>
+          {/* Note */}
+          {book.notes && (
+          <View style={styles.descriptionSection}>
             <Text style={styles.sectionTitle}>Le tue note</Text>
-            <View style={styles.notesPreview}>
-              <Text style={styles.notesPreviewText} numberOfLines={3}>
-                {notes}
-              </Text>
+
+            <Text
+              style={styles.description}
+              numberOfLines={3}
+              onTextLayout={e => {
+                if (e.nativeEvent.lines.length > 3 && !isTextLong) {
+                  setIsTextLong(true)
+                }
+              }}
+            >
+              {book.notes}
+            </Text>
+
+            {isTextLong && (
               <TouchableOpacity onPress={() => setShowNotesModal(true)}>
                 <Text style={styles.expandText}>Leggi tutto</Text>
               </TouchableOpacity>
-            </View>
+            )}
           </View>
         )}
+
+          </View>
+
+          
+        </View>
+      </LinearGradient>
       </ScrollView>
 
       {/* Rating Modal */}
@@ -444,7 +447,7 @@ export default function BookDetailsScreen() {
         </View>
       </Modal>
 
-      {/* Notes Modal */}
+      {/* Notes Modal 
       <Modal
         visible={showNotesModal}
         animationType="slide"
@@ -487,7 +490,7 @@ export default function BookDetailsScreen() {
             </View>
           </View>
         </View>
-      </Modal>
+      </Modal>*/}
     </View>
   );
 }
@@ -547,12 +550,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: Spacing.md,
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.xxl, 
   },
   editButton: {
-    padding: Spacing.sm,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 999,
+      flexDirection: 'row',
+      backgroundColor: '#fff',
+      paddingTop: 8,
+      paddingBottom: 11,
+      paddingRight: 10,
+      paddingLeft: 12,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center', 
+      marginTop: 10,
+      alignSelf: 'center',
   },
   backButton: {
     padding: Spacing.sm,
@@ -571,6 +583,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: Spacing.xxxl,
     paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.lg, 
   },
   bookImageContainer: {
     position: 'relative',
@@ -593,10 +606,8 @@ const styles = StyleSheet.create({
   },
   statusBadge: {
     position: 'absolute',
-    top: -8,
-    right: -8,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
+    top: -10,
+    right: -10,
     borderRadius: 999,
     ...Shadows.medium,
   },
@@ -624,6 +635,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: Spacing.md,
     gap: Spacing.sm,
+    marginBottom: Spacing.xl,
   },
   metadataTag: {
     backgroundColor: Colors.surfaceVariant,
@@ -640,24 +652,21 @@ const styles = StyleSheet.create({
   },
 
   // Rating section
-  ratingSection: {
+  savedRatingContainer: {
     alignItems: 'center',
-    marginVertical: Spacing.xl,
-    backgroundColor: Colors.surfaceVariant,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.xl,
-    marginHorizontal: Spacing.lg,
+    marginBottom: 16,
   },
-  starsContainer: {
+  starsRow: {
     flexDirection: 'row',
-    marginBottom: Spacing.md,
+    justifyContent: 'center',
+    marginBottom: 8,
   },
-  ratingComment: {
+  savedComment: {
     fontStyle: 'italic',
-    color: Colors.textSecondary,
+    color: '#555',
     textAlign: 'center',
-    fontSize: Typography.fontSize.md,
-    maxWidth: '90%',
+    paddingHorizontal: 16,
+    marginTop: 4,
   },
 
   // Action section
@@ -671,7 +680,6 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     alignItems: 'center',
-    flex: 1,
     marginHorizontal: Spacing.sm,
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.xl,
@@ -712,18 +720,20 @@ const styles = StyleSheet.create({
     fontWeight: Typography.fontWeight.bold,
     color: Colors.textPrimary,
     marginBottom: Spacing.lg,
+    textAlign: 'left', 
   },
   statusGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: Spacing.md,
+    justifyContent: 'center',
+    gap: '3%',  
   },
   statusCard: {
-    flex: 1,
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.xl,
     padding: Spacing.lg,
+    paddingHorizontal: Spacing.xs, 
     alignItems: 'center',
+    width: '33%', 
     borderWidth: 2,
     borderColor: Colors.borderLight,
     ...Shadows.small,
@@ -752,10 +762,11 @@ const styles = StyleSheet.create({
     fontWeight: Typography.fontWeight.bold,
   },
 
-  // Description section
+  // Description and notes section
   descriptionSection: {
-    marginHorizontal: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
     marginBottom: Spacing.xl,
+    width: '100%', 
   },
   description: {
     fontSize: Typography.fontSize.md,
@@ -764,22 +775,6 @@ const styles = StyleSheet.create({
     textAlign: 'justify',
   },
 
-  // Notes preview
-  notesPreviewSection: {
-    marginHorizontal: Spacing.lg,
-    marginBottom: Spacing.xl,
-  },
-  notesPreview: {
-    backgroundColor: Colors.surfaceVariant,
-    borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
-  },
-  notesPreviewText: {
-    fontSize: Typography.fontSize.md,
-    color: Colors.textPrimary,
-    lineHeight: 22,
-    marginBottom: Spacing.sm,
-  },
   expandText: {
     fontSize: Typography.fontSize.sm,
     color: Colors.primary,
@@ -846,7 +841,7 @@ const styles = StyleSheet.create({
   },
 
   // Notes modal
-  notesInputContainer: {
+  /*notesInputContainer: {
     marginBottom: Spacing.xl,
   },
   notesTextInput: {
@@ -859,7 +854,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     minHeight: 200,
     textAlignVertical: 'top',
-  },
+  },*/
 
   // Modal buttons
   modalButtons: {

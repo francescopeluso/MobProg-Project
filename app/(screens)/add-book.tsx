@@ -1,7 +1,7 @@
 import { AntDesign, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -20,10 +20,10 @@ import {
 import { Easing } from 'react-native-reanimated'; 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AnimatePresence, MotiView } from 'moti'; 
-
 import SearchModal from '../../components/SearchModal';
 import { Colors } from '../../constants/styles';
-import { Book, deleteBook, getBookById, insertBook, saveNotes, saveRating, updateBook, updateReadingStatus } from '../../services/bookApi';
+import { Book, deleteBook, getBookById, insertBook, saveNotes, saveRating, updateBook, updateReadingStatus, toggleWishlist, toggleFavorite } from '../../services/bookApi';
+import { screenOptionsFactory } from 'expo-router/build/useScreens';
 
 const initialForm = {
   title: '',
@@ -42,6 +42,8 @@ export default function AddBookScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [bookImage, setBookImage] = useState<string | undefined>(undefined); // immagine copertina
   const [isDirty, setIsDirty] = useState(false); 
+  // scroll 
+  const scrollViewRef = useRef<ScrollView>(null);
   // stati
   const STATI = ['to_read', 'reading', 'completed'] as const;
   const [activeStatus, setActiveStatus] = useState<typeof STATI[number]>('to_read');
@@ -76,13 +78,6 @@ export default function AddBookScreen() {
       prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g]
   )}; 
 
-  const categories = [
-    { icon: 'chevron-down-outline',    color: '#BBB'   },
-    { icon: 'heart',  color: '#FFA0CC' },
-    { icon: 'cart',    color: '#79E18F' },
-  ] as const;
-  
-
   useEffect(() => {
     if (params.id) {
       setIsEditing(true);
@@ -96,6 +91,14 @@ export default function AddBookScreen() {
       setComment(labels[rating - 1])
     }
   }, [rating, comment])
+
+  useEffect(() => {
+  if (showRating) {
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 50);
+  }
+}, [showRating]);
 
   /**
    * 
@@ -133,6 +136,8 @@ export default function AddBookScreen() {
         setRating(bookData.rating?.rating || 0);
         setComment(bookData.rating?.comment || '');
         setNote(bookData.notes || '');
+        setIsInWishlist(bookData.is_in_wishlist || false); 
+        setIsFavorite(bookData.is_favorite || false); 
         
         // Set remote book data if ISBN exists to show in display
         if (bookData.isbn10 || bookData.isbn13) {
@@ -255,18 +260,21 @@ export default function AddBookScreen() {
       bookId = newId;                  
     }
 
-    // adesso posso usarlo per salvare lo stato, rating e note:
+    // salva stato di lettura, rating e note
     await updateReadingStatus(bookId, activeStatus);
     if (rating > 0)  await saveRating(bookId, rating, comment);
     if (note.trim()) await saveNotes(bookId, note);
+
+    // salva wishlist e favorite
+    await toggleWishlist(bookId, isInWishlist);
+    await toggleFavorite(bookId, isFavorite);
 
     setIsDirty(false);
     Alert.alert('Completato', isEditing ? 'Libro aggiornato.' : 'Libro aggiunto.');
     // reset + back
     setForm({ ...initialForm });
     setRemoteBook(null);
-    router.back();
-
+    router.replace('/');
   } catch (err: any) {
     console.error(err);
     Alert.alert('Errore', err.message || 'Qualcosa è andato storto.');
@@ -397,13 +405,13 @@ export default function AddBookScreen() {
       </View>
       
       <ScrollView 
+        ref={scrollViewRef}
         contentContainerStyle={[
           styles.contentContainer,
           { paddingBottom: 80 + insets.bottom, paddingTop: 80 + insets.top}]} // per tenere conto del footer e dell'header fissi
         showsVerticalScrollIndicator={false}
       >
         {/* Copertina del libro (click to edit) */}
-        <View style={styles.bookDisplaySection}>
           <View style={styles.bookCoverSection}>
             <View style={styles.coverContainer}>
               <Pressable onPress={pickBookImage}>
@@ -458,17 +466,16 @@ export default function AddBookScreen() {
                 )}
               </View>
               
-              {remoteBook && (
+              {/*{remoteBook && (
                 <View style={styles.sourceTagContainer}>
                   <View style={styles.sourceTag}>
                     <Ionicons name="cloud-download-outline" size={14} color="#4A90E2" />
                     <Text style={styles.sourceText}>Dati da ricerca online</Text>
                   </View>
                 </View>
-              )}
+              )}*/}
             </View>
           </View>
-        </View>
 
  {/* selettore status */}
   <View style={styles.tabRow}>
@@ -586,7 +593,7 @@ export default function AddBookScreen() {
             />
           </View>
 
-          {/* Icon Row per aprire i tre modal */}
+          {/* Icon Row per aprire i quattro modal */}
           <View style={[styles.formRow, {flexDirection: 'row', justifyContent: 'space-around'}]}>
             {/* Generi */}
             <Pressable
@@ -604,46 +611,48 @@ export default function AddBookScreen() {
               <Ionicons name="create-outline" size={24} color="#fff" />
             </Pressable>
 
-            <Pressable 
-              onPress={() => setShowRating(v => !v)} 
-              style={styles.iconButton}
-            >
-              <Ionicons name="star" size={20} color="#fff" />
-            </Pressable>
+            <Pressable
+            onPress={() => { // scorri in fondo
+              setShowRating(v => !v);
+                scrollViewRef.current?.scrollTo({ y: 99999, animated: true })            }}
+            style={styles.iconButton}
+          >
+            <Ionicons name="star" size={20} color="#fff" />
+          </Pressable>
 
             {/* Preferiti o Wishlist */}
             <Pressable
               onPress={() => {
-                if(!isInWishlist && !isFavorite) {
-                            setIsInWishlist(true);
-                } else if (isInWishlist && !isFavorite) {
-                  setIsInWishlist(false);
-                  setIsFavorite(true);
-                } else {
-                  setIsFavorite(false);
-                }
-                setIsDirty(true);
+              if(!isInWishlist && !isFavorite) {
+                    setIsInWishlist(true);
+              } else if (isInWishlist && !isFavorite) {
+                setIsInWishlist(false);
+                setIsFavorite(true);
+              } else {
+                setIsFavorite(false);
+              }
+              setIsDirty(true);
               }}
               style={[ styles.iconButton, 
-                isFavorite || isInWishlist
-                  ? { backgroundColor: '#4A90E2' }
-                  : { backgroundColor: '#BBB' }
+              isFavorite ? { backgroundColor: '#FFA0CC' } :
+              isInWishlist ? { backgroundColor: '#79E18F' } :
+              { backgroundColor: '#BBB' }
               ]}
             >
               <Ionicons
-                name={
-                  isInWishlist   ? 'cart'      :
-                  isFavorite     ? 'heart'     :
-                                  'cart-outline'
-                }
-                size={24}
-                color="#fff"
+              name={
+                isInWishlist   ? 'cart'      :
+                isFavorite     ? 'heart'     :
+                        'chevron-down-outline'
+              }
+              size={24}
+              color="#fff"
               />
             </Pressable>
           </View>
 
           {/* GENRE MODAL */}
-          <Modal visible={showGenreModal} transparent animationType="none">
+          <Modal visible={showGenreModal} transparent animationType="slide">
             <View style={styles.modalOverlay}>
               <MotiView {...entry} transition={entryTransition} style={styles.modalContent}>
                 <Pressable onPress={() => setShowGenreModal(false)} style={styles.closeIcon}>
@@ -676,6 +685,50 @@ export default function AddBookScreen() {
           </Modal>
 
           {/* NOTE BOTTOM‐SHEET */}
+          {/* Notes Modal 
+      <Modal
+        visible={showNotesModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowNotesModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Le tue note</Text>
+              <TouchableOpacity onPress={() => setShowNotesModal(false)}>
+                <Ionicons name="close" size={24} color={Colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.notesInputContainer}>
+              <TextInput
+                style={styles.notesTextInput}
+                value={tempNotes}
+                onChangeText={setTempNotes}
+                placeholder="Scrivi qui le tue note, pensieri o citazioni preferite..."
+                multiline
+                textAlignVertical="top"
+              />
+            </View>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setShowNotesModal(false)}
+              >
+                <Text style={styles.cancelButtonText}>Annulla</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.saveButton]}
+                onPress={handleSaveNotes}
+              >
+                <Text style={styles.saveButtonText}>Salva</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>*/}
           <Modal visible={showNoteModal} transparent animationType="none">
             <View style={[styles.modalOverlay, { justifyContent: 'flex-end' }]}>
               <AnimatePresence>
@@ -718,7 +771,7 @@ export default function AddBookScreen() {
                         <AntDesign
                           name={s <= rating ? 'star' : 'staro'}
                           size={32}
-                          color={s <= rating ? Colors.secondary : '#DDD'}
+                          color={s <= rating ? '#f5a623' : '#DDD'}
                           style={{ marginHorizontal: 4 }}
                         />
                       </MotiView>
@@ -936,6 +989,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginTop: 16,
         paddingHorizontal: 8,
+        paddingBottom: 10, 
       },
       infoTag: {
         flexDirection: 'row',
@@ -943,7 +997,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#F0F7FF',
         paddingHorizontal: 10,
         paddingVertical: 6,
-        borderRadius: 16,
+        borderRadius: 8,
         marginRight: 8,
         marginBottom: 8,
         borderWidth: 1,
@@ -960,11 +1014,11 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         marginLeft: 4,
       },
-      bookPreviewSection: {
+      /*bookPreviewSection: {
       flexDirection: 'column',
       alignItems: 'center',
       marginBottom: 16,
-      },
+      },*/
       coverContainer: {
       alignItems: 'center', 
       shadowColor: '#000',
@@ -978,70 +1032,69 @@ const styles = StyleSheet.create({
       height: '100%',
       borderRadius: 8,
     },
-  coverPlaceholder: {
-    width: 140,
-    height: 210,
-    borderRadius: 12,
-    backgroundColor: '#f1f1f1',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    borderWidth: 2,
-    borderColor: '#e0e0e0',
-    borderStyle: 'dashed',
-  },
-  coverPlaceholderText: {
-    color: '#999',
-    fontSize: 13,
-    textAlign: 'center',
-    marginTop: 8,
-    fontWeight: '500',
-  },
-  cover: {
-    width: 140,
-    height: 210,
-    backgroundColor: '#4A90E2',
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',   
-  },
-  basicInfo: {
-    flex: 1,
-    alignItems: 'center', 
-  },
-  bookTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 6,
-    marginTop: 16, 
-    textAlign: 'center',
-    lineHeight: 28,
-  },
-  bookAuthor: {
-    fontSize: 18,
-    color: '#666',
-    marginBottom: 8,
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-  placeholderText: {
-    fontStyle: 'italic',
-    color: '#999',
-    fontSize: 16,
-    marginBottom: 4,
-  },
-  sourceTag: {
-    backgroundColor: '#E8F4FF',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#D0E7FF',
-  },
+    coverPlaceholder: {
+      width: 140,
+      height: 210,
+      borderRadius: 12,
+      backgroundColor: '#f1f1f1',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 16,
+      borderWidth: 2,
+      borderColor: '#e0e0e0',
+      borderStyle: 'dashed',
+    },
+    coverPlaceholderText: {
+      color: '#999',
+      fontSize: 13,
+      textAlign: 'center',
+      marginTop: 8,
+      fontWeight: '500',
+    },
+    cover: {
+      width: 140,
+      height: 210,
+      backgroundColor: '#4A90E2',
+      borderRadius: 8,
+      justifyContent: 'center',
+      alignItems: 'center',
+      overflow: 'hidden',   
+    },
+    basicInfo: {
+      flex: 1,
+      alignItems: 'center', 
+    },
+    bookTitle: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: '#333',
+      marginBottom: 6, 
+      textAlign: 'center',
+      lineHeight: 28,
+    },
+    bookAuthor: {
+      fontSize: 18,
+      color: '#666',
+      marginBottom: 8,
+      textAlign: 'center',
+      fontWeight: '500',
+    },
+    placeholderText: {
+      fontStyle: 'italic',
+      color: '#999',
+      fontSize: 16,
+      marginBottom: 4,
+    },
+    sourceTag: {
+      backgroundColor: '#E8F4FF',
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: '#D0E7FF',
+    },
   sourceText: {
     color: '#4A90E2',
     fontSize: 13,
