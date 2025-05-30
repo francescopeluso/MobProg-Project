@@ -12,7 +12,7 @@ const GenreChart: React.FC<GenreChartProps> = ({ data }) => {
   if (!data || data.length === 0) {
     return (
       <View style={styles.chartContainer}>
-        <Text style={styles.chartTitle}>Generi più letti</Text>
+        <Text style={styles.chartTitle}>Distribuzione generi libri</Text>
         <View style={CommonStyles.emptyState}>
           <Text style={CommonStyles.emptyText}>Nessun dato disponibile</Text>
           <Text style={CommonStyles.emptyText}>Inizia a leggere per vedere i tuoi generi preferiti</Text>
@@ -23,7 +23,7 @@ const GenreChart: React.FC<GenreChartProps> = ({ data }) => {
 
   return (
     <View style={styles.chartContainer}>
-      <Text style={styles.chartTitle}>Generi più letti</Text>
+      <Text style={styles.chartTitle}>Distribuzione generi libri</Text>
       
       {/* Grafico a torta centrato */}
       <View style={styles.pieChartContainer}>

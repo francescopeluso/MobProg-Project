@@ -1,31 +1,31 @@
 import { AntDesign, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { BorderRadius, Colors, Shadows, Spacing, Typography } from '../../constants/styles';
-import React, { useEffect, useState, useRef } from 'react';
+import { MotiView } from 'moti';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Dimensions,
-    Image,
-    Keyboard,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MotiView } from 'moti'; 
 import SearchModal from '../../components/SearchModal';
-import { Book, deleteBook, getBookById, insertBook, saveNotes, saveRating, updateBook, updateReadingStatus, toggleWishlist, toggleFavorite, deleteComment, deleteRating } from '../../services/bookApi';
+import { BorderRadius, Colors, Shadows, Spacing, Typography } from '../../constants/styles';
+import { Book, deleteBook, deleteComment, deleteRating, getBookById, insertBook, saveNotes, saveRating, toggleFavorite, toggleWishlist, updateBook, updateReadingStatus } from '../../services/bookApi';
 
 const initialForm = {
   title: '',
