@@ -845,3 +845,38 @@ export async function getReadingSessions(bookId: number): Promise<ReadingSession
 
   return rows;
 }
+
+
+/**
+ * Rimuove la valutazione di un libro
+ */
+export async function deleteRating(bookId: number): Promise<boolean> {
+  const db = getDBConnection();
+  try {
+    await db.runAsync(
+      `DELETE FROM ratings WHERE book_id = ?`,
+      bookId
+    );
+    return true;
+  } catch (error) {
+    console.error('Error deleting rating:', error);
+    return false;
+  }
+}
+
+/**
+ * Rimuove le note di un libro
+ */
+export async function deleteComment(bookId: number): Promise<boolean> {
+  const db = getDBConnection();
+  try {
+    await db.runAsync(
+      `DELETE FROM comment WHERE book_id = ?`,
+      bookId
+    );
+    return true;
+  } catch (error) {
+    console.error('Error deleting comment:', error);
+    return false;
+  }
+}

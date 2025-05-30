@@ -1,7 +1,8 @@
 import { AntDesign, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { BorderRadius, Colors, Shadows, Spacing, Typography } from '../../constants/styles';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -19,11 +20,9 @@ import {
 } from 'react-native';
 import { Easing } from 'react-native-reanimated'; 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AnimatePresence, MotiView } from 'moti'; 
-
+import { MotiView } from 'moti'; 
 import SearchModal from '../../components/SearchModal';
-import { Colors } from '../../constants/styles';
-import { Book, deleteBook, getBookById, insertBook, saveNotes, saveRating, updateBook, updateReadingStatus } from '../../services/bookApi';
+import { Book, deleteBook, getBookById, insertBook, saveNotes, saveRating, updateBook, updateReadingStatus, toggleWishlist, toggleFavorite, deleteComment, deleteRating } from '../../services/bookApi';
 
 const initialForm = {
   title: '',
@@ -32,6 +31,8 @@ const initialForm = {
   cover_url: '',
   publication: '',
 };
+
+const commentInputRef = useRef<TextInput>(null);
 
 export default function AddBookScreen() {
   const router = useRouter();
@@ -42,6 +43,8 @@ export default function AddBookScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [bookImage, setBookImage] = useState<string | undefined>(undefined); // immagine copertina
   const [isDirty, setIsDirty] = useState(false); 
+  // scroll 
+  const scrollViewRef = useRef<ScrollView>(null);
   // stati
   const STATI = ['to_read', 'reading', 'completed'] as const;
   const [activeStatus, setActiveStatus] = useState<typeof STATI[number]>('to_read');
@@ -76,13 +79,6 @@ export default function AddBookScreen() {
       prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g]
   )}; 
 
-  const categories = [
-    { icon: 'chevron-down-outline',    color: '#BBB'   },
-    { icon: 'heart',  color: '#FFA0CC' },
-    { icon: 'cart',    color: '#79E18F' },
-  ] as const;
-  
-
   useEffect(() => {
     if (params.id) {
       setIsEditing(true);
@@ -96,6 +92,14 @@ export default function AddBookScreen() {
       setComment(labels[rating - 1])
     }
   }, [rating, comment])
+
+  useEffect(() => {
+  if (showRating) {
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 50);
+  }
+}, [showRating]);
 
   /**
    * 
@@ -133,6 +137,8 @@ export default function AddBookScreen() {
         setRating(bookData.rating?.rating || 0);
         setComment(bookData.rating?.comment || '');
         setNote(bookData.notes || '');
+        setIsInWishlist(bookData.is_in_wishlist || false); 
+        setIsFavorite(bookData.is_favorite || false); 
         
         // Set remote book data if ISBN exists to show in display
         if (bookData.isbn10 || bookData.isbn13) {
@@ -255,18 +261,28 @@ export default function AddBookScreen() {
       bookId = newId;                  
     }
 
-    // adesso posso usarlo per salvare lo stato, rating e note:
+    // salva stato di lettura, rating e note
     await updateReadingStatus(bookId, activeStatus);
-    if (rating > 0)  await saveRating(bookId, rating, comment);
-    if (note.trim()) await saveNotes(bookId, note);
+    if (rating > 0) await saveRating(bookId, rating, comment);
+    else {
+      await deleteRating(bookId);
+    }
+    if (note.trim()) await saveNotes(bookId, note) 
+    else {
+      await deleteComment(bookId);
+    }
+ 
+
+    // salva wishlist e favorite
+    await toggleWishlist(bookId, isInWishlist);
+    await toggleFavorite(bookId, isFavorite);
 
     setIsDirty(false);
     Alert.alert('Completato', isEditing ? 'Libro aggiornato.' : 'Libro aggiunto.');
     // reset + back
     setForm({ ...initialForm });
     setRemoteBook(null);
-    router.back();
-
+    router.replace('/');
   } catch (err: any) {
     console.error(err);
     Alert.alert('Errore', err.message || 'Qualcosa è andato storto.');
@@ -397,13 +413,13 @@ export default function AddBookScreen() {
       </View>
       
       <ScrollView 
+        ref={scrollViewRef}
         contentContainerStyle={[
           styles.contentContainer,
           { paddingBottom: 80 + insets.bottom, paddingTop: 80 + insets.top}]} // per tenere conto del footer e dell'header fissi
         showsVerticalScrollIndicator={false}
       >
         {/* Copertina del libro (click to edit) */}
-        <View style={styles.bookDisplaySection}>
           <View style={styles.bookCoverSection}>
             <View style={styles.coverContainer}>
               <Pressable onPress={pickBookImage}>
@@ -458,17 +474,16 @@ export default function AddBookScreen() {
                 )}
               </View>
               
-              {remoteBook && (
+              {/*{remoteBook && (
                 <View style={styles.sourceTagContainer}>
                   <View style={styles.sourceTag}>
                     <Ionicons name="cloud-download-outline" size={14} color="#4A90E2" />
                     <Text style={styles.sourceText}>Dati da ricerca online</Text>
                   </View>
                 </View>
-              )}
+              )}*/}
             </View>
           </View>
-        </View>
 
  {/* selettore status */}
   <View style={styles.tabRow}>
@@ -586,7 +601,7 @@ export default function AddBookScreen() {
             />
           </View>
 
-          {/* Icon Row per aprire i tre modal */}
+          {/* Icon Row per aprire i quattro modal */}
           <View style={[styles.formRow, {flexDirection: 'row', justifyContent: 'space-around'}]}>
             {/* Generi */}
             <Pressable
@@ -604,52 +619,60 @@ export default function AddBookScreen() {
               <Ionicons name="create-outline" size={24} color="#fff" />
             </Pressable>
 
-            <Pressable 
-              onPress={() => setShowRating(v => !v)} 
-              style={styles.iconButton}
-            >
-              <Ionicons name="star" size={20} color="#fff" />
-            </Pressable>
+            <Pressable
+            onPress={() => { // scorri in fondo
+              setShowRating(v => !v);
+                scrollViewRef.current?.scrollTo({ y: 99999, animated: true })            }}
+            style={styles.iconButton}
+          >
+            <Ionicons name="star" size={20} color="#fff" />
+          </Pressable>
 
             {/* Preferiti o Wishlist */}
             <Pressable
               onPress={() => {
-                if(!isInWishlist && !isFavorite) {
-                            setIsInWishlist(true);
-                } else if (isInWishlist && !isFavorite) {
-                  setIsInWishlist(false);
-                  setIsFavorite(true);
-                } else {
-                  setIsFavorite(false);
-                }
-                setIsDirty(true);
+              if(!isInWishlist && !isFavorite) {
+                    setIsInWishlist(true);
+              } else if (isInWishlist && !isFavorite) {
+                setIsInWishlist(false);
+                setIsFavorite(true);
+              } else {
+                setIsFavorite(false);
+              }
+              setIsDirty(true);
               }}
               style={[ styles.iconButton, 
-                isFavorite || isInWishlist
-                  ? { backgroundColor: '#4A90E2' }
-                  : { backgroundColor: '#BBB' }
+              isFavorite ? { backgroundColor: '#FFA0CC' } :
+              isInWishlist ? { backgroundColor: '#79E18F' } :
+              { backgroundColor: '#BBB' }
               ]}
             >
               <Ionicons
-                name={
-                  isInWishlist   ? 'cart'      :
-                  isFavorite     ? 'heart'     :
-                                  'cart-outline'
-                }
-                size={24}
-                color="#fff"
+              name={
+                isInWishlist   ? 'cart'      :
+                isFavorite     ? 'heart'     :
+                        'chevron-down-outline'
+              }
+              size={24}
+              color="#fff"
               />
             </Pressable>
           </View>
 
           {/* GENRE MODAL */}
-          <Modal visible={showGenreModal} transparent animationType="none">
+          <Modal 
+            visible={showGenreModal}
+            animationType="slide"
+            transparent
+            onRequestClose={() => setShowGenreModal(false)}>
             <View style={styles.modalOverlay}>
               <MotiView {...entry} transition={entryTransition} style={styles.modalContent}>
-                <Pressable onPress={() => setShowGenreModal(false)} style={styles.closeIcon}>
-                  <Ionicons name="close" size={24} color="#333" />
-                </Pressable>
-                <Text style={styles.label}>Seleziona Generi</Text>
+                 <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Seleziona Generi</Text>
+                  <TouchableOpacity onPress={() => setShowGenreModal(false)}>
+                    <Ionicons name="close" size={24} color={Colors.textSecondary} />
+                  </TouchableOpacity>
+                </View>
                 <View style={styles.genreRow}>
                   {GENRES.map(g => (
                     <Pressable
@@ -674,34 +697,41 @@ export default function AddBookScreen() {
               </MotiView>
             </View>
           </Modal>
-
-          {/* NOTE BOTTOM‐SHEET */}
-          <Modal visible={showNoteModal} transparent animationType="none">
-            <View style={[styles.modalOverlay, { justifyContent: 'flex-end' }]}>
-              <AnimatePresence>
-                {showNoteModal && (
-                  <MotiView style={styles.bottomSheet}>
-                    <Pressable onPress={() => setShowNoteModal(false)} style={styles.closeIcon}>
-                      <Ionicons name="close" size={24} color="#333" />
-                    </Pressable>
-                    <Text style={styles.label}>Note aggiuntive</Text>
-                    <TextInput
-                      style={styles.noteInput}
-                      placeholder="Scrivi una nota..."
-                      placeholderTextColor="#555"
-                      multiline
-                      value={note}
-                      onChangeText={setNote}
-                    />
-                  </MotiView>
-                )}
-              </AnimatePresence>
+          {/*Notes Modal*/}
+          <Modal
+            visible={showNoteModal}
+            animationType="slide"
+            transparent
+            onRequestClose={() => setShowNoteModal(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Note</Text>
+                  <TouchableOpacity onPress={() => setShowNoteModal(false)}>
+                    <Ionicons name="close" size={24} color={Colors.textSecondary} />
+                  </TouchableOpacity>
+                </View>
+    
+                <ScrollView style={styles.notesReadContainer}>
+                  <Text style={styles.notesReadText}>{note}</Text>
+                </ScrollView>
+    
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity 
+                    style={[styles.modalButton, styles.primaryButton, {flex: 1}]}
+                    onPress={() => setShowNoteModal(false)}
+                  >
+                    <Text style={styles.primaryButtonText}>Chiudi</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
           </Modal>
 
           </View>
           {showRating && (
-            <View style={styles.formSection}>
+            <View style={[styles.formSection, {paddingBottom: Spacing.xs}]}>
               <MotiView style={styles.ratingContainer}>
                 <Text style={[styles.label, {marginBottom: 16}]}>Aggiungi una Valutazione</Text>
                 <View style={styles.starsRow}>
@@ -718,7 +748,7 @@ export default function AddBookScreen() {
                         <AntDesign
                           name={s <= rating ? 'star' : 'staro'}
                           size={32}
-                          color={s <= rating ? Colors.secondary : '#DDD'}
+                          color={s <= rating ? '#f5a623' : '#DDD'}
                           style={{ marginHorizontal: 4 }}
                         />
                       </MotiView>
@@ -727,17 +757,36 @@ export default function AddBookScreen() {
                 </View>
 
                 <View style={styles.commentWrapper}>
-                  <Ionicons name="create-outline" size={20} color="#666"/>
-                  <TextInput
-                    style={[styles.input, styles.commentInput]}
-                    placeholder="Commento..."
-                    placeholderTextColor="#555"
-                    value={comment}
-                    onChangeText={text => {
-                      setComment(text);
-                      setIsDirty(true);   
+                <TextInput
+                  ref={commentInputRef}           // ← qui
+                  style={[styles.input, styles.commentInput]}
+                  placeholder="Commento..."
+                  placeholderTextColor="#555"
+                  value={comment}
+                  onChangeText={text => {
+                    setComment(text);
+                    setIsDirty(true);
+                  }}
+                />
+              </View>
+                <View style={styles.modalButtons}>
+                  <TouchableOpacity 
+                    style={[styles.modalButton, styles.primaryButton, {flex: 1}]}
+                    onPress={() => {
+                      setRating(0);
+                      setComment('');
+                      setIsDirty(true);
                     }}
-                  />
+                    >
+                    <Text style={styles.primaryButtonText}>Rimuovi valutazione</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.modalButton, styles.primaryButton, {flex: 1}]}
+                    onPress={() => {commentInputRef.current?.focus();
+                    }} 
+                  >
+                    <Text style={styles.primaryButtonText}>Modifica commento</Text>
+                  </TouchableOpacity>
                 </View>
               </MotiView>
             </View>
@@ -936,6 +985,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginTop: 16,
         paddingHorizontal: 8,
+        paddingBottom: 10, 
       },
       infoTag: {
         flexDirection: 'row',
@@ -943,27 +993,17 @@ const styles = StyleSheet.create({
         backgroundColor: '#F0F7FF',
         paddingHorizontal: 10,
         paddingVertical: 6,
-        borderRadius: 16,
+        borderRadius: 8,
         marginRight: 8,
         marginBottom: 8,
         borderWidth: 1,
         borderColor: '#E0EFFF',
-        shadowColor: '#4A90E2',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
       },
       tagText: {
         fontSize: 13,
         color: '#4A90E2',
         fontWeight: '500',
         marginLeft: 4,
-      },
-      bookPreviewSection: {
-      flexDirection: 'column',
-      alignItems: 'center',
-      marginBottom: 16,
       },
       coverContainer: {
       alignItems: 'center', 
@@ -978,70 +1018,69 @@ const styles = StyleSheet.create({
       height: '100%',
       borderRadius: 8,
     },
-  coverPlaceholder: {
-    width: 140,
-    height: 210,
-    borderRadius: 12,
-    backgroundColor: '#f1f1f1',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    borderWidth: 2,
-    borderColor: '#e0e0e0',
-    borderStyle: 'dashed',
-  },
-  coverPlaceholderText: {
-    color: '#999',
-    fontSize: 13,
-    textAlign: 'center',
-    marginTop: 8,
-    fontWeight: '500',
-  },
-  cover: {
-    width: 140,
-    height: 210,
-    backgroundColor: '#4A90E2',
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',   
-  },
-  basicInfo: {
-    flex: 1,
-    alignItems: 'center', 
-  },
-  bookTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 6,
-    marginTop: 16, 
-    textAlign: 'center',
-    lineHeight: 28,
-  },
-  bookAuthor: {
-    fontSize: 18,
-    color: '#666',
-    marginBottom: 8,
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-  placeholderText: {
-    fontStyle: 'italic',
-    color: '#999',
-    fontSize: 16,
-    marginBottom: 4,
-  },
-  sourceTag: {
-    backgroundColor: '#E8F4FF',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#D0E7FF',
-  },
+    coverPlaceholder: {
+      width: 140,
+      height: 210,
+      borderRadius: 12,
+      backgroundColor: '#f1f1f1',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 16,
+      borderWidth: 2,
+      borderColor: '#e0e0e0',
+      borderStyle: 'dashed',
+    },
+    coverPlaceholderText: {
+      color: '#999',
+      fontSize: 13,
+      textAlign: 'center',
+      marginTop: 8,
+      fontWeight: '500',
+    },
+    cover: {
+      width: 140,
+      height: 210,
+      backgroundColor: '#4A90E2',
+      borderRadius: 8,
+      justifyContent: 'center',
+      alignItems: 'center',
+      overflow: 'hidden',   
+    },
+    basicInfo: {
+      flex: 1,
+      alignItems: 'center', 
+    },
+    bookTitle: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: '#333',
+      marginBottom: 6, 
+      textAlign: 'center',
+      lineHeight: 28,
+    },
+    bookAuthor: {
+      fontSize: 18,
+      color: '#666',
+      marginBottom: 8,
+      textAlign: 'center',
+      fontWeight: '500',
+    },
+    placeholderText: {
+      fontStyle: 'italic',
+      color: '#999',
+      fontSize: 16,
+      marginBottom: 4,
+    },
+    sourceTag: {
+      backgroundColor: '#E8F4FF',
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: '#D0E7FF',
+    },
   sourceText: {
     color: '#4A90E2',
     fontSize: 13,
@@ -1184,20 +1223,34 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontWeight: '500',
   },
-  // stili modal
-  modalOverlay: {
+
+  // Modal buttons
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: Spacing.md,
+  },
+  primaryButton: {
+    backgroundColor: Colors.primary,
+  },
+  primaryButtonText: {
+    fontSize: Typography.fontSize.md,
+    color: Colors.textOnPrimary,
+    fontWeight: Typography.fontWeight.medium,
+  },
+  modalButton: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingVertical: Spacing.md,
+    borderRadius: BorderRadius.lg,
     alignItems: 'center',
   },
-  modalContent: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 16,
-    width: '80%',
-    alignItems: 'center',
-    gap: 12,
-    marginTop: '40%',
+  cancelButton: {
+    backgroundColor: Colors.surfaceVariant,
+  },
+  cancelButtonText: {
+    fontSize: Typography.fontSize.md,
+    color: Colors.textSecondary,
+    fontWeight: Typography.fontWeight.medium,
   },
   closeIcon: {
     position: 'absolute',
@@ -1222,12 +1275,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#A4E8D7',
   },
   genreText: {
-    fontSize: 13,
     color: '#666',
+    fontSize: Typography.fontSize.md,
+    fontWeight: Typography.fontWeight.medium,
   },
   genreTextSelected: {
     fontWeight: '700',
-    color: '#222',
+    color: '#fff',
   },
   addCategoryButton: {
     fontSize: 13,
@@ -1272,12 +1326,13 @@ const styles = StyleSheet.create({
   starsRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: 3,
   },
   commentWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     width: '80%',
+    marginBottom: Spacing.xl, 
   },
   commentInput: {
     flex: 1,
@@ -1287,6 +1342,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     fontSize: 14,
     borderColor: 'transparent',
+    textAlign: 'center', 
   },
   // stato lettura
   tabRow: {
@@ -1319,4 +1375,85 @@ tabText: {
 tabTextActive: {
   color: '#fff',
 },
+
+modalOverlay: {
+    flex: 1,
+    backgroundColor: Colors.overlay,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.xxxl,
+  },
+  modalContent: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.xl,
+    width: '100%',
+    maxWidth: 400,
+    maxHeight: '80%',
+    ...Shadows.large,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.xl,
+  },
+  modalTitle: {
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
+  },
+
+  // Rating modal
+  ratingInput: {
+    marginBottom: Spacing.xl,
+  },
+  inputLabel: {
+    fontSize: Typography.fontSize.md,
+    fontWeight: Typography.fontWeight.medium,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.sm,
+  },
+  starsInput: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: Spacing.sm,
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    fontSize: Typography.fontSize.md,
+    color: Colors.textPrimary,
+    backgroundColor: Colors.surface,
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+
+  // Notes modal
+  notesInputContainer: {
+    marginBottom: Spacing.xl,
+  },
+  notesTextInput: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.md,
+    fontSize: Typography.fontSize.md,
+    color: Colors.textPrimary,
+    backgroundColor: Colors.surface,
+    minHeight: 200,
+    textAlignVertical: 'top',
+  },
+  notesReadContainer: {
+    marginBottom: Spacing.xl,
+    maxHeight: 400,
+  },
+  notesReadText: {
+    fontSize: Typography.fontSize.md,
+    color: Colors.textPrimary,
+    lineHeight: 24,
+  },
+
 });
