@@ -455,8 +455,10 @@ return (
             </Text>
           </View>
         )}
-      </View>
-  </ScrollView>
+
+        </View>
+
+      </ScrollView>
 
       {/* Rating Modal */}
       <Modal
