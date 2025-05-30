@@ -178,8 +178,6 @@ export default function BookDetailsScreen() {
     }
   };
 
-
-
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'to_read': return 'bookmark-outline';
@@ -232,7 +230,7 @@ export default function BookDetailsScreen() {
   }
 
   if (!book) {
-    return (
+    return ( 
       <View style={styles.errorContainer}>
         <Ionicons name="alert-circle-outline" size={64} color={Colors.error} />
         <Text style={styles.errorText}>Libro non trovato</Text>
@@ -243,179 +241,161 @@ export default function BookDetailsScreen() {
     );
   }
 
-  return (
-    <View style={styles.container}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {/* Header with gradient background */}
-        <LinearGradient
-          colors={[Colors.primary, Colors.primaryDark]}
-          start={[0, 0]}
-          end={[1, 1]}
-          style={[styles.headerGradient, { paddingTop: insets.top }]}
-        >
-          <View style={styles.headerContent}>
-            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-              <Ionicons name="arrow-back" size={24} color="#fff" />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.editButton} onPress={() => router.push(`/add-book?id=${book.id}`)}>
-              <Ionicons name="create-outline" size={24} color="#4A90E2" />
-            </TouchableOpacity>
-          </View>
-          
-          <View style={[styles.heroSection, {backgroundColor: '#fff'}]}>
-            <View style={styles.bookImageContainer}>
-              {book.cover_url ? (
-                <Image source={{ uri: book.cover_url }} style={styles.bookImage} />
-              ) : (
-                <View style={styles.placeholderImage}>
-                  <Ionicons name="book" size={48} color={Colors.textSecondary} />
-                </View>
-              )}
-              
-              {/* Floating Favorite or Wishlist */}
-              {inWishlist && (
-                <View style={[styles.statusBadge, { backgroundColor:'#79E18F' }]}>
-                  <Ionicons name="cart" size={24} color="#fff" style={{ margin: 13, marginLeft: 12, marginRight: 15 }} />
-                </View>
-              )}
-              {favorite && (
-                <View style={[styles.statusBadge, { backgroundColor: '#FFA0CC' }]}>
-                  <Ionicons name="heart" size={24} color="#fff" style={{ margin: 13}}  />
-                </View>
-              )}
-            </View>
-
-            <View style={styles.bookInfo}>
-              <Text style={styles.bookTitle}>{book.title}</Text>
-              <Text style={styles.bookAuthor}>{book.author}</Text>
-              
-              {/* Book Metadata Tags */}
-                <View style={styles.metadataContainer}>
-                {book.publication && (
-                  <View style={styles.metadataTag}>
-                    <Ionicons name="calendar-outline" size={14} color={Colors.primary} />
-                    <Text style={[styles.metadataText, {color: Colors.primary}]}>{book.publication}</Text>
-                  </View>
-                )}
-                
-                {book.genres && book.genres.length > 0 && (
-                  <View style={styles.metadataTag}>
-                    <Ionicons name="bookmark-outline" size={14} color={Colors.accent} />
-                    <Text style={[styles.metadataText, {color: Colors.accent} ]}>
-                      {Array.isArray(book.genres) 
-                        ? book.genres.map(g => typeof g === 'string' ? g : g.name).join(', ')
-                        : ''
-                      }
-                    </Text>
-                  </View>
-                )}
-              </View>
-            </View>
-          </View>
-        </LinearGradient>
-        
-        {/* Rating Section */}
-        {rating > 0 && (
-        <View style={styles.savedRatingContainer}>
-          <View style={styles.starsRow}>
-            {[1, 2, 3, 4, 5].map((star, i) => (
-              <MotiView
-                key={star}
-                from={{
-                  opacity: 0,
-                  translateX: -20,   // parte da sinistra
-                  scale: 0.5,        // parte piccola
-                }}
-                animate={{
-                  opacity: 1,
-                  translateX: 0,
-                  scale: star === rating ? 1.3 : 1,  // ingrandisci solo quella selezionata
-                }}
-                transition={{
-                  type: 'spring',
-                  damping: 8,
-                  mass: 0.5,
-                  delay: i * 100,    // sposta l’inizio di 100ms per ogni stella
-                }}
-                style={{ marginHorizontal: 4 }}     // spacing tra le stelle
-              >
-                <AntDesign
-                  name={star <= rating ? 'star' : 'staro'}
-                  size={32}
-                  color={star <= rating ? '#f5a623' : '#DDD'}
-                />
-              </MotiView>
-            ))}
-          </View>
-          {comment.length > 0 && (
-            <Text style={styles.savedComment}>&ldquo;{comment}&rdquo;</Text>
-          )}
+return (
+  <View style={styles.container}>
+    <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        {/* Header */}
+        <View style={styles.headerContent}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color="#4A90E2" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.editButton} onPress={() => router.push(`/add-book?id=${book.id}`)}>
+            <Ionicons name="create-outline" size={24} color="#fff" />
+          </TouchableOpacity>
         </View>
-        )}
-
-        <View style={[{width: '97%'}]}>
-        {/* Status Selection */}
-        <View style={styles.statusSection}>
-          <Text style={styles.sectionTitle}>Stato di Lettura</Text>
-          <View style={styles.statusGrid}>
-            {(['to_read', 'reading', 'completed'] as const).map((s) => (
-            <TouchableOpacity
-              key={s}
-              style={[
-                styles.statusCard,
-                status === s && styles.statusCardActive,
-              ]}
-              onPress={() => updateStatus(s)}
-            >
-              <View style={[
-                styles.statusIconContainer,
-                { backgroundColor: status === s ? '#fff' : getStatusColor(s) + '20' }
-              ]}>
-                <Ionicons 
-                  name={getStatusIcon(s)} 
-                  size={24} 
-                  color={status === s ? getStatusColor(s) : getStatusColor(s)} 
-                />
+        {/* Sezione Principale*/}
+        <View style={[styles.heroSection, {alignItems: 'center'}]}>
+          {/* Copertina */}
+          <View style={styles.bookImageContainer}>
+            {book.cover_url ? (
+              <Image source={{ uri: book.cover_url }} style={styles.bookImage} />
+            ) : (
+              <View style={styles.placeholderImage}>
+                <Ionicons name="book" size={48} color={Colors.textSecondary} />
               </View>
-              <Text style={[
-                styles.statusText,
-                status === s && styles.statusTextActive
-              ]}>
-                {getStatusLabel(s)}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-        {/* Description */}
-        {book.description && (
-          <View style={styles.descriptionSection}>
-            <Text style={styles.sectionTitle}>Descrizione</Text>
-            <Text style={styles.description}>{book.description}</Text>
-          </View>
-        )}
-
-        {/* Note */}
-        {notes.length > 0 && (
-          <View style={styles.descriptionSection}>
-            <Text style={styles.sectionTitle}>Le tue note</Text>
-
-            {/* Anteprima a 200 caratteri */}
-            <Text style={styles.description}>
-              {previewNotes}
-            </Text>
-
-            {/* “Leggi tutto” se veramente ci sono più di 200 caratteri */}
-            {isNotesLong && (
-              <TouchableOpacity onPress={() => setShowNotesModal(true)}>
-                <Text style={styles.expandText}>Leggi tutto</Text>
-              </TouchableOpacity>
+            )}  
+            {/* Floating Favorite or Wishlist */}
+            {inWishlist && (
+              <View style={[styles.statusBadge, { backgroundColor:'#79E18F' }]}>
+                <Ionicons name="cart" size={24} color="#fff" style={{ margin: 13, marginLeft: 12, marginRight: 15 }} />
+              </View>
             )}
+            {favorite && (
+              <View style={[styles.statusBadge, { backgroundColor: '#FFA0CC' }]}>
+                <Ionicons name="heart" size={24} color="#fff" style={{ margin: 13}}  />
+              </View>
+            )}
+          </View> 
+          {/*Fine tag copertina*/}
+
+          {/* Info del Libro */}
+          <View style={styles.bookInfo}>
+            <Text style={styles.bookTitle}>{book.title}</Text>
+            <Text style={styles.bookAuthor}>{book.author}</Text>
+            {/* Book Metadata Tags */}
+            <View style={styles.metadataContainer}>
+              {book.publication && (
+                <View style={styles.metadataTag}>
+                  <Ionicons name="calendar-outline" size={14} color={Colors.primary} />
+                  <Text style={[styles.metadataText, {color: Colors.primary}]}>{book.publication}</Text>
+                </View>
+              )}
+              {book.genres && book.genres.length > 0 && (
+                <View style={styles.metadataTag}>
+                  <Ionicons name="bookmark-outline" size={14} color={Colors.accent} />
+                  <Text style={[styles.metadataText, {color: Colors.accent} ]}>
+                    {Array.isArray(book.genres) 
+                      ? book.genres.map(g => typeof g === 'string' ? g : g.name).join(', ')
+                      : ''
+                    }
+                  </Text>
+                </View>
+              )}
+            </View> 
+        
+            {/* Rating Section */}
+            {rating > 0 && (
+              <View style={styles.savedRatingContainer}>
+                <View style={styles.starsRow}>
+                  {[1, 2, 3, 4, 5].map((star, i) => (
+                    <MotiView
+                      key={star}
+                      from={{
+                      opacity: 0,
+                      translateX: -20,   // parte da sinistra
+                      scale: 0.5,        // parte piccola
+                    }}
+                    animate={{
+                      opacity: 1,
+                      translateX: 0,
+                      scale: star === rating ? 1.3 : 1,  // ingrandisci solo quella selezionata
+                    }}
+                    transition={{
+                      type: 'spring',
+                      damping: 8,
+                      mass: 0.5,
+                      delay: i * 100,    // sposta l’inizio di 100ms per ogni stella
+                    }}
+                    style={{ marginHorizontal: 4 }}     // spacing tra le stelle
+                    >
+                    <AntDesign
+                      name={star <= rating ? 'star' : 'staro'}
+                      size={32}
+                      color={star <= rating ? '#f5a623' : '#DDD'}
+                    />
+                    </MotiView>
+                  ))}
+                </View>
+                {comment.length > 0 && (
+                  <Text style={styles.savedComment}>&ldquo;{comment}&rdquo;</Text>
+                )}
+              </View>
+            )}
+            
+            {/* Contenitore Stati */}
+            <View style={[{width: '97%'}]}>
+              {/* Stati */}
+              <View style={styles.statusSection}>
+                <Text style={styles.sectionTitle}>Stato di Lettura</Text>
+                <View style={styles.statusGrid}>
+                  {(['to_read', 'reading', 'completed'] as const).map((s) => (
+                    <TouchableOpacity
+                      key={s}
+                      style={[
+                        styles.statusCard,
+                        status === s && styles.statusCardActive,
+                      ]}
+                      onPress={() => updateStatus(s)}
+                    >
+                      <View style={[styles.statusIconContainer, { backgroundColor: status === s ? '#fff' : getStatusColor(s) + '20' }]}>
+                        <Ionicons 
+                          name={getStatusIcon(s)} 
+                          size={24} 
+                          color={status === s ? getStatusColor(s) : getStatusColor(s)} 
+                        />
+                      </View>
+                      <Text style={[styles.statusText,status === s && styles.statusTextActive]}>{getStatusLabel(s)}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Description */}
+              {book.description && (
+                <View style={styles.descriptionSection}>
+                  <Text style={styles.sectionTitle}>Descrizione</Text>
+                  <Text style={styles.description}>{book.description}</Text>
+                </View>
+              )}
+
+              {/* Note */}
+              {notes.length > 0 && (
+                <View style={styles.descriptionSection}>
+                  <Text style={styles.sectionTitle}>Le tue note</Text>
+                  <Text style={styles.description}>{previewNotes}</Text>
+                  {isNotesLong && (
+                    <TouchableOpacity onPress={() => setShowNotesModal(true)}>
+                      <Text style={styles.expandText}>Leggi tutto</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
+            </View>
           </View>
-        )}
+        </View>
 
         {/* Recommendations Section */}
+        <View style={[styles.heroSection, {marginTop: Spacing.xl}]}>
         {loadingRecommendations && (
           <View style={styles.recommendationsLoading}>
             <ActivityIndicator size="small" color={Colors.primary} />
@@ -475,13 +455,8 @@ export default function BookDetailsScreen() {
             </Text>
           </View>
         )}
-
-          </View>
-
-          
-        </View>
-      </LinearGradient>
-      </ScrollView>
+      </View>
+  </ScrollView>
 
       {/* Rating Modal */}
       <Modal
@@ -637,22 +612,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.background, 
   },
-  
-  // Header styles
-  headerGradient: {
-    paddingHorizontal: Spacing.lg,
-    paddingBottom: Spacing.lg,
-  },
   headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: Spacing.xs,
-    marginBottom: Spacing.xxl, 
+    marginVertical: Spacing.xl,
+    paddingTop: Spacing.xl,
+    paddingHorizontal: Spacing.lg,
   },
   editButton: {
       flexDirection: 'row',
-      backgroundColor: '#fff',
+      backgroundColor: '#4A90E2',
       paddingTop: 8,
       paddingBottom: 11,
       paddingRight: 10,
@@ -677,15 +647,20 @@ const styles = StyleSheet.create({
 
   // Hero section
   heroSection: {
-    alignItems: 'center',
+    backgroundColor: '#fff', 
     paddingVertical: Spacing.xxxl,
     paddingHorizontal: Spacing.lg,
     borderRadius: BorderRadius.lg, 
+    marginHorizontal: Spacing.xl, 
     ...Shadows.large,
   },
   bookImageContainer: {
     position: 'relative',
     marginBottom: Spacing.xl,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
   },
   bookImage: {
     width: width * 0.45,

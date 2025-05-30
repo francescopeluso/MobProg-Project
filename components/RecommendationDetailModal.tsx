@@ -205,6 +205,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.xl,
     width: '100%',
     maxWidth: 400,
+    height: '80%', 
     ...Shadows.large,
   },
   header: {
@@ -237,8 +238,11 @@ const styles = StyleSheet.create({
     width: 80,
     height: 120,
     borderRadius: BorderRadius.md,
-    backgroundColor: Colors.surfaceVariant,
-    ...Shadows.medium,
+    backgroundColor: Colors.surfaceVariant,    
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
   },
   placeholderCover: {
     width: 80,
@@ -247,7 +251,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surfaceVariant,
     alignItems: 'center',
     justifyContent: 'center',
-    ...Shadows.medium,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
   },
   bookBasicInfo: {
     flex: 1,

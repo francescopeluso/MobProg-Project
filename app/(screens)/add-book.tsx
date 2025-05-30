@@ -449,274 +449,250 @@ export default function AddBookScreen() {
     );
   }
   
-  return (
-    <View style={styles.container}>
-        <View
-          style={[
-            styles.header,
-            { paddingTop: insets.top }  
-          ]}
-        >
-        <View style={styles.headerRow}></View>
-        <View style={styles.headerRow}>
-          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-            <Ionicons name="arrow-back" size={24} color="#4A90E2" />
-          </TouchableOpacity>
-          <Text style={styles.title}>
-            {isEditing ? 'Modifica Libro' : 'Nuovo Libro'}
-          </Text>
-          <TouchableOpacity style={styles.searchButton} onPress={() => setShowSearch(true)}>
-            <Ionicons name="search-outline" size={22} color="#fff" />
-          </TouchableOpacity>
+return (
+  <View style={styles.container}>
+    {/*Header*/}
+    <View style={[styles.header, {paddingTop: insets.top}]}>
+      <View style={styles.headerRow}></View>
+      <View style={styles.headerRow}>
+        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+          <Ionicons name="arrow-back" size={24} color="#4A90E2" />
+        </TouchableOpacity>
+        <Text style={styles.title}>
+          {isEditing ? 'Modifica Libro' : 'Nuovo Libro'}
+        </Text>
+        <TouchableOpacity style={styles.searchButton} onPress={() => setShowSearch(true)}>
+          <Ionicons name="search-outline" size={22} color="#fff" />
+        </TouchableOpacity>
+      </View>
+    </View>
+      
+    <ScrollView ref={scrollViewRef} contentContainerStyle={[styles.contentContainer, {paddingBottom: 80 + insets.bottom, paddingTop: 80 + insets.top}]} showsVerticalScrollIndicator={false}>
+      {/* Copertina del libro (click to edit) */}
+      <View style={styles.bookCoverSection}>
+        <View style={styles.coverContainer}>
+          <Pressable onPress={pickBookImage}>
+            {renderCoverPreview()}
+          </Pressable>
         </View>
       </View>
-      
-      <ScrollView 
-        ref={scrollViewRef}
-        contentContainerStyle={[
-          styles.contentContainer,
-          { paddingBottom: 80 + insets.bottom, paddingTop: 80 + insets.top}]} // per tenere conto del footer e dell'header fissi
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Copertina del libro (click to edit) */}
-          <View style={styles.bookCoverSection}>
-            <View style={styles.coverContainer}>
-              <Pressable onPress={pickBookImage}>
-                {renderCoverPreview()}
-              </Pressable>
-            </View>
-          </View>
-          
-          <View style={styles.bookInfoSection}>
-            <View style={styles.bookMetadata}>
-              <Text style={styles.bookTitle} numberOfLines={3}>
-                {form.title || 'Titolo del Libro'}
-              </Text>
-              <Text style={styles.bookAuthor} numberOfLines={2}>
-                {form.author || 'Nome Autore'}
-              </Text>
-              
-              {/* contenitore dei tags per anno, generi, ecc... */}
-              <View style={styles.tagsContainer}>
-                {form.publication && (
-                  <View style={styles.infoTag}>
-                    <Ionicons name="calendar-outline" size={14} color="#4A90E2" />
-                    <Text style={styles.tagText}>{form.publication}</Text>
-                  </View>
-                )}
-                
-                {selectedGenres.map((genre) => (
-                  <View key={genre} style={styles.infoTag}>
-                    <Ionicons name="bookmark-outline" size={14} color="#9F7AEA" />
-                    <Text style={[styles.tagText, { color: '#9F7AEA' }]}>{genre}</Text>
-                  </View>
-                ))}
-                
-                {remoteBook?.isbn13 ? (
-                  <View style={styles.infoTag}>
-                    <Ionicons name="barcode-outline" size={14} color="#38B2AC" />
-                    <Text style={[styles.tagText, { color: '#38B2AC' }]}>{remoteBook.isbn13}</Text>
-                  </View>
-                ) : remoteBook?.isbn10 && (
-                  <View style={styles.infoTag}>
-                    <Ionicons name="barcode-outline" size={14} color="#38B2AC" />
-                    <Text style={[styles.tagText, { color: '#38B2AC' }]}>{remoteBook.isbn10}</Text>
-                  </View>
-                )}
-                
-                {/* placeholders se non ci sono tags */}
-                {!form.publication && selectedGenres.length === 0 && !remoteBook?.isbn10 && !remoteBook?.isbn13 && (
-                  <View style={[styles.infoTag, { backgroundColor: '#F8F9FA', borderColor: '#E9ECEF' }]}>
-                    <Ionicons name="information-circle-outline" size={14} color="#6C757D" />
-                    <Text style={[styles.tagText, { color: '#6C757D', fontStyle: 'italic' }]}>Compila i campi per vedere i dettagli</Text>
-                  </View>
-                )}
+      {/* Sezione info libro e metadati */}
+      <View style={styles.bookInfoSection}>
+        <View style={styles.bookMetadata}>
+          <Text style={styles.bookTitle} numberOfLines={3}>{form.title || 'Titolo del Libro'}</Text>
+          <Text style={styles.bookAuthor} numberOfLines={2}> {form.author || 'Nome Autore'}</Text>
+          {/* Tags per anno, generi, ecc... */}
+          <View style={styles.tagsContainer}>
+            {form.publication && (
+              <View style={styles.infoTag}>
+                <Ionicons name="calendar-outline" size={14} color="#4A90E2" />
+                <Text style={styles.tagText}>{form.publication}</Text>
               </View>
-              
-              {/*{remoteBook && (
-                <View style={styles.sourceTagContainer}>
-                  <View style={styles.sourceTag}>
-                    <Ionicons name="cloud-download-outline" size={14} color="#4A90E2" />
-                    <Text style={styles.sourceText}>Dati da ricerca online</Text>
-                  </View>
-                </View>
-              )}*/}
-            </View>
+            )}  
+            {selectedGenres.map((genre) => (
+              <View key={genre} style={styles.infoTag}>
+                <Ionicons name="bookmark-outline" size={14} color="#9F7AEA" />
+                <Text style={[styles.tagText, { color: '#9F7AEA' }]}>{genre}</Text>
+              </View>
+            ))}
+            {remoteBook?.isbn13 ? (
+              <View style={styles.infoTag}>
+                <Ionicons name="barcode-outline" size={14} color="#38B2AC" />
+                <Text style={[styles.tagText, { color: '#38B2AC' }]}>{remoteBook.isbn13}</Text>
+              </View>
+            ) : remoteBook?.isbn10 && (
+              <View style={styles.infoTag}>
+                <Ionicons name="barcode-outline" size={14} color="#38B2AC" />
+                <Text style={[styles.tagText, { color: '#38B2AC' }]}>{remoteBook.isbn10}</Text>
+              </View>
+            )}
+            {/* placeholders se non ci sono tags */}
+            {!form.publication && selectedGenres.length === 0 && !remoteBook?.isbn10 && !remoteBook?.isbn13 && (
+              <View style={[styles.infoTag, { backgroundColor: '#F8F9FA', borderColor: '#E9ECEF' }]}>
+                <Ionicons name="information-circle-outline" size={14} color="#6C757D" />
+                <Text style={[styles.tagText, { color: '#6C757D', fontStyle: 'italic' }]}>Compila i campi per vedere i dettagli</Text>
+              </View>
+            )}
           </View>
-
- {/* selettore status */}
-  <View style={styles.tabRow}>
-  {STATI.map(s => {
-    const label = s === 'to_read' ? 'Da leggere' 
-                : s === 'reading' ? 'In lettura' 
-                : 'Completato';
-    const isActive = activeStatus === s;
-    return (
-      <MotiView
-        key={s}
-        from={{ backgroundColor: '#eee', translateY: 0 }}
-        animate={{
-          backgroundColor: isActive ? '#4A90E2' : '#eee',
-          translateY: isActive ? -4 : 0,
-        }}
-        transition={{ type: 'timing', duration: 300, easing: Easing.out(Easing.exp) }}
-        style={styles.tabButton}
-      >
-        <Pressable
-          onPress={() => { setActiveStatus(s); setIsDirty(true); }}
-          style={styles.tabButton}
-        >
-          <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
-            {label}
-          </Text>
-        </Pressable>
-      </MotiView>
-    );
-  })}
-</View>
-
-        {/* Form dei dati del libro */}
-        <View style={[styles.formSection, { backgroundColor: '#4A90E2', paddingBottom: 0, marginTop: -12 }]}>
-          <View style={styles.formSection}>
-          {/* Titolo */}
-          <View style={styles.formGroup}>
-            <View style={styles.labelContainer}>
-              <Ionicons name="book-outline" size={18} color="#666" style={styles.labelIcon} />
-              <Text style={styles.label}>Titolo</Text>
+          {/*{remoteBook && (
+            <View style={styles.sourceTagContainer}>
+              <View style={styles.sourceTag}>
+                <Ionicons name="cloud-download-outline" size={14} color="#4A90E2" />
+                <Text style={styles.sourceText}>Dati da ricerca online</Text>
+              </View>
             </View>
-            <TextInput
+          )}*/}
+        </View> 
+        {/* tag fine bookMetadata */}
+      </View> 
+      {/* tag fine bookInfoSection */}
+
+    {/* Stati */}
+    <View style={styles.tabRow}>
+      {STATI.map(s => {
+        const label = s === 'to_read' ? 'Da leggere' 
+                    : s === 'reading' ? 'In lettura' 
+                    : 'Completato';
+        const isActive = activeStatus === s;
+        return (
+          <MotiView
+            key={s}
+            from={{ backgroundColor: '#eee', translateY: 0 }}
+            animate={{
+              backgroundColor: isActive ? '#4A90E2' : '#eee',
+              translateY: isActive ? -4 : 0,
+            }}
+            transition={{ type: 'timing', duration: 300, easing: Easing.out(Easing.exp) }}
+            style={styles.tabButton}
+          >
+            <Pressable
+              onPress={() => { setActiveStatus(s); setIsDirty(true); }}
+              style={styles.tabButton}
+            >
+              <Text style={[styles.tabText, isActive && styles.tabTextActive]}>{label}</Text>
+            </Pressable>
+          </MotiView>
+        );
+      })}
+    </View> 
+    {/* fine tag Stati */}
+
+    {/* Form dei dati del libro */}
+    <View style={[styles.formSection, { backgroundColor: '#4A90E2', paddingBottom: 0, marginTop: -12 }]}>
+      <View style={styles.formSection}>
+        {/* Titolo */}
+        <View style={styles.formGroup}>
+          <View style={styles.labelContainer}>
+            <Ionicons name="book-outline" size={18} color="#666" style={styles.labelIcon} />
+            <Text style={styles.label}>Titolo</Text>
+          </View>
+          <TextInput
               style={styles.input}
               value={form.title}
               autoCapitalize='sentences'       // prima lettera maiuscola
               onChangeText={(t) => handleChange('title', t)}
               placeholder="Titolo del libro"
               placeholderTextColor="#bbb"
-            />
-          </View>
+          />
+        </View>
 
-          {/* Autore */}
-          <View style={styles.formGroup}>
-            <View style={styles.labelContainer}>
-              <Ionicons name="person-outline" size={18} color="#666" style={styles.labelIcon} />
-              <Text style={styles.label}>Autore</Text>
-            </View>
-            <TextInput
+        {/* Autore */}
+        <View style={styles.formGroup}>
+          <View style={styles.labelContainer}>
+            <Ionicons name="person-outline" size={18} color="#666" style={styles.labelIcon} />
+            <Text style={styles.label}>Autore</Text>
+          </View>
+          <TextInput
               style={styles.input}
               value={form.author}
               onChangeText={(t) => handleChange('author', t)}
               placeholder="Nome autore"
               placeholderTextColor="#bbb"
               autoCapitalize='words'       // prima lettera maiuscola
-            />
-          </View>
+          />
+        </View>
           
+        <View style={[styles.formRow, {marginBottom:0}]}>
           {/* Anno e copertina */}
-          <View style={[styles.formRow, {marginBottom:0}]}>
-            <View style={[styles.formGroup, { width: 100 }]}>
-              <View style={styles.labelContainer}>
-                <Ionicons name="calendar-outline" size={18} color="#666" style={styles.labelIcon} />
-                <Text style={styles.label}>Anno</Text>
-              </View>
-              <TextInput
-                style={styles.input}
-                value={form.publication}
-                onChangeText={(t) => handleChange('publication', t)}
-                placeholder="YYYY"
-                placeholderTextColor="#bbb"
-                keyboardType="numeric"
-              />
-            </View>
-
-           
-            <View style={[styles.formGroup, { flex: 1, marginLeft: 10 }]}>
-              <View style={styles.labelContainer}>
-                <Ionicons name="image-outline" size={18} color="#666" style={styles.labelIcon} />
-                <Text style={styles.label}>URL Copertina</Text>
-              </View>
-              <TextInput
-                style={styles.input}
-                value={form.cover_url}
-                onChangeText={(t) => handleChange('cover_url', t)}
-                placeholder="https://..."
-                placeholderTextColor="#bbb"
-              />
-            </View>
-          </View>
-
-          {/* Trama */}
-          <View style={styles.formGroup}>
+          <View style={[styles.formGroup, { width: 100 }]}>
             <View style={styles.labelContainer}>
-              <Ionicons name="document-text-outline" size={18} color="#666" style={styles.labelIcon} />
-              <Text style={styles.label}>Trama</Text>
+              <Ionicons name="calendar-outline" size={18} color="#666" style={styles.labelIcon} />
+              <Text style={styles.label}>Anno</Text>
             </View>
             <TextInput
-              style={[styles.input, styles.textArea]}
-              value={form.description}
-              onChangeText={(t) => handleChange('description', t)}
-              placeholder="Breve descrizione della trama"
+              style={styles.input}
+              value={form.publication}
+              onChangeText={(t) => handleChange('publication', t)}
+              placeholder="YYYY"
               placeholderTextColor="#bbb"
-              multiline
-              textAlignVertical="top"
+              keyboardType="numeric"
             />
           </View>
 
-          {/* Icon Row per aprire i quattro modal */}
-          <View style={[styles.formRow, {flexDirection: 'row', justifyContent: 'space-around'}]}>
-            {/* Generi */}
-            <Pressable
-              onPress={() => setShowGenreModal(true)}
-              style={styles.iconButton}
-            >
-              <Ionicons name="book-outline" size={24} color="#fff" />
-            </Pressable>
-
-            {/* Note */}
-            <Pressable
-              onPress={() => setShowNoteModal(true)}
-              style={styles.iconButton}
-            >
-              <Ionicons name="create-outline" size={24} color="#fff" />
-            </Pressable>
-
-            <Pressable
-            onPress={() => { // scorri in fondo
-              setShowRating(v => !v);
-                scrollViewRef.current?.scrollTo({ y: 99999, animated: true })            }}
-            style={styles.iconButton}
-          >
-            <Ionicons name="star" size={20} color="#fff" />
-          </Pressable>
-
-            {/* Preferiti o Wishlist */}
-            <Pressable
-              onPress={() => {
-              if(!isInWishlist && !isFavorite) {
-                    setIsInWishlist(true);
-              } else if (isInWishlist && !isFavorite) {
-                setIsInWishlist(false);
-                setIsFavorite(true);
-              } else {
-                setIsFavorite(false);
-              }
-              setIsDirty(true);
-              }}
-              style={[ styles.iconButton, 
-              isFavorite ? { backgroundColor: '#FFA0CC' } :
-              isInWishlist ? { backgroundColor: '#79E18F' } :
-              { backgroundColor: '#BBB' }
-              ]}
-            >
-              <Ionicons
-              name={
-                isInWishlist   ? 'cart'      :
-                isFavorite     ? 'heart'     :
-                        'chevron-down-outline'
-              }
-              size={24}
-              color="#fff"
-              />
-            </Pressable>
+          {/* Url Libro */}
+          <View style={[styles.formGroup, { flex: 1, marginLeft: 10 }]}>
+            <View style={styles.labelContainer}>
+              <Ionicons name="image-outline" size={18} color="#666" style={styles.labelIcon} />
+              <Text style={styles.label}>URL Copertina</Text>
+            </View>
+            <TextInput
+              style={styles.input}
+              value={form.cover_url}
+              onChangeText={(t) => handleChange('cover_url', t)}
+              placeholder="https://..."
+              placeholderTextColor="#bbb"
+            />
           </View>
+        </View>
+
+        {/* Trama */}
+        <View style={styles.formGroup}>
+          <View style={styles.labelContainer}>
+            <Ionicons name="document-text-outline" size={18} color="#666" style={styles.labelIcon} />
+            <Text style={styles.label}>Trama</Text>
+          </View>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            value={form.description}
+            onChangeText={(t) => handleChange('description', t)}
+            placeholder="Breve descrizione della trama"
+            placeholderTextColor="#bbb"
+            multiline
+            textAlignVertical="top"
+          />
+        </View>
+
+        {/* Icon Row per aprire i quattro modal */}
+        <View style={[styles.formRow, {flexDirection: 'row', justifyContent: 'space-around'}]}>
+          {/* Generi */}
+          <Pressable
+            onPress={() => setShowGenreModal(true)}
+            style={styles.iconButton}
+          ><Ionicons name="book-outline" size={24} color="#fff" />
+          </Pressable>
+          {/* Note */}
+          <Pressable
+            onPress={() => setShowNoteModal(true)}
+            style={styles.iconButton}
+          ><Ionicons name="create-outline" size={24} color="#fff" />
+          </Pressable>
+          {/* Ratings */}
+          <Pressable
+            onPress={() => { // scorri in fondo
+            setShowRating(v => !v);
+            scrollViewRef.current?.scrollTo({ y: 99999, animated: true })            }}
+            style={styles.iconButton}
+          ><Ionicons name="star" size={20} color="#fff" />
+          </Pressable>
+          {/* Preferiti o Wishlist */}
+          <Pressable
+            onPress={() => {
+            if(!isInWishlist && !isFavorite) {
+                  setIsInWishlist(true);
+            } else if (isInWishlist && !isFavorite) {
+              setIsInWishlist(false);
+              setIsFavorite(true);
+            } else {
+              setIsFavorite(false);
+            }
+            setIsDirty(true);
+            }}
+            style={[ styles.iconButton, 
+            isFavorite ? { backgroundColor: '#FFA0CC' } :
+            isInWishlist ? { backgroundColor: '#79E18F' } :
+            { backgroundColor: '#BBB' }
+            ]}
+          ><Ionicons
+            name={
+              isInWishlist   ? 'cart'      :
+              isFavorite     ? 'heart'     : 'chevron-down-outline'
+            }
+            size={24}
+            color="#fff"
+            />
+          </Pressable>
+        </View> 
+        {/* fine tag pulsanti per i Modal */}
 
           {/* GENRE MODAL */}
           <Modal 
