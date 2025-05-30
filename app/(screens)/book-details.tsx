@@ -8,12 +8,14 @@ import {
   Alert,
   Dimensions,
   Image,
+  Keyboard,
   Modal,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -467,61 +469,66 @@ return (
         transparent
         onRequestClose={() => setShowRatingModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Valuta questo libro</Text>
-              <TouchableOpacity onPress={() => setShowRatingModal(false)}>
-                <Ionicons name="close" size={24} color={Colors.textSecondary} />
-              </TouchableOpacity>
-            </View>
+        <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Valuta questo libro</Text>
+                <TouchableOpacity onPress={() => setShowRatingModal(false)}>
+                  <Ionicons name="close" size={24} color={Colors.textSecondary} />
+                </TouchableOpacity>
+              </View>
 
-            <View style={styles.ratingInput}>
-              <Text style={styles.inputLabel}>La tua valutazione</Text>
-              <View style={styles.starsInput}>
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <TouchableOpacity
-                    key={star}
-                    onPress={() => setTempRating(star)}
-                  >
-                    <AntDesign
-                      name={star <= tempRating ? 'star' : 'staro'}
-                      size={36}
-                      color={star <= tempRating ? Colors.warning : Colors.borderLight}
-                      style={{ marginHorizontal: 4 }}
-                    />
-                  </TouchableOpacity>
-                ))}
+              <View style={styles.ratingInput}>
+                <Text style={styles.inputLabel}>La tua valutazione</Text>
+                <View style={styles.starsInput}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <TouchableOpacity
+                      key={star}
+                      onPress={() => setTempRating(star)}
+                    >
+                      <AntDesign
+                        name={star <= tempRating ? 'star' : 'staro'}
+                        size={36}
+                        color={star <= tempRating ? Colors.warning : Colors.borderLight}
+                        style={{ marginHorizontal: 4 }}
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.commentInput}>
+                <Text style={styles.inputLabel}>Commento (opzionale)</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={tempComment}
+                  onChangeText={setTempComment}
+                  placeholder="Scrivi la tua opinione..."
+                  multiline
+                  returnKeyType="done"
+                  onSubmitEditing={() => Keyboard.dismiss()}
+                  blurOnSubmit={true}
+                />
+              </View>
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity 
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => setShowRatingModal(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Annulla</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.modalButton, styles.saveButton]}
+                  onPress={handleSaveRating}
+                >
+                  <Text style={styles.saveButtonText}>Salva</Text>
+                </TouchableOpacity>
               </View>
             </View>
-
-            <View style={styles.commentInput}>
-              <Text style={styles.inputLabel}>Commento (opzionale)</Text>
-              <TextInput
-                style={styles.textInput}
-                value={tempComment}
-                onChangeText={setTempComment}
-                placeholder="Scrivi la tua opinione..."
-                multiline
-              />
-            </View>
-
-            <View style={styles.modalButtons}>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setShowRatingModal(false)}
-              >
-                <Text style={styles.cancelButtonText}>Annulla</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.saveButton]}
-                onPress={handleSaveRating}
-              >
-                <Text style={styles.saveButtonText}>Salva</Text>
-              </TouchableOpacity>
-            </View>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </Modal>
 
       {/* Notes Modal */}

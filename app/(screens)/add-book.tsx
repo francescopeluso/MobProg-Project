@@ -9,13 +9,16 @@ import {
     Dimensions,
     Image,
     Keyboard,
+    KeyboardAvoidingView,
     Modal,
+    Platform,
     Pressable,
     ScrollView,
     StyleSheet,
     Text,
     TextInput,
     TouchableOpacity,
+    TouchableWithoutFeedback,
     View,
 } from 'react-native';
 import { Easing } from 'react-native-reanimated';
@@ -32,8 +35,6 @@ const initialForm = {
   publication: '',
 };
 
-const commentInputRef = useRef<TextInput>(null);
-
 export default function AddBookScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string; prefilledData?: string }>();
@@ -45,6 +46,13 @@ export default function AddBookScreen() {
   const [isDirty, setIsDirty] = useState(false); 
   // scroll 
   const scrollViewRef = useRef<ScrollView>(null);
+  // TextInput refs for keyboard navigation
+  const titleInputRef = useRef<TextInput>(null);
+  const authorInputRef = useRef<TextInput>(null);
+  const publicationInputRef = useRef<TextInput>(null);
+  const coverUrlInputRef = useRef<TextInput>(null);
+  const descriptionInputRef = useRef<TextInput>(null);
+  const commentInputRef = useRef<TextInput>(null);
   // stati
   const STATI = ['to_read', 'reading', 'completed'] as const;
   const [activeStatus, setActiveStatus] = useState<typeof STATI[number]>('to_read');
@@ -56,7 +64,6 @@ export default function AddBookScreen() {
   // per i tre modal
   const [showGenreModal, setShowGenreModal] = useState(false)
   const [showNoteModal, setShowNoteModal] = useState(false)
-  const [showCategoryModal, setShowCategoryModal] = useState(false)
   // per la bottom‐sheet delle note
   const [note, setNote] = useState('')
   // wishlist o preferiti
@@ -72,6 +79,13 @@ export default function AddBookScreen() {
     animate: { translateY: 0, opacity: 1 },
     transition: { type: 'spring', damping: 50, stiffness: 10, mass: 1 }
   }
+
+  // Funzione per lo scroll automatico ai campi
+  const scrollToInput = (yOffset: number) => {
+    setTimeout(() => {
+      scrollViewRef.current?.scrollTo({ y: yOffset, animated: true });
+    }, 100);
+  };
 
   const toggleGenre = (g: string) => {
     setIsDirty(true);
@@ -450,24 +464,30 @@ export default function AddBookScreen() {
   }
   
 return (
-  <View style={styles.container}>
-    {/*Header*/}
-    <View style={[styles.header, {paddingTop: insets.top}]}>
-      <View style={styles.headerRow}></View>
-      <View style={styles.headerRow}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Ionicons name="arrow-back" size={24} color="#4A90E2" />
-        </TouchableOpacity>
-        <Text style={styles.title}>
-          {isEditing ? 'Modifica Libro' : 'Nuovo Libro'}
-        </Text>
-        <TouchableOpacity style={styles.searchButton} onPress={() => setShowSearch(true)}>
-          <Ionicons name="search-outline" size={22} color="#fff" />
-        </TouchableOpacity>
-      </View>
-    </View>
-      
-    <ScrollView ref={scrollViewRef} contentContainerStyle={[styles.contentContainer, {paddingBottom: 80 + insets.bottom, paddingTop: 80 + insets.top}]} showsVerticalScrollIndicator={false}>
+  <KeyboardAvoidingView 
+    style={styles.container}
+    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    keyboardVerticalOffset={0}
+  >
+    <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+      <View style={styles.container}>
+        {/*Header*/}
+        <View style={[styles.header, {paddingTop: insets.top}]}>
+          <View style={styles.headerRow}></View>
+          <View style={styles.headerRow}>
+            <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+              <Ionicons name="arrow-back" size={24} color="#4A90E2" />
+            </TouchableOpacity>
+            <Text style={styles.title}>
+              {isEditing ? 'Modifica Libro' : 'Nuovo Libro'}
+            </Text>
+            <TouchableOpacity style={styles.searchButton} onPress={() => setShowSearch(true)}>
+              <Ionicons name="search-outline" size={22} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </View>
+          
+        <ScrollView ref={scrollViewRef} contentContainerStyle={[styles.contentContainer, {paddingBottom: 80 + insets.bottom, paddingTop: 80 + insets.top}]} showsVerticalScrollIndicator={false}>
       {/* Copertina del libro (click to edit) */}
       <View style={styles.bookCoverSection}>
         <View style={styles.coverContainer}>
@@ -567,12 +587,20 @@ return (
             <Text style={styles.label}>Titolo</Text>
           </View>
           <TextInput
+              ref={titleInputRef}
               style={styles.input}
               value={form.title}
               autoCapitalize='sentences'       // prima lettera maiuscola
               onChangeText={(t) => handleChange('title', t)}
               placeholder="Titolo del libro"
               placeholderTextColor="#bbb"
+              returnKeyType="next"
+              onSubmitEditing={() => {
+                authorInputRef.current?.focus();
+                scrollToInput(400);
+              }}
+              onFocus={() => scrollToInput(300)}
+              blurOnSubmit={false}
           />
         </View>
 
@@ -583,12 +611,20 @@ return (
             <Text style={styles.label}>Autore</Text>
           </View>
           <TextInput
+              ref={authorInputRef}
               style={styles.input}
               value={form.author}
               onChangeText={(t) => handleChange('author', t)}
               placeholder="Nome autore"
               placeholderTextColor="#bbb"
               autoCapitalize='words'       // prima lettera maiuscola
+              returnKeyType="next"
+              onSubmitEditing={() => {
+                publicationInputRef.current?.focus();
+                scrollToInput(500);
+              }}
+              onFocus={() => scrollToInput(400)}
+              blurOnSubmit={false}
           />
         </View>
           
@@ -600,12 +636,20 @@ return (
               <Text style={styles.label}>Anno</Text>
             </View>
             <TextInput
+              ref={publicationInputRef}
               style={styles.input}
               value={form.publication}
               onChangeText={(t) => handleChange('publication', t)}
               placeholder="YYYY"
               placeholderTextColor="#bbb"
               keyboardType="numeric"
+              returnKeyType="next"
+              onSubmitEditing={() => {
+                coverUrlInputRef.current?.focus();
+                scrollToInput(600);
+              }}
+              onFocus={() => scrollToInput(500)}
+              blurOnSubmit={false}
             />
           </View>
 
@@ -616,11 +660,19 @@ return (
               <Text style={styles.label}>URL Copertina</Text>
             </View>
             <TextInput
+              ref={coverUrlInputRef}
               style={styles.input}
               value={form.cover_url}
               onChangeText={(t) => handleChange('cover_url', t)}
               placeholder="https://..."
               placeholderTextColor="#bbb"
+              returnKeyType="next"
+              onSubmitEditing={() => {
+                descriptionInputRef.current?.focus();
+                scrollToInput(700);
+              }}
+              onFocus={() => scrollToInput(600)}
+              blurOnSubmit={false}
             />
           </View>
         </View>
@@ -632,6 +684,7 @@ return (
             <Text style={styles.label}>Trama</Text>
           </View>
           <TextInput
+            ref={descriptionInputRef}
             style={[styles.input, styles.textArea]}
             value={form.description}
             onChangeText={(t) => handleChange('description', t)}
@@ -639,6 +692,10 @@ return (
             placeholderTextColor="#bbb"
             multiline
             textAlignVertical="top"
+            returnKeyType="done"
+            onSubmitEditing={() => Keyboard.dismiss()}
+            onFocus={() => scrollToInput(750)}
+            blurOnSubmit={true}
           />
         </View>
 
@@ -802,6 +859,9 @@ return (
                     setComment(text);
                     setIsDirty(true);
                   }}
+                  returnKeyType="done"
+                  onSubmitEditing={() => Keyboard.dismiss()}
+                  blurOnSubmit={true}
                 />
               </View>
                 <View style={styles.modalButtons}>
@@ -879,7 +939,9 @@ return (
           onClose={() => setShowSearch(false)}
         />
       </Modal>
-    </View>
+      </View>
+    </TouchableWithoutFeedback>
+  </KeyboardAvoidingView>
   );
 }
 

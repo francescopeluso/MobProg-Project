@@ -7,12 +7,14 @@ import {
   Alert,
   Animated,
   FlatList,
+  Keyboard,
   PanResponder,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -203,15 +205,16 @@ export default function WishlistScreen() {
 
   return (
     <View style={CommonStyles.container}>
-      <ScrollView 
-        contentContainerStyle={[
-          CommonStyles.contentContainer,
-          {
-            paddingTop: 0,
-            paddingBottom: getTabContentBottomPadding(insets.bottom)
-          }
-        ]}
-      >
+      <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+        <ScrollView 
+          contentContainerStyle={[
+            CommonStyles.contentContainer,
+            {
+              paddingTop: 0,
+              paddingBottom: getTabContentBottomPadding(insets.bottom)
+            }
+          ]}
+        >
         {/* Header */}
         <View style={[CommonStyles.header, { marginTop: insets.top }]}>
           <View style={styles.headerRow}>
@@ -235,7 +238,10 @@ export default function WishlistScreen() {
               placeholderTextColor={Colors.textSecondary}
               value={newBookTitle}
               onChangeText={setNewBookTitle}
-              onSubmitEditing={addToWishlistHandler}
+              onSubmitEditing={() => {
+                addToWishlistHandler();
+                Keyboard.dismiss();
+              }}
               returnKeyType="done"
             />
             <TouchableOpacity
@@ -275,6 +281,7 @@ export default function WishlistScreen() {
           )}
         </SectionCard>
       </ScrollView>
+      </TouchableWithoutFeedback>
     </View>
   );
 }

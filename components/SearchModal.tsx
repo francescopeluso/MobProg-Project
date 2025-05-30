@@ -15,6 +15,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from 'react-native';
 import { Book, searchBooksLocal, searchBooksRemote } from '../services/bookApi';
@@ -569,145 +570,150 @@ export default function SearchModal({ mode, onSelectRemote, onSelectLocal, onClo
   return (
     <Animated.View style={[styles.modalContainer, { opacity: fadeAnim }]}>
       <SafeAreaView style={styles.safe}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>
-            {mode === 'remote' ? 'Cerca Online' : 'Cerca Libri'}
-          </Text>
-        </View>
+        <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+          <View style={{ flex: 1 }}>
+            <View style={styles.header}>
+              <Text style={styles.headerTitle}>
+                {mode === 'remote' ? 'Cerca Online' : 'Cerca Libri'}
+              </Text>
+            </View>
 
-        <View style={styles.searchBarContainer}>
-          <View style={styles.searchBar}>
-            <Ionicons name="search" size={20} color={Colors.textTertiary} style={styles.searchIcon} />
-            <TextInput
-              placeholder={
-                mode === 'remote'
-                  ? 'Cerca titolo / ISBN / autore…'
-                  : 'Cerca nella tua libreria…'
-              }
-              value={query}
-              onChangeText={text => {
-                console.log('[SearchModal] query changed to:', text);
-                setQuery(text);
-              }}
-              style={styles.input}
-              autoFocus={mode === 'remote'}
-              returnKeyType="search"
-              blurOnSubmit={false}
-              clearButtonMode="never"
-              textContentType="none"
-              autoComplete="off"
-              autoCorrect={false}
-              spellCheck={false}
-            />
-            {query.length > 0 && (
-              <TouchableOpacity onPress={() => setQuery('')} style={styles.clearBtn}>
-                <Ionicons name="close-circle" size={20} color={Colors.textTertiary} />
-              </TouchableOpacity>
-            )}
-          </View>
-          
-          <TouchableOpacity 
-            onPress={closeWithAnimation} 
-            style={styles.closeBtn}
-          >
-            <Text style={styles.cancelText}>Annulla</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Rendering dei filtri e ordinamento solo per ricerca locale */}
-        {mode === 'local' && (
-          <>
-            {renderFilterOptions()}
-            {renderSortOptions()}
-          </>
-        )}
-
-        {loading && (
-          <View style={CommonStyles.loadingContainer}>
-            <ActivityIndicator size="large" color={Colors.secondary} />
-            <Text style={CommonStyles.loadingText}>Ricerca in corso...</Text>
-          </View>
-        )}
-
-        {renderSearchGuide()}
-
-        <Animated.View style={{ opacity: resultsAnim, flex: 1 }}>
-          <FlatList
-            data={results}
-            keyExtractor={(item, idx) =>
-              ((item.id ?? idx).toString())
-            }
-            contentContainerStyle={styles.listContainer}
-            style={styles.flatListStyle}
-            showsVerticalScrollIndicator={true}
-            keyboardShouldPersistTaps="handled"
-            renderItem={({ item }) => (
-              <TouchableOpacity 
-                style={styles.item} 
-                onPress={() => handleSelect(item)}
-                activeOpacity={0.7}
-              >
-                {item.cover_url ? (
-                  <Image 
-                    source={{ uri: item.cover_url }} 
-                    style={styles.coverImage}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <View style={styles.noCoverContainer}>
-                    <Ionicons name="book" size={28} color="#ddd" />
-                  </View>
-                )}
-                
-                <View style={styles.itemContent}>
-                  <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
-                  {item.authors && Array.isArray(item.authors) && (
-                    <Text style={styles.subtitle} numberOfLines={1}>
-                      {Array.isArray(item.authors) 
-                        ? (item.authors.length > 0 && typeof item.authors[0] === 'string'
-                          ? item.authors.join(', ')
-                          : item.authors.map((a: any) => a.name).join(', '))
-                        : ''
-                      }
-                    </Text>
-                  )}
-                </View>
-                <View style={styles.itemAction}>
-                  <Ionicons name="chevron-forward" size={20} color="#ccc" />
-                </View>
-              </TouchableOpacity>
-            )}
-            ListEmptyComponent={
-              !loading && searchedOnce && query.trim().length > 0 ? (
-                <View style={styles.emptyContainer}>
-                  <Ionicons name="search-outline" size={50} color="#ddd" />
-                  <Text style={styles.noResults}>
-                    Nessun risultato trovato per &quot;{query}&quot;
-                  </Text>
-                  {mode === 'remote' && (
-                    <Text style={styles.emptyTip}>
-                      Prova a modificare i termini di ricerca o controlla l&apos;ortografia
-                    </Text>
-                  )}
-                  
-                  <TouchableOpacity 
-                    style={styles.retryButton} 
-                    onPress={() => setQuery('')}
-                  >
-                    <Text style={styles.retryText}>Prova una nuova ricerca</Text>
+            <View style={styles.searchBarContainer}>
+              <View style={styles.searchBar}>
+                <Ionicons name="search" size={20} color={Colors.textTertiary} style={styles.searchIcon} />
+                <TextInput
+                  placeholder={
+                    mode === 'remote'
+                      ? 'Cerca titolo / ISBN / autore…'
+                      : 'Cerca nella tua libreria…'
+                  }
+                  value={query}
+                  onChangeText={text => {
+                    console.log('[SearchModal] query changed to:', text);
+                    setQuery(text);
+                  }}
+                  style={styles.input}
+                  autoFocus={mode === 'remote'}
+                  returnKeyType="search"
+                  onSubmitEditing={() => Keyboard.dismiss()}
+                  blurOnSubmit={false}
+                  clearButtonMode="never"
+                  textContentType="none"
+                  autoComplete="off"
+                  autoCorrect={false}
+                  spellCheck={false}
+                />
+                {query.length > 0 && (
+                  <TouchableOpacity onPress={() => setQuery('')} style={styles.clearBtn}>
+                    <Ionicons name="close-circle" size={20} color={Colors.textTertiary} />
                   </TouchableOpacity>
-                </View>
-              ) : query.trim().length === 0 && searchedOnce ? (
-                <View style={styles.emptyContainer}>
-                  <Ionicons name="book-outline" size={50} color={Colors.textTertiary} />
-                  <Text style={styles.emptySearch}>
-                    Inserisci un termine di ricerca
-                  </Text>
-                </View>
-              ) : null
-            }
-          />
-        </Animated.View>
+                )}
+              </View>
+              
+              <TouchableOpacity 
+                onPress={closeWithAnimation} 
+                style={styles.closeBtn}
+              >
+                <Text style={styles.cancelText}>Annulla</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Rendering dei filtri e ordinamento solo per ricerca locale */}
+            {mode === 'local' && (
+              <>
+                {renderFilterOptions()}
+                {renderSortOptions()}
+              </>
+            )}
+
+            {loading && (
+              <View style={CommonStyles.loadingContainer}>
+                <ActivityIndicator size="large" color={Colors.secondary} />
+                <Text style={CommonStyles.loadingText}>Ricerca in corso...</Text>
+              </View>
+            )}
+
+            {renderSearchGuide()}
+
+            <Animated.View style={{ opacity: resultsAnim, flex: 1 }}>
+              <FlatList
+                data={results}
+                keyExtractor={(item, idx) =>
+                  ((item.id ?? idx).toString())
+                }
+                contentContainerStyle={styles.listContainer}
+                style={styles.flatListStyle}
+                showsVerticalScrollIndicator={true}
+                keyboardShouldPersistTaps="handled"
+                renderItem={({ item }) => (
+                  <TouchableOpacity 
+                    style={styles.item} 
+                    onPress={() => handleSelect(item)}
+                    activeOpacity={0.7}
+                  >
+                    {item.cover_url ? (
+                      <Image 
+                        source={{ uri: item.cover_url }} 
+                        style={styles.coverImage}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View style={styles.noCoverContainer}>
+                        <Ionicons name="book" size={28} color="#ddd" />
+                      </View>
+                    )}
+                    
+                    <View style={styles.itemContent}>
+                      <Text style={styles.title} numberOfLines={2}>{item.title}</Text>
+                      {item.authors && Array.isArray(item.authors) && (
+                        <Text style={styles.subtitle} numberOfLines={1}>
+                          {Array.isArray(item.authors) 
+                            ? (item.authors.length > 0 && typeof item.authors[0] === 'string'
+                              ? item.authors.join(', ')
+                              : item.authors.map((a: any) => a.name).join(', '))
+                            : ''
+                          }
+                        </Text>
+                      )}
+                    </View>
+                    <View style={styles.itemAction}>
+                      <Ionicons name="chevron-forward" size={20} color="#ccc" />
+                    </View>
+                  </TouchableOpacity>
+                )}
+                ListEmptyComponent={
+                  !loading && searchedOnce && query.trim().length > 0 ? (
+                    <View style={styles.emptyContainer}>
+                      <Ionicons name="search-outline" size={50} color="#ddd" />
+                      <Text style={styles.noResults}>
+                        Nessun risultato trovato per &quot;{query}&quot;
+                      </Text>
+                      {mode === 'remote' && (
+                        <Text style={styles.emptyTip}>
+                          Prova a modificare i termini di ricerca o controlla l&apos;ortografia
+                        </Text>
+                      )}
+                      
+                      <TouchableOpacity 
+                        style={styles.retryButton} 
+                        onPress={() => setQuery('')}
+                      >
+                        <Text style={styles.retryText}>Prova una nuova ricerca</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : query.trim().length === 0 && searchedOnce ? (
+                    <View style={styles.emptyContainer}>
+                      <Ionicons name="book-outline" size={50} color={Colors.textTertiary} />
+                      <Text style={styles.emptySearch}>
+                        Inserisci un termine di ricerca
+                      </Text>
+                    </View>
+                  ) : null
+                }
+              />
+            </Animated.View>
+          </View>
+        </TouchableWithoutFeedback>
       </SafeAreaView>
     </Animated.View>
   );
