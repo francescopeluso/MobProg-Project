@@ -86,6 +86,10 @@ const styles = StyleSheet.create({
     marginRight: Spacing.lg,
     width: 120,
     position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
   },
   cover: {
     width: 120,
