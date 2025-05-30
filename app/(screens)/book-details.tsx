@@ -128,7 +128,7 @@ export default function BookDetailsScreen() {
     }
   };
 
-  /*const handleSaveNotes = async () => {
+  const handleSaveNotes = async () => {
     if (!book) return;
     
     try {
@@ -144,7 +144,7 @@ export default function BookDetailsScreen() {
       console.error('Error saving notes:', saveError);
       Alert.alert('Errore', 'Errore durante il salvataggio.');
     }
-  };*/
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -176,6 +176,14 @@ export default function BookDetailsScreen() {
   const handleBack = () => {
     router.back();
   };
+
+  useEffect(() => {
+    // Pre-estimate text length - if notes contain newlines or are long enough
+    // to likely exceed 3 lines, set isTextLong to true
+    const hasMultipleLines = notes?.includes('\n') && (notes.match(/\n/g) || []).length >= 2;
+    const isLikelyLong = notes?.length > 180; // ~60 chars per line as estimate
+    setIsTextLong(hasMultipleLines || isLikelyLong);
+  }, [notes]);
 
   if (loading) {
     return (
@@ -359,9 +367,8 @@ export default function BookDetailsScreen() {
               style={styles.description}
               numberOfLines={3}
               onTextLayout={e => {
-                if (e.nativeEvent.lines.length > 3 && !isTextLong) {
-                  setIsTextLong(true)
-                }
+                // Set isTextLong based on actual rendered lines
+                setIsTextLong(e.nativeEvent.lines.length > 3);
               }}
             >
               {book.notes}
@@ -447,7 +454,7 @@ export default function BookDetailsScreen() {
         </View>
       </Modal>
 
-      {/* Notes Modal 
+      {/* Notes Modal */}
       <Modal
         visible={showNotesModal}
         animationType="slide"
@@ -457,40 +464,27 @@ export default function BookDetailsScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Le tue note</Text>
+              <Text style={styles.modalTitle}>Note</Text>
               <TouchableOpacity onPress={() => setShowNotesModal(false)}>
                 <Ionicons name="close" size={24} color={Colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
-            <View style={styles.notesInputContainer}>
-              <TextInput
-                style={styles.notesTextInput}
-                value={tempNotes}
-                onChangeText={setTempNotes}
-                placeholder="Scrivi qui le tue note, pensieri o citazioni preferite..."
-                multiline
-                textAlignVertical="top"
-              />
-            </View>
+            <ScrollView style={styles.notesReadContainer}>
+              <Text style={styles.notesReadText}>{notes}</Text>
+            </ScrollView>
 
             <View style={styles.modalButtons}>
               <TouchableOpacity 
-                style={[styles.modalButton, styles.cancelButton]}
+                style={[styles.modalButton, styles.primaryButton, {flex: 1}]}
                 onPress={() => setShowNotesModal(false)}
               >
-                <Text style={styles.cancelButtonText}>Annulla</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.saveButton]}
-                onPress={handleSaveNotes}
-              >
-                <Text style={styles.saveButtonText}>Salva</Text>
+                <Text style={styles.primaryButtonText}>Chiudi</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
-      </Modal>*/}
+      </Modal>
     </View>
   );
 }
@@ -841,7 +835,7 @@ const styles = StyleSheet.create({
   },
 
   // Notes modal
-  /*notesInputContainer: {
+  notesInputContainer: {
     marginBottom: Spacing.xl,
   },
   notesTextInput: {
@@ -854,7 +848,16 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     minHeight: 200,
     textAlignVertical: 'top',
-  },*/
+  },
+  notesReadContainer: {
+    marginBottom: Spacing.xl,
+    maxHeight: 400,
+  },
+  notesReadText: {
+    fontSize: Typography.fontSize.md,
+    color: Colors.textPrimary,
+    lineHeight: 24,
+  },
 
   // Modal buttons
   modalButtons: {
@@ -880,6 +883,14 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
   },
   saveButtonText: {
+    fontSize: Typography.fontSize.md,
+    color: Colors.textOnPrimary,
+    fontWeight: Typography.fontWeight.medium,
+  },
+  primaryButton: {
+    backgroundColor: Colors.primary,
+  },
+  primaryButtonText: {
     fontSize: Typography.fontSize.md,
     color: Colors.textOnPrimary,
     fontWeight: Typography.fontWeight.medium,
