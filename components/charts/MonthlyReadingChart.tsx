@@ -55,7 +55,7 @@ const MonthlyReadingChart: React.FC<MonthlyReadingChartProps> = ({ data }) => {
     <View style={styles.chartContainer}>
       <Text style={styles.chartTitle}>Libri letti per mese</Text>
       {needsScroll && (
-        <Text style={styles.scrollHint}>← Scorri per vedere tutti i mesi →</Text>
+        <Text style={styles.scrollHint}>← Scorri per vedere tutti gli ultimi mesi →</Text>
       )}
       {needsScroll ? (
         <ScrollView 

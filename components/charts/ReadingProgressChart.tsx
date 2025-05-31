@@ -54,7 +54,7 @@ const ReadingProgressChart: React.FC<ReadingProgressChartProps> = ({
     <View style={styles.chartContainer}>
       <Text style={styles.chartTitle}>{title}</Text>
       {needsScroll && (
-        <Text style={styles.scrollHint}>← Scorri per vedere tutte le settimane →</Text>
+        <Text style={styles.scrollHint}>← Scorri per vedere gli ultimi 7 giorni →</Text>
       )}
       {needsScroll ? (
         <ScrollView 
