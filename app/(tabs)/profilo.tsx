@@ -28,7 +28,7 @@ export default function ProfiloScreen() {
             <View>
               <Text style={CommonStyles.title}>Profilo</Text>
               <Text style={CommonStyles.subtitle}>
-                "Ground control to Major Tom"
+                &quot;Ground control to Major Tom&quot;
               </Text>
             </View>
           </View>

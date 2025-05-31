@@ -150,18 +150,26 @@ function delay(ms: number): Promise<void> {
 /**
  * Popola il database con dati reali da Google Books API
  */
-export async function populateWithDemoDataFromAPI(): Promise<void> {
+export async function populateWithDemoDataFromAPI(
+  onProgress?: (progress: number, message: string) => void
+): Promise<void> {
   const db = getDBConnection();
   
   try {
     console.log('Inizio popolamento database con dati reali da Google Books API...');
     console.log(`Cercando ${bookTitles.length} libri...`);
     
+    onProgress?.(5, 'Inizializzazione in corso...');
+    
     const fetchedBooks: Book[] = [];
     
     // Cerca ogni libro tramite API con delay per evitare rate limiting
     for (let i = 0; i < bookTitles.length; i++) {
       const title = bookTitles[i];
+      
+      // Progresso fase di ricerca (5% - 40%)
+      const searchProgress = 5 + (i / bookTitles.length) * 35;
+      onProgress?.(searchProgress, `Ricerca libri... ${i + 1}/${bookTitles.length}`);
       
       try {
         const book = await searchBookByTitle(title);
@@ -183,10 +191,15 @@ export async function populateWithDemoDataFromAPI(): Promise<void> {
     }
     
     console.log(`Trovati ${fetchedBooks.length} libri. Inserimento nel database...`);
+    onProgress?.(40, `Trovati ${fetchedBooks.length} libri. Inserimento nel database...`);
     
     // Inserisce i libri nel database
     for (let i = 0; i < fetchedBooks.length; i++) {
       const book = fetchedBooks[i];
+      
+      // Progresso fase di inserimento (40% - 85%)
+      const insertProgress = 40 + (i / fetchedBooks.length) * 45;
+      onProgress?.(insertProgress, `Inserimento libro ${i + 1}/${fetchedBooks.length}: ${book.title}`);
       
       try {
         // Inserisce gli autori
@@ -325,6 +338,8 @@ export async function populateWithDemoDataFromAPI(): Promise<void> {
       }
     }
     
+    onProgress?.(85, 'Aggiunta elementi wishlist...');
+    
     // Aggiunge alcuni elementi alla wishlist
     const wishlistItems = [
       "The Expanse Leviathan Wakes - James S.A. Corey",
@@ -337,7 +352,11 @@ export async function populateWithDemoDataFromAPI(): Promise<void> {
       "Klara and the Sun - Kazuo Ishiguro"
     ];
     
-    for (const item of wishlistItems) {
+    for (let i = 0; i < wishlistItems.length; i++) {
+      const item = wishlistItems[i];
+      const wishlistProgress = 85 + (i / wishlistItems.length) * 10;
+      onProgress?.(wishlistProgress, `Aggiunta wishlist ${i + 1}/${wishlistItems.length}...`);
+      
       if (Math.random() > 0.4) { // 60% di probabilità per ogni elemento
         await db.runAsync(
           'INSERT INTO wishlist (book_title, added_at) VALUES (?, ?)',
@@ -345,6 +364,8 @@ export async function populateWithDemoDataFromAPI(): Promise<void> {
         );
       }
     }
+    
+    onProgress?.(100, 'Completato!');
     
     console.log('✅ Database popolato con successo con dati reali da Google Books API!');
     console.log(`📚 Inseriti ${fetchedBooks.length} libri con metadati reali`);

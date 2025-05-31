@@ -11,6 +11,7 @@ import StatBox from './StatBox';
 import TimeStatRow from './TimeStatRow';
 
 export * from './charts';
+export { LoadingModal } from './LoadingModal';
 export {
     BookRatingCard,
     RatingDistributionChart,

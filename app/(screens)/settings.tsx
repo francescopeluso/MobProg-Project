@@ -1,15 +1,19 @@
-import { SectionCard } from '@/components';
+import { LoadingModal, SectionCard } from '@/components';
 import { Colors, CommonStyles } from '@/constants/styles';
 import { createTables, dropTables, getDBConnection } from '@/utils/database';
 import { populateWithDemoDataFromAPI } from '@/utils/demoInitialize';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import React, { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function SettingsScreen() {
   const db = getDBConnection();
   const insets = useSafeAreaInsets();
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingMessage, setLoadingMessage] = useState('');
 
   return (
     <View style={CommonStyles.container}>
@@ -81,16 +85,19 @@ export default function SettingsScreen() {
                     text: "Conferma",
                     onPress: async () => {
                       try {
-                        // Mostra un alert di caricamento senza pulsanti
-                        Alert.alert(
-                          'In corso...',
-                          'Sto scaricando i dati dai server di Google Books. Attendere...',
-                          [], // Nessun pulsante
-                          { cancelable: false } // Non può essere chiuso toccando fuori
-                        );
-                        await populateWithDemoDataFromAPI();
+                        setIsLoading(true);
+                        setLoadingProgress(0);
+                        setLoadingMessage('Inizializzazione...');
+
+                        await populateWithDemoDataFromAPI((progress, message) => {
+                          setLoadingProgress(progress);
+                          setLoadingMessage(message);
+                        });
+                        
+                        setIsLoading(false);
                         Alert.alert('Successo', 'Database popolato con libri demo!');
                       } catch (error) {
+                        setIsLoading(false);
                         console.error('Errore durante il popolamento API:', error);
                         Alert.alert('Errore', 'Errore durante il popolamento del database.');
                       }
@@ -119,6 +126,13 @@ export default function SettingsScreen() {
           </Text>
         </SectionCard>
       </ScrollView>
+      
+      <LoadingModal 
+        visible={isLoading}
+        title="Download in corso..."
+        message={loadingMessage}
+        progress={loadingProgress}
+      />
     </View>
   );
 }
