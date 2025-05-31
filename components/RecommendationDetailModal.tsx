@@ -179,7 +179,7 @@ export default function RecommendationDetailModal({ visible, book, onClose }: Pr
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
                 <>
-                  <Ionicons name="heart-outline" size={20} color="#fff" />
+                  <Ionicons name="cart" size={20} color="#fff" />
                   <Text style={styles.wishlistButtonText}>Aggiungi alla Wishlist</Text>
                 </>
               )}
@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.accent,
+    backgroundColor: Colors.accentSecondary,
     borderRadius: BorderRadius.lg,
     gap: Spacing.xs,
   },
