@@ -58,8 +58,9 @@ export default function BookDetailsScreen() {
   // Stati per il modal dei dettagli delle raccomandazioni
   const [showRecommendationModal, setShowRecommendationModal] = useState(false);
   const [selectedRecommendation, setSelectedRecommendation] = useState<Book | null>(null);
-  const isNotesLong = notes.length > 200; 
-  const previewNotes = isNotesLong ? notes.substring(0,200) + '[...]' : notes; 
+  const forMeIsLongAt = 200; // Costante per la lunghezza del preview delle note
+  const isNotesLong = notes.length > forMeIsLongAt;
+  const previewNotes = isNotesLong ? notes.substring(0,forMeIsLongAt) + '[...]' : notes; 
   const loadBook = useCallback(async () => {
     try {
       setLoading(true);
@@ -148,7 +149,7 @@ export default function BookDetailsScreen() {
       
       if (success) {
         setStatus(newStatus);
-        Alert.alert('Successo', 'Stato di lettura aggiornato');
+        // Alert removed: no more "Successo" message
       } else {
         Alert.alert('Errore', 'Impossibile aggiornare lo stato di lettura.');
       }
@@ -365,7 +366,13 @@ return (
                           color={status === s ? getStatusColor(s) : getStatusColor(s)} 
                         />
                       </View>
-                      <Text style={[styles.statusText,status === s && styles.statusTextActive]}>{getStatusLabel(s)}</Text>
+                      <Text 
+                        style={[styles.statusText, status === s && styles.statusTextActive]} 
+                        numberOfLines={1} 
+                        adjustsFontSizeToFit
+                      >
+                        {getStatusLabel(s)}
+                      </Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -373,9 +380,15 @@ return (
 
               {/* Description */}
               {book.description && (
-                <View style={styles.descriptionSection}>
+                <View style={styles.statusSection}>
                   <Text style={styles.sectionTitle}>Descrizione</Text>
-                  <Text style={styles.description}>{book.description}</Text>
+                  <ScrollView 
+                    style={styles.descriptionScrollContainer}
+                    showsVerticalScrollIndicator={true}
+                    nestedScrollEnabled={true}
+                  >
+                    <Text style={styles.description}>{book.description}</Text>
+                  </ScrollView>
                 </View>
               )}
 
@@ -803,7 +816,7 @@ const styles = StyleSheet.create({
     fontWeight: Typography.fontWeight.bold,
     color: Colors.textPrimary,
     marginBottom: Spacing.lg,
-    textAlign: 'left', 
+    textAlign: 'center', 
   },
   statusGrid: {
     flexDirection: 'row',
@@ -847,15 +860,25 @@ const styles = StyleSheet.create({
 
   // Description and notes section
   descriptionSection: {
-    paddingHorizontal: Spacing.lg,
+    marginHorizontal: Spacing.lg,
     marginBottom: Spacing.xl,
-    width: '100%', 
+    width: '100%',
+    alignSelf: 'center',
   },
   description: {
     fontSize: Typography.fontSize.md,
     color: Colors.textPrimary,
     lineHeight: 24,
     textAlign: 'justify',
+  },
+  descriptionScrollContainer: {
+    maxHeight: 220,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#FAFAFA',
   },
 
   expandText: {
