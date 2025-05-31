@@ -1,6 +1,7 @@
 import { SectionCard } from '@/components';
 import { Colors, CommonStyles } from '@/constants/styles';
 import { createTables, dropTables, getDBConnection } from '@/utils/database';
+import { populateWithDemoDataFromAPI } from '@/utils/demoInitialize';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -34,8 +35,7 @@ export default function SettingsScreen() {
             <View style={{width: 24}} />
           </View>
         </View>
-        
-        <SectionCard title="Gestione Database">
+         <SectionCard title="Gestione Database">
             <Text style={styles.description}>
             La reinizializzazione del database ripristina la struttura delle tabelle dell&apos;applicazione.
             </Text>
@@ -48,7 +48,7 @@ export default function SettingsScreen() {
           [
             { text: "Annulla", style: "cancel" },
             { 
-              text: "Conferma", 
+              text: "Conferma",
               style: "destructive",
               onPress: async () => {
                 try {
@@ -67,6 +67,41 @@ export default function SettingsScreen() {
           >
             <Ionicons name="refresh-outline" size={22} color="#fff" />
             <Text style={CommonStyles.secondaryButtonText}>Reinizializza Database</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[CommonStyles.primaryButton, { marginTop: 8 }]}
+            onPress={() => {
+              Alert.alert(
+                'Popola con libri demo',
+                'Vuoi popolare il database con dati demo? Questa operazione può richiedere alcuni minuti.',
+                [
+                  { text: 'Annulla', style: 'cancel' },
+                  {
+                    text: "Conferma",
+                    onPress: async () => {
+                      try {
+                        // Mostra un alert di caricamento senza pulsanti
+                        Alert.alert(
+                          'In corso...',
+                          'Sto scaricando i dati dai server di Google Books. Attendere...',
+                          [], // Nessun pulsante
+                          { cancelable: false } // Non può essere chiuso toccando fuori
+                        );
+                        await populateWithDemoDataFromAPI();
+                        Alert.alert('Successo', 'Database popolato con libri demo!');
+                      } catch (error) {
+                        console.error('Errore durante il popolamento API:', error);
+                        Alert.alert('Errore', 'Errore durante il popolamento del database.');
+                      }
+                    }
+                  }
+                ]
+              );
+            }}
+          >
+            <Ionicons name="library-outline" size={22} color="#fff" />
+            <Text style={CommonStyles.primaryButtonText}>Popola con libri demo</Text>
           </TouchableOpacity>
         </SectionCard>
 
