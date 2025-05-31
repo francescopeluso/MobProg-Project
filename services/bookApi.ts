@@ -104,23 +104,30 @@ export async function searchBooksRemote(query: string): Promise<Book[]> {
       return [];
     }
 
-    return json.items.map((item: any) => {
-      const volumeInfo = item.volumeInfo;   // l'API restituisce in questa proprietà le info utili
+    return json.items
+      .filter((item: any) => {
+        const volumeInfo = item.volumeInfo;
+        const title = volumeInfo.title;
+        // Filtra elementi senza titolo valido
+        return title && title.trim().length >= 2;
+      })
+      .map((item: any) => {
+        const volumeInfo = item.volumeInfo;   // l'API restituisce in questa proprietà le info utili
 
-      // nel map restituiamo i campi dell'oggetto con quelli che ci servono dall'API
-      return {
-        title: volumeInfo.title || 'Titolo sconosciuto',
-        authors: volumeInfo.authors || [],
-        editor: volumeInfo.publisher,
-        publication: volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate) : undefined,
-        description: volumeInfo.description,
-        cover_url: volumeInfo.imageLinks?.thumbnail,
-        isbn10: volumeInfo.industryIdentifiers?.find((id: any) => id.type === 'ISBN_10')?.identifier,
-        isbn13: volumeInfo.industryIdentifiers?.find((id: any) => id.type === 'ISBN_13')?.identifier,
-        language: volumeInfo.language,
-        genres: volumeInfo.categories || []
-      };
-    });
+        // nel map restituiamo i campi dell'oggetto con quelli che ci servono dall'API
+        return {
+          title: volumeInfo.title,
+          authors: volumeInfo.authors || [],
+          editor: volumeInfo.publisher,
+          publication: volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate) : undefined,
+          description: volumeInfo.description,
+          cover_url: volumeInfo.imageLinks?.thumbnail,
+          isbn10: volumeInfo.industryIdentifiers?.find((id: any) => id.type === 'ISBN_10')?.identifier,
+          isbn13: volumeInfo.industryIdentifiers?.find((id: any) => id.type === 'ISBN_13')?.identifier,
+          language: volumeInfo.language,
+          genres: volumeInfo.categories || []
+        };
+      });
 
   } catch (error) {
     console.error('Errore durante la ricerca su Google Books API: ', error);
@@ -208,6 +215,11 @@ export async function insertBook(book: Book): Promise<number> {
   // Verifica del titolo (campo obbligatorio)
   if (!title) {
     throw new Error('È richiesto di inserire almeno il titolo.');
+  }
+
+  // Verifica degli autori (campo obbligatorio)
+  if (!book.authors || book.authors.length === 0) {
+    throw new Error('È richiesto di inserire almeno un autore.');
   }
 
   try {
@@ -415,6 +427,16 @@ export async function getBookById(id: number): Promise<Book | null> {
 export async function updateBook(book: Book): Promise<boolean> {
   if (!book.id) {
     throw new Error('ID libro mancante. Impossibile aggiornare.');
+  }
+
+  // Verifica del titolo (campo obbligatorio)
+  if (!book.title) {
+    throw new Error('È richiesto di inserire almeno il titolo.');
+  }
+
+  // Verifica degli autori (campo obbligatorio)
+  if (!book.authors || book.authors.length === 0) {
+    throw new Error('È richiesto di inserire almeno un autore.');
   }
 
   const db = getDBConnection();

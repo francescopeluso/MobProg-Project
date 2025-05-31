@@ -22,7 +22,7 @@ export const getAuthorRecommendations = async (authorName: string): Promise<Book
     const res = await fetch(
       `https://www.googleapis.com/books/v1/volumes?q=inauthor:${encodeURIComponent(
         authorName
-      )}&maxResults=20`
+      )}&maxResults=40`
     );
 
     if (!res.ok) {
@@ -46,15 +46,33 @@ export const getAuthorRecommendations = async (authorName: string): Promise<Book
     const existingTitles = new Set(existingBooks.map((book: { title: string }) => book.title.toLowerCase()));
     const recommendations: Book[] = [];
 
+    // Normalizzo il nome dell'autore per il confronto
+    const normalizedAuthorName = authorName.toLowerCase().trim();
+
     for (const item of json.items) {
       const volumeInfo = item.volumeInfo;
       const title = volumeInfo.title;
+      const authors = volumeInfo.authors || [];
       
-      if (title && !existingTitles.has(title.toLowerCase())) {
+      // Salta elementi senza titolo o con titoli non validi
+      if (!title || title.trim().length < 2) {
+        continue;
+      }
+
+      // Verifica che almeno uno degli autori corrisponda esattamente all'autore richiesto
+      const hasMatchingAuthor = authors.some((author: string) => 
+        author.toLowerCase().trim() === normalizedAuthorName
+      );
+
+      if (!hasMatchingAuthor) {
+        continue;
+      }
+      
+      if (!existingTitles.has(title.toLowerCase())) {
         // Creo l'oggetto Book completo usando la stessa logica di bookApi
         const book: Book = {
-          title: title || 'Titolo sconosciuto',
-          authors: volumeInfo.authors || [],
+          title: title,
+          authors: authors,
           editor: volumeInfo.publisher,
           publication: volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate) : undefined,
           description: volumeInfo.description,
@@ -69,7 +87,9 @@ export const getAuthorRecommendations = async (authorName: string): Promise<Book
       }
     }
 
-    return recommendations.slice(0, 10); // Limito a 10 raccomandazioni
+    // Restituisco tutti i libri trovati per quello specifico autore (senza limite fisso)
+    // Se non ci sono libri per quell'autore, restituisco array vuoto
+    return recommendations;
 
   } catch (error) {
     console.error('Errore durante la ricerca su Google Books API: ', error);
@@ -118,10 +138,15 @@ export const getGenreRecommendations = async (genre: string): Promise<Book[]> =>
       const volumeInfo = item.volumeInfo;
       const title = volumeInfo.title;
       
-      if (title && !existingTitles.has(title.toLowerCase())) {
+      // Salta elementi senza titolo o con titoli non validi
+      if (!title || title.trim().length < 2) {
+        continue;
+      }
+      
+      if (!existingTitles.has(title.toLowerCase())) {
         // Creo l'oggetto Book completo usando la stessa logica di bookApi
         const book: Book = {
-          title: title || 'Titolo sconosciuto',
+          title: title,
           authors: volumeInfo.authors || [],
           editor: volumeInfo.publisher,
           publication: volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate) : undefined,
@@ -185,10 +210,15 @@ export const getSimilarBookRecommendations = async (bookTitle: string): Promise<
       const volumeInfo = item.volumeInfo;
       const title = volumeInfo.title;
       
-      if (title && !existingTitles.has(title.toLowerCase())) {
+      // Salta elementi senza titolo o con titoli non validi
+      if (!title || title.trim().length < 2) {
+        continue;
+      }
+      
+      if (!existingTitles.has(title.toLowerCase())) {
         // Creo l'oggetto Book completo usando la stessa logica di bookApi
         const book: Book = {
-          title: title || 'Titolo sconosciuto',
+          title: title,
           authors: volumeInfo.authors || [],
           editor: volumeInfo.publisher,
           publication: volumeInfo.publishedDate ? parseInt(volumeInfo.publishedDate) : undefined,

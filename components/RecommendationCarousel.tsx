@@ -21,12 +21,41 @@ interface Props {
 }
 
 /**
+ * Funzione per validare se un titolo è valido (non generico/sconosciuto)
+ */
+function isValidTitle(title: string): boolean {
+  const invalidTitles = [
+    'titolo sconosciuto',
+    'unknown title',
+    'senza titolo',
+    'untitled',
+    'no title',
+    'title unknown',
+    'libro sconosciuto',
+    'unknown book'
+  ];
+  
+  const normalizedTitle = title.toLowerCase().trim();
+  
+  // Filtra titoli vuoti, troppo corti o che contengono termini generici
+  if (!normalizedTitle || normalizedTitle.length < 2) {
+    return false;
+  }
+  
+  // Controlla se il titolo contiene una delle stringhe non valide
+  return !invalidTitles.some(invalid => normalizedTitle.includes(invalid));
+}
+
+/**
  * RecommendationCarousel
  * Carousel orizzontale per mostrare libri raccomandati.
  * A differenza di BookCarousel, questo gestisce libri che potrebbero non avere un ID.
  */
 export default function RecommendationCarousel({ books, onPress }: Props) {
-  if (books.length === 0) {
+  // Filtra libri con titoli validi
+  const validBooks = books.filter(book => book.title && isValidTitle(book.title));
+  
+  if (validBooks.length === 0) {
     return (
       <View style={styles.emptyContainer}>
         <Text style={CommonStyles.emptyText}>Nessuna raccomandazione disponibile</Text>
@@ -36,7 +65,7 @@ export default function RecommendationCarousel({ books, onPress }: Props) {
 
   return (
     <FlatList
-      data={books}
+      data={validBooks}
       horizontal
       keyExtractor={(item, index) => item.id ? item.id.toString() : `recommendation-${index}`}
       showsHorizontalScrollIndicator={false}

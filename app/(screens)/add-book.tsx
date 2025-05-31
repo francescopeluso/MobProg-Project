@@ -291,8 +291,21 @@ export default function AddBookScreen() {
    */
   const handleSave = async () => {
   try {
+    // Validazione campi obbligatori
+    if (!form.title.trim()) {
+      Alert.alert('Errore', 'Il titolo del libro è obbligatorio.');
+      titleInputRef.current?.focus();
+      return;
+    }
+
+    if (!form.author.trim()) {
+      Alert.alert('Errore', 'L\'autore del libro è obbligatorio.');
+      authorInputRef.current?.focus();
+      return;
+    }
+
     // 1. Prepara i campi standard
-    const title = form.title.trim() || 'Titolo Sconosciuto';
+    const title = form.title.trim();
     const description = form.description.trim() || undefined;
     const cover_url = form.cover_url.trim() || undefined;
     const publication = parseInt(form.publication, 10) || undefined;
@@ -302,7 +315,6 @@ export default function AddBookScreen() {
       .split(',')
       .map(a => a.trim())
       .filter(Boolean);
-    if (!authors.length) authors.push('Autore Sconosciuto');
       // Crea l'oggetto libro da salvare
       const bookToSave: Book = {
         title,

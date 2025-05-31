@@ -1,7 +1,7 @@
 /**
  * Questo file serve ad inizializzare e popolare il database
  * con dati di esempio per la demo utilizzando Google Books API
- * per ottenere metadati reali dei libri geek/nerd.
+ * per ottenere metadati reali dei libri.
  * 
  * Verranno aggiunti libri curati, con una distribuzione
  * tra letti, in lettura e da leggere. Inoltre, verranno generati
@@ -31,82 +31,41 @@ function getRandomDate(): string {
   return `${randomMonth}-${randomDay.toString().padStart(2, '0')} ${randomHour.toString().padStart(2, '0')}:${randomMinute.toString().padStart(2, '0')}:00`;
 }
 
-// Lista curata di titoli geek/nerd per la ricerca tramite Google Books API
-const geekBookTitles = [
-  // Fantascienza Classica
+// Lista curata di titoli per la ricerca tramite Google Books API
+const bookTitles = [
   "Dune Frank Herbert",
-  "Foundation Isaac Asimov", 
-  "Neuromancer William Gibson",
-  "Hyperion Dan Simmons",
-  "The Left Hand of Darkness Ursula K. Le Guin",
-  "Ender's Game Orson Scott Card",
+  "Foundation Isaac Asimov",
   "The Martian Andy Weir",
-  "Snow Crash Neal Stephenson",
-  "Do Androids Dream of Electric Sheep Philip K. Dick",
-  "The Time Machine H.G. Wells",
-
-  // Fantasy Epica
-  "The Fellowship of the Ring J.R.R. Tolkien",
+  "Il signore degli anelli J.R.R. Tolkien",
   "A Game of Thrones George R.R. Martin",
-  "The Name of the Wind Patrick Rothfuss",
-  "The Way of Kings Brandon Sanderson",
-  "American Gods Neil Gaiman",
-  "The Lies of Locke Lamora Scott Lynch",
-  "The Blade Itself Joe Abercrombie",
-
-  // Cyberpunk & Tech
   "Ready Player One Ernest Cline",
   "Altered Carbon Richard K. Morgan",
   "The Diamond Age Neal Stephenson",
   "Ghost in the Shell Masamune Shirow",
   "Akira Katsuhiro Otomo",
-
-  // Distopia & Post-Apocalittico  
-  "1984 George Orwell",
-  "Brave New World Aldous Huxley",
-  "The Road Cormac McCarthy",
-  "World War Z Max Brooks",
-  "Station Eleven Emily St. John Mandel",
-
-  // Horror & Weird Fiction
-  "Lovecraft Complete Fiction H.P. Lovecraft",
-  "The Call of Cthulhu H.P. Lovecraft",
-  "Perdido Street Station China Miéville",
-  "Annihilation Jeff VanderMeer",
-
-  // Commedia Geek
-  "The Hitchhiker's Guide to the Galaxy Douglas Adams",
-  "Good Omens Terry Pratchett Neil Gaiman",
-  "Discworld Terry Pratchett",
-
-  // Graphic Novel & Manga Classici
-  "Watchmen Alan Moore",
-  "The Sandman Neil Gaiman",
+  "1984: Edizione Integrale George Orwell",
+  "Guida Galattica per Autostoppisti Douglas Adams",
   "V for Vendetta Alan Moore",
-  "Saga Brian K. Vaughan",
-
-  // Thriller Tecnologici
-  "Digital Fortress Dan Brown",
-  "Cryptonomicon Neal Stephenson",
-  "Little Brother Cory Doctorow"
+  "Steve Jobs Walter Isaacson",
+  "Elon Musk Walter Isaacson",
+  "Einstein Walter Isaacson",
+  "Il nuovo Java Claudio De Sio Cesari",
+  "Il nome della rosa Umberto Eco",
+  "Il codice da Vinci Dan Brown",
 ];
 
-const geekComments = [
+const randomComments = [
   "Un capolavoro assoluto! Ogni pagina è un piacere da leggere.",
-  "Molto interessante, mi ha fatto riflettere profondamente sui temi tech.",
+  "Molto interessante, mi ha fatto riflettere profondamente sui temi.",
   "Non è riuscito a coinvolgermi completamente, ma ha dei momenti geniali.",
-  "Scrittura eccellente e trama avvincente. Un must per ogni geek!",
+  "Scrittura eccellente e trama avvincente. Consigliatissimo!",
   "Un po' lento all'inizio, ma poi l'azione esplode magnificamente.",
   "Personaggi ben caratterizzati e worldbuilding perfetto.",
-  "Un libro che lascia il segno. Cambierà il vostro modo di vedere la tecnologia.",
-  "Interessante ma non il mio sottogenere di sci-fi preferito.",
-  "Bellissimo! Non riuscivo a smettere di leggere. Page-turner totale!",
-  "Buono nel complesso, anche se alcuni twist erano prevedibili.",
-  "Una space opera che ridefinisce il genere. Epico!",
-  "Cyberpunk all'ennesima potenza. Gibson rimane insuperabile.",
-  "Fantasy moderno che rivaleggia con i grandi classici.",
-  "Distopia inquietante ma necessaria. Molto attuale.",
-  "Horror cosmico fatto a regola d'arte. Lovecraft approvrebbe."
+  "Un libro che lascia il segno. Cambierà il vostro modo di vedere le cose.",
+  "Scrittura all'ennesima potenza. L'autore rimane insuperabile.",
+  "Narrativa moderna che rivaleggia con i grandi classici.",
+  "Storia inquietante ma necessaria. Molto attuale.",
+  "Racconto fatto a regola d'arte. Perfetto nell'esecuzione."
 ];
 
 /**
@@ -161,9 +120,9 @@ async function searchBookByTitle(query: string): Promise<Book | null> {
 }
 
 /**
- * Genera dati casuali per le sessioni di lettura (versione geek con sessioni più lunghe)
+ * Genera dati casuali per le sessioni di lettura
  */
-function generateGeekReadingSessions(bookId: number, status: ReadingStatus): {start_time: string, end_time: string}[] {
+function generateReadingSessions(bookId: number, status: ReadingStatus): {start_time: string, end_time: string}[] {
   if (status === 'to_read') return [];
   
   const sessions = [];
@@ -171,7 +130,7 @@ function generateGeekReadingSessions(bookId: number, status: ReadingStatus): {st
   
   for (let i = 0; i < numSessions; i++) {
     const startTime = getRandomDate();
-    // Sessioni più lunghe per libri geek (45min - 3 ore)
+    // Sessioni di lettura variabili (45min - 3 ore)
     const duration = Math.floor(Math.random() * 8100) + 2700; // 45 minuti - 3 ore in secondi
     const endTime = new Date(new Date(startTime).getTime() + duration * 1000).toISOString().replace('T', ' ').substring(0, 19);
     
@@ -196,13 +155,13 @@ export async function populateWithDemoDataFromAPI(): Promise<void> {
   
   try {
     console.log('Inizio popolamento database con dati reali da Google Books API...');
-    console.log(`Cercando ${geekBookTitles.length} libri geek/nerd...`);
+    console.log(`Cercando ${bookTitles.length} libri...`);
     
     const fetchedBooks: Book[] = [];
     
     // Cerca ogni libro tramite API con delay per evitare rate limiting
-    for (let i = 0; i < geekBookTitles.length; i++) {
-      const title = geekBookTitles[i];
+    for (let i = 0; i < bookTitles.length; i++) {
+      const title = bookTitles[i];
       
       try {
         const book = await searchBookByTitle(title);
@@ -213,7 +172,7 @@ export async function populateWithDemoDataFromAPI(): Promise<void> {
         }
         
         // Delay tra le richieste per rispettare i rate limits
-        if (i < geekBookTitles.length - 1) {
+        if (i < bookTitles.length - 1) {
           await delay(200); // 200ms tra le richieste
         }
         
@@ -329,7 +288,7 @@ export async function populateWithDemoDataFromAPI(): Promise<void> {
           );
           
           // Genera sessioni di lettura
-          const sessions = generateGeekReadingSessions(bookId, status);
+          const sessions = generateReadingSessions(bookId, status);
           for (const session of sessions) {
             await db.runAsync(
               'INSERT INTO reading_sessions (book_id, start_time, end_time) VALUES (?, ?, ?)',
@@ -341,7 +300,7 @@ export async function populateWithDemoDataFromAPI(): Promise<void> {
           if (status === 'completed' && Math.random() > 0.15) {
             // Rating tendenzialmente alto per libri curati (bias positivo)
             const rating = Math.random() > 0.3 ? Math.floor(Math.random() * 2) + 4 : Math.floor(Math.random() * 3) + 2; // 70% sono 4-5 stelle
-            const comment = Math.random() > 0.3 ? geekComments[Math.floor(Math.random() * geekComments.length)] : null;
+            const comment = Math.random() > 0.3 ? randomComments[Math.floor(Math.random() * randomComments.length)] : null;
             
             await db.runAsync(
               'INSERT INTO ratings (book_id, rating, comment, rated_at) VALUES (?, ?, ?, ?)',
@@ -349,7 +308,7 @@ export async function populateWithDemoDataFromAPI(): Promise<void> {
             );
           }
           
-          // Aggiunge alcuni libri ai preferiti (25% di probabilità per libri geek)
+          // Aggiunge alcuni libri ai preferiti (25% di probabilità)
           if (Math.random() > 0.75) {
             await db.runAsync(
               'INSERT INTO favorites (book_id, added_at) VALUES (?, ?)',
@@ -366,8 +325,8 @@ export async function populateWithDemoDataFromAPI(): Promise<void> {
       }
     }
     
-    // Aggiunge alcuni elementi alla wishlist (libri geek che non sono stati trovati o sequel)
-    const geekWishlistItems = [
+    // Aggiunge alcuni elementi alla wishlist
+    const wishlistItems = [
       "The Expanse Leviathan Wakes - James S.A. Corey",
       "Red Mars - Kim Stanley Robinson", 
       "The Culture Consider Phlebas - Iain M. Banks",
@@ -378,7 +337,7 @@ export async function populateWithDemoDataFromAPI(): Promise<void> {
       "Klara and the Sun - Kazuo Ishiguro"
     ];
     
-    for (const item of geekWishlistItems) {
+    for (const item of wishlistItems) {
       if (Math.random() > 0.4) { // 60% di probabilità per ogni elemento
         await db.runAsync(
           'INSERT INTO wishlist (book_title, added_at) VALUES (?, ?)',
@@ -388,7 +347,7 @@ export async function populateWithDemoDataFromAPI(): Promise<void> {
     }
     
     console.log('✅ Database popolato con successo con dati reali da Google Books API!');
-    console.log(`📚 Inseriti ${fetchedBooks.length} libri geek/nerd con metadati reali`);
+    console.log(`📚 Inseriti ${fetchedBooks.length} libri con metadati reali`);
     
   } catch (error) {
     console.error('❌ Errore durante il popolamento del database:', error);
