@@ -58,6 +58,13 @@ export interface RatingStats {
   ratingsDistribution: { [key: number]: number };
 }
 
+/** Interfaccia per le statistiche del tempo di lettura */
+export interface TimeStats {
+  totalReadingTimeMinutes: number;
+  averageReadingTimeHours: number;
+  readingStreak: number;
+}
+
 /**
  * 
  * @function getReadingStatistics
@@ -129,6 +136,49 @@ export async function getMonthlyReadingData(): Promise<MonthlyData[]> {
       value: stat?.count || 0,
       label: monthNames[monthNum],
       frontColor: '#4A90E2'
+    });
+  }
+
+  return result;
+}
+
+/**
+ * 
+ * @function getYearlyReadingData
+ * @description Restituisce i dati per il grafico delle letture annuali a partire dal primo anno con dati.
+ * @returns {Promise<MonthlyData[]>} Array di dati per il grafico annuale
+ * @async
+ */
+export async function getYearlyReadingData(): Promise<MonthlyData[]> {
+  const db = getDBConnection();
+  
+  const yearlyStats = await db.getAllAsync(`
+    SELECT 
+      strftime('%Y', rs.end_time) as year,
+      COUNT(*) as count
+    FROM reading_status rs
+    WHERE rs.status = 'completed' 
+      AND rs.end_time IS NOT NULL
+    GROUP BY strftime('%Y', rs.end_time)
+    ORDER BY year
+  `) as any[];
+
+  if (yearlyStats.length === 0) return [];
+
+  // Ottieni il primo e l'ultimo anno con dati
+  const firstYear = parseInt(yearlyStats[0].year);
+  const lastYear = parseInt(yearlyStats[yearlyStats.length - 1].year);
+  
+  // Crea array continuo dal primo all'ultimo anno
+  const result: MonthlyData[] = [];
+  
+  for (let year = firstYear; year <= lastYear; year++) {
+    const stat = yearlyStats.find(s => parseInt(s.year) === year);
+    
+    result.push({
+      value: stat?.count || 0,
+      label: year.toString(),
+      frontColor: '#9F7AEA'
     });
   }
 
@@ -319,6 +369,36 @@ export async function getTotalReadingTime(): Promise<number> {
 
 /**
  * 
+ * @function getAverageReadingTime
+ * @description Calcola il tempo medio di lettura per libro completato in ore.
+ * @returns {Promise<number>} Tempo medio di lettura per libro in ore
+ * @async
+ */
+export async function getAverageReadingTime(): Promise<number> {
+  const db = getDBConnection();
+  
+  const result = await db.getFirstAsync(`
+    SELECT 
+      COUNT(DISTINCT rs.book_id) as completedBooks,
+      SUM(session.duration) as totalSeconds
+    FROM reading_status rs
+    LEFT JOIN reading_sessions session ON rs.book_id = session.book_id
+    WHERE rs.status = 'completed'
+      AND session.end_time IS NOT NULL
+      AND session.duration IS NOT NULL
+  `) as any;
+
+  const completedBooks = result?.completedBooks || 0;
+  const totalSeconds = result?.totalSeconds || 0;
+  
+  if (completedBooks === 0) return 0;
+  
+  const averageSecondsPerBook = totalSeconds / completedBooks;
+  return Math.round((averageSecondsPerBook / 3600) * 10) / 10; // Converti in ore con 1 decimale
+}
+
+/**
+ * 
  * @function getReadingStreak
  * @description Calcola la streak corrente di giorni consecutivi di lettura.
  * @returns {Promise<number>} Numero di giorni consecutivi di lettura
@@ -363,35 +443,6 @@ export async function getReadingStreak(): Promise<number> {
   return streak;
 }
 
-/**
- * 
- * @function getFavoriteBooks
- * @param limit Numero massimo di libri preferiti da restituire (default: 5)
- * @description Restituisce i libri preferiti dell'utente.
- * @returns {Promise<any[]>} Array dei libri preferiti
- * @async
- */
-export async function getFavoriteBooks(limit: number = 5): Promise<any[]> {
-  const db = getDBConnection();
-  
-  return await db.getAllAsync(`
-    SELECT 
-      b.id,
-      b.title,
-      b.cover_url,
-      COALESCE(
-        (SELECT GROUP_CONCAT(a.name, ', ') 
-         FROM book_authors ba 
-         JOIN authors a ON ba.author_id = a.id 
-         WHERE ba.book_id = b.id), 
-        'Autore sconosciuto'
-      ) as author,
-      f.added_at
-    FROM favorites f
-    JOIN books b ON f.book_id = b.id
-    ORDER BY f.added_at DESC
-    LIMIT ?
-  `, [limit]);
-}
+
 
 

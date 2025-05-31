@@ -54,10 +54,24 @@ export default function ProfiloScreen() {
 
             <TouchableOpacity 
               style={styles.menuItem} 
-              onPress={() => router.push('/(screens)/wishlist')}
+              onPress={() => router.push('/(screens)/favorites')}
             >
               <View style={[styles.menuIcon, { backgroundColor: Colors.accent + '15' }]}>
                 <Ionicons name="heart" size={28} color={Colors.accent} />
+              </View>
+              <View style={styles.menuContent}>
+                <Text style={styles.menuTitle}>Preferiti</Text>
+                <Text style={styles.menuSubtitle}>I tuoi libri del cuore</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={Colors.textSecondary} />
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.menuItem} 
+              onPress={() => router.push('/(screens)/wishlist')}
+            >
+              <View style={[styles.menuIcon, { backgroundColor: Colors.secondary + '15' }]}>
+                <Ionicons name="cart" size={28} color={Colors.secondary} />
               </View>
               <View style={styles.menuContent}>
                 <Text style={styles.menuTitle}>Wishlist</Text>

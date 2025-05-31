@@ -7,13 +7,13 @@ import {
   BookRatingCard,
   GenreChart,
   MonthlyReadingChart,
+  RatingDistributionChart,
   ReadingProgressChart,
-  SectionCard,
-  StatBox
+  SectionCard
 } from '@/components';
 
 import { getTabContentBottomPadding } from '@/constants/layout';
-import { Colors, CommonStyles, Typography } from '@/constants/styles';
+import { BorderRadius, Colors, CommonStyles, Spacing, Typography } from '@/constants/styles';
 import { useStatistics } from '@/hooks/useStatistics';
 
 export default function StatisticsScreen() {
@@ -27,8 +27,24 @@ export default function StatisticsScreen() {
     weeklyData,
     bookRatings,
     ratingStats,
+    timeStats,
     loading
   } = useStatistics();
+
+  // Funzione helper per formattare il tempo di lettura
+  const formatReadingTime = (minutes: number): string => {
+    if (minutes < 60) {
+      return `${minutes}m`;
+    }
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    if (hours < 24) {
+      return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+    }
+    const days = Math.floor(hours / 24);
+    const remainingHours = hours % 24;
+    return remainingHours > 0 ? `${days}g ${remainingHours}h` : `${days}g`;
+  };
 
   return (
     <View style={CommonStyles.container}>
@@ -40,55 +56,131 @@ export default function StatisticsScreen() {
             paddingBottom: getTabContentBottomPadding(insets.bottom)
           }
         ]}
+        showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
+        {/* Header coerente con l'app */}
         <View style={[CommonStyles.header, { marginTop: insets.top }]}>
-          <View style={styles.headerRow}>
+          <View style={CommonStyles.headerTop}>
             <TouchableOpacity 
-              style={CommonStyles.iconButton} 
+              style={CommonStyles.iconButton}
               onPress={() => router.back()}
             >
               <Ionicons name="arrow-back" size={24} color={Colors.primary} />
             </TouchableOpacity>
-            <Text style={CommonStyles.title}>Statistiche</Text>
-            <View style={{width: 24}} />
+            <View style={styles.headerCenter}>
+              <Text style={CommonStyles.title}>Statistiche</Text>
+              <Text style={CommonStyles.subtitle}>La tua attività di lettura</Text>
+            </View>
+            <View style={{width: 40}} />
           </View>
         </View>
 
         {loading ? (
           <View style={CommonStyles.loadingContainer}>
-            <ActivityIndicator size="large" color={Colors.secondary} />
+            <ActivityIndicator size="large" color={Colors.primary} />
             <Text style={CommonStyles.loadingText}>Caricamento statistiche...</Text>
           </View>
         ) : (
           <>
-            {/* Statistiche di lettura */}
+            {/* Statistiche principali */}
             <SectionCard title="Le tue statistiche">
-              <View style={styles.statsRow}>
-                <StatBox value={readingStats.booksRead} label="Libri letti" />
-                <StatBox value={readingStats.booksReading} label="In corso" />
-                <StatBox value={readingStats.booksToRead} label="Da leggere" />
+              <View style={styles.statsGrid}>
+                <View style={styles.statItem}>
+                  <View style={[styles.statIcon, { backgroundColor: Colors.completed + '20' }]}>
+                    <Ionicons name="checkmark-circle" size={24} color={Colors.completed} />
+                  </View>
+                  <Text style={styles.statValue}>{readingStats.booksRead}</Text>
+                  <Text style={styles.statLabel}>Libri letti</Text>
+                </View>
+                
+                <View style={styles.statItem}>
+                  <View style={[styles.statIcon, { backgroundColor: Colors.reading + '20' }]}>
+                    <Ionicons name="book" size={24} color={Colors.reading} />
+                  </View>
+                  <Text style={styles.statValue}>{readingStats.booksReading}</Text>
+                  <Text style={styles.statLabel}>In corso</Text>
+                </View>
+                
+                <View style={styles.statItem}>
+                  <View style={[styles.statIcon, { backgroundColor: Colors.toRead + '20' }]}>
+                    <Ionicons name="bookmark" size={24} color={Colors.toRead} />
+                  </View>
+                  <Text style={styles.statValue}>{readingStats.booksToRead}</Text>
+                  <Text style={styles.statLabel}>Da leggere</Text>
+                </View>
               </View>
-              
+            </SectionCard>
+
+            {/* Statistiche del tempo */}
+            <SectionCard title="Tempo di lettura">
+              <View style={styles.timeStatsGrid}>
+                <View style={styles.timeStatRow}>
+                  <View style={[styles.timeStatIcon, { backgroundColor: Colors.chart1 + '20' }]}>
+                    <Ionicons name="hourglass" size={20} color={Colors.chart1} />
+                  </View>
+                  <View style={styles.timeStatContent}>
+                    <Text style={styles.timeStatLabel}>Tempo totale</Text>
+                    <Text style={styles.timeStatValue}>
+                      {formatReadingTime(timeStats.totalReadingTimeMinutes)}
+                    </Text>
+                  </View>
+                </View>
+                
+                <View style={styles.timeStatRow}>
+                  <View style={[styles.timeStatIcon, { backgroundColor: Colors.chart2 + '20' }]}>
+                    <Ionicons name="speedometer" size={20} color={Colors.chart2} />
+                  </View>
+                  <View style={styles.timeStatContent}>
+                    <Text style={styles.timeStatLabel}>Media per libro</Text>
+                    <Text style={styles.timeStatValue}>
+                      {timeStats.averageReadingTimeHours > 0 ? `${timeStats.averageReadingTimeHours}h` : '0h'}
+                    </Text>
+                  </View>
+                </View>
+                
+                <View style={styles.timeStatRow}>
+                  <View style={[styles.timeStatIcon, { backgroundColor: Colors.chart3 + '20' }]}>
+                    <Ionicons name="flame" size={20} color={Colors.chart3} />
+                  </View>
+                  <View style={styles.timeStatContent}>
+                    <Text style={styles.timeStatLabel}>Streak di giorni consecutivi</Text>
+                    <Text style={styles.timeStatValue}>{timeStats.readingStreak}</Text>
+                  </View>
+                </View>
+              </View>
+            </SectionCard>
+
+            {/* Grafici di lettura */}
+            <SectionCard title="Andamento letture">
               {monthlyData.length > 0 ? (
-                <MonthlyReadingChart data={monthlyData} />
+                <View style={styles.chartContainer}>
+                  <MonthlyReadingChart data={monthlyData} />
+                </View>
               ) : (
-                <Text style={CommonStyles.emptyText}>Nessuna lettura completata negli ultimi 6 mesi</Text>
+                <View style={CommonStyles.emptyState}>
+                  <Ionicons name="bar-chart" size={48} color={Colors.textTertiary} />
+                  <Text style={CommonStyles.emptyText}>Nessuna lettura completata negli ultimi 6 mesi</Text>
+                </View>
               )}
             </SectionCard>
 
-            {/* Statistiche libreria */}
+            {/* Generi e progressione settimanale */}
             <SectionCard title="La tua libreria">
               {genreData.length > 0 ? (
-                <GenreChart data={genreData} />
+                <View style={styles.chartContainer}>
+                  <GenreChart data={genreData} />
+                </View>
               ) : (
-                <Text style={CommonStyles.emptyText}>Nessun genere disponibile</Text>
+                <View style={CommonStyles.emptyState}>
+                  <Ionicons name="pie-chart" size={48} color={Colors.textTertiary} />
+                  <Text style={CommonStyles.emptyText}>Nessun genere disponibile</Text>
+                </View>
               )}
               
-              {weeklyData.some(d => d.value > 0) ? (
-                <ReadingProgressChart data={weeklyData} />
-              ) : (
-                <Text style={CommonStyles.emptyText}>Nessuna sessione di lettura questa settimana</Text>
+              {weeklyData.some(d => d.value > 0) && (
+                <View style={[styles.chartContainer, { marginTop: Spacing.lg }]}>
+                  <ReadingProgressChart data={weeklyData} />
+                </View>
               )}
             </SectionCard>
 
@@ -96,32 +188,49 @@ export default function StatisticsScreen() {
             <SectionCard title="Valutazioni">
               {ratingStats.totalRatings > 0 ? (
                 <>
-                  <View style={styles.ratingBox}>
-                    <Text style={styles.ratingValue}>
-                      {ratingStats.averageRating.toFixed(1)}
+                  <View style={styles.ratingOverview}>
+                    <View style={styles.averageRatingContainer}>
+                      <Text style={styles.averageRatingValue}>
+                        {ratingStats.averageRating.toFixed(1)}
+                      </Text>
+                      <Text style={styles.averageRatingLabel}>/ 5</Text>
+                    </View>
+                    <Text style={styles.averageRatingSubtext}>
+                      Media di {ratingStats.totalRatings} valutazioni
                     </Text>
-                    <Text style={styles.ratingLabel}>/ 5</Text>
                   </View>
                   
-                  <Text style={styles.chartTitle}>
-                    {bookRatings.length > 0 ? `Ultime ${bookRatings.length} valutazioni` : 'Nessuna valutazione recente'}
-                  </Text>
+                  <View style={styles.chartContainer}>
+                    <RatingDistributionChart 
+                      ratingsDistribution={ratingStats.ratingsDistribution}
+                      totalRatings={ratingStats.totalRatings}
+                    />
+                  </View>
+                  
                   {bookRatings.length > 0 && (
-                    <View style={styles.ratingsGrid}>
+                    <View style={{ marginTop: Spacing.lg }}>
+                      <Text style={styles.subsectionTitle}>
+                        Ultime {bookRatings.length} valutazioni
+                      </Text>
                       {bookRatings.map((book, index) => (
-                        <BookRatingCard 
-                          key={`${book.title}-${index}`}
-                          title={book.title}
-                          author={book.author}
-                          rating={book.rating}
-                          comment={book.comment}
-                        />
+                        <View key={`${book.title}-${index}`} style={{ marginTop: Spacing.md }}>
+                          <BookRatingCard 
+                            title={book.title}
+                            author={book.author}
+                            rating={book.rating}
+                            comment={book.comment}
+                          />
+                        </View>
                       ))}
                     </View>
                   )}
                 </>
               ) : (
-                <Text style={CommonStyles.emptyText}>Nessuna valutazione disponibile</Text>
+                <View style={CommonStyles.emptyState}>
+                  <Ionicons name="star-outline" size={48} color={Colors.textTertiary} />
+                  <Text style={CommonStyles.emptyText}>Nessuna valutazione disponibile</Text>
+                  <Text style={styles.emptySubtext}>Inizia a valutare i tuoi libri</Text>
+                </View>
               )}
             </SectionCard>
           </>
@@ -132,42 +241,127 @@ export default function StatisticsScreen() {
 }
 
 const styles = StyleSheet.create({
-  headerRow: {
-    flexDirection: 'row',
+  // Header personalizzato
+  headerCenter: {
+    flex: 1,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%',
   },
-  statsRow: {
+
+  // Statistiche principali - grid uniforme
+  statsGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 24,
+    marginTop: Spacing.md,
   },
-  ratingBox: {
-    flexDirection: 'row',
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: Spacing.sm,
+  },
+  statIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
-    marginTop: 5,
+    marginBottom: Spacing.md,
   },
-  ratingValue: {
-    fontSize: Typography.fontSize.huge + 8,
+  statValue: {
+    fontSize: Typography.fontSize.xxl,
     fontWeight: Typography.fontWeight.bold,
-    color: Colors.secondary,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.xs,
   },
-  ratingLabel: {
-    fontSize: Typography.fontSize.xl,
-    color: Colors.textSecondary,
-    marginLeft: 4,
-  },
-  ratingsGrid: {
-    marginTop: 10,
-  },
-  chartTitle: {
-    fontSize: Typography.fontSize.lg,
-    fontWeight: Typography.fontWeight.medium,
-    marginBottom: 16,
+  statLabel: {
+    fontSize: Typography.fontSize.sm,
     color: Colors.textSecondary,
     textAlign: 'center',
+    fontWeight: Typography.fontWeight.medium,
+  },
+
+  // Statistiche del tempo - lista verticale
+  timeStatsGrid: {
+    marginTop: Spacing.md,
+  },
+  timeStatRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderLight,
+  },
+  timeStatIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.md,
+  },
+  timeStatContent: {
+    flex: 1,
+  },
+  timeStatLabel: {
+    fontSize: Typography.fontSize.md,
+    color: Colors.textSecondary,
+    marginBottom: Spacing.xs,
+  },
+  timeStatValue: {
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.textPrimary,
+  },
+
+  // Container per grafici - ottimizzato per scroll
+  chartContainer: {
+    marginTop: Spacing.md,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: Colors.surfaceVariant,
+    padding: Spacing.md,
+    overflow: 'hidden', // Previene overflow dal container
+  },
+
+  // Sezione valutazioni
+  ratingOverview: {
+    alignItems: 'center',
+    marginTop: Spacing.md,
+    marginBottom: Spacing.lg,
+  },
+  averageRatingContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: Spacing.sm,
+  },
+  averageRatingValue: {
+    fontSize: Typography.fontSize.huge + 8,
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.warning,
+  },
+  averageRatingLabel: {
+    fontSize: Typography.fontSize.xl,
+    color: Colors.textSecondary,
+    marginLeft: Spacing.xs,
+  },
+  averageRatingSubtext: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+  },
+
+  // Sottosezioni
+  subsectionTitle: {
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.semibold,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.md,
+  },
+
+  // Stili per stati vuoti
+  emptySubtext: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textTertiary,
+    textAlign: 'center',
+    marginTop: Spacing.xs,
+    fontStyle: 'italic',
   },
 });

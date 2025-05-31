@@ -18,8 +18,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
+  View
 } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -148,7 +147,7 @@ export default function AddBookScreen() {
         setForm({
           title: bookData.title || '',
           author: authorString,
-          description: bookData.description ? bookData.description.substring(0, 300) + ' [...]' : '',
+          description: bookData.description || '',  // Mantieni il testo completo
           cover_url: bookData.cover_url || '',
           publication: bookData.publication ? bookData.publication.toString() : '',
         });
@@ -204,10 +203,7 @@ export default function AddBookScreen() {
       setForm({
         title: bookData.title || '',
         author: authorString,
-        description: bookData.description ? 
-          (bookData.description.length > 300 ? 
-            bookData.description.substring(0, 300) + '...' : 
-            bookData.description) : '',
+        description: bookData.description || '',  // Mantieni il testo completo
         cover_url: bookData.cover_url || '',
         publication: bookData.publication ? bookData.publication.toString() : '',
       });
@@ -276,7 +272,7 @@ export default function AddBookScreen() {
     setForm({
       title: book.title,
       author: Array.isArray(book.authors) ? book.authors.join(', ') : '',
-      description: (book.description ? book.description.substring(0, 300) + ' [...]' : '') || (form.description ? form.description.substring(0, 300) + ' [...]' : ''),
+      description: book.description || form.description || '',  // Mantieni il testo completo
       cover_url: book.cover_url || '',
       publication: book.published?.toString() || book.publication?.toString() || '',
     });
@@ -465,229 +461,223 @@ return (
   <KeyboardAvoidingView 
     style={styles.container}
     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    keyboardVerticalOffset={0}
+    keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
   >
-    <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-      <View style={styles.container}>
-        {/*Header*/}
-        <View style={[styles.header, {paddingTop: insets.top}]}>
-          <View style={styles.headerRow}></View>
-          <View style={styles.headerRow}>
-            <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-              <Ionicons name="arrow-back" size={24} color="#4A90E2" />
-            </TouchableOpacity>
-            <Text style={styles.title}>
-              {isEditing ? 'Modifica Libro' : 'Nuovo Libro'}
-            </Text>
-            <TouchableOpacity style={styles.searchButton} onPress={() => setShowSearch(true)}>
-              <Ionicons name="search-outline" size={22} color="#fff" />
-            </TouchableOpacity>
-          </View>
-        </View>
-          
-        <ScrollView ref={scrollViewRef} contentContainerStyle={[styles.contentContainer, {paddingBottom: 80 + insets.bottom, paddingTop: 80 + insets.top}]} showsVerticalScrollIndicator={false}>
-      {/* Copertina del libro (click to edit) */}
-      <View style={styles.bookCoverSection}>
-        <View style={styles.coverContainer}>
-          <Pressable onPress={pickBookImage}>
-            {renderCoverPreview()}
-          </Pressable>
+    <View style={styles.container}>
+      {/*Header*/}
+      <View style={[styles.header, {paddingTop: insets.top}]}>
+        <View style={styles.headerRow}></View>
+        <View style={styles.headerRow}>
+          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+            <Ionicons name="arrow-back" size={24} color="#4A90E2" />
+          </TouchableOpacity>
+          <Text style={styles.title}>
+            {isEditing ? 'Modifica Libro' : 'Nuovo Libro'}
+          </Text>
+          <TouchableOpacity style={styles.searchButton} onPress={() => setShowSearch(true)}>
+            <Ionicons name="search-outline" size={22} color="#fff" />
+          </TouchableOpacity>
         </View>
       </View>
-      {/* Sezione info libro e metadati */}
-      <View style={styles.bookInfoSection}>
-        <View style={styles.bookMetadata}>
-          <Text style={styles.bookTitle} numberOfLines={3}>{form.title || 'Titolo del Libro'}</Text>
-          <Text style={styles.bookAuthor} numberOfLines={2}> {form.author || 'Nome Autore'}</Text>
-          {/* Tags per anno, generi, ecc... */}
-          <View style={styles.tagsContainer}>
-            {form.publication && (
-              <View style={styles.infoTag}>
-                <Ionicons name="calendar-outline" size={14} color="#4A90E2" />
-                <Text style={styles.tagText}>{form.publication}</Text>
-              </View>
-            )}  
-            {selectedGenres.map((genre) => (
-              <View key={genre} style={styles.infoTag}>
-                <Ionicons name="bookmark-outline" size={14} color="#9F7AEA" />
-                <Text style={[styles.tagText, { color: '#9F7AEA' }]}>{genre}</Text>
-              </View>
-            ))}
-            {remoteBook?.isbn13 ? (
-              <View style={styles.infoTag}>
-                <Ionicons name="barcode-outline" size={14} color="#38B2AC" />
-                <Text style={[styles.tagText, { color: '#38B2AC' }]}>{remoteBook.isbn13}</Text>
-              </View>
-            ) : remoteBook?.isbn10 && (
-              <View style={styles.infoTag}>
-                <Ionicons name="barcode-outline" size={14} color="#38B2AC" />
-                <Text style={[styles.tagText, { color: '#38B2AC' }]}>{remoteBook.isbn10}</Text>
-              </View>
-            )}
-            {/* placeholders se non ci sono tags */}
-            {!form.publication && selectedGenres.length === 0 && !remoteBook?.isbn10 && !remoteBook?.isbn13 && (
-              <View style={[styles.infoTag, { backgroundColor: '#F8F9FA', borderColor: '#E9ECEF' }]}>
-                <Ionicons name="information-circle-outline" size={14} color="#6C757D" />
-                <Text style={[styles.tagText, { color: '#6C757D', fontStyle: 'italic' }]}>Compila i campi per vedere i dettagli</Text>
-              </View>
-            )}
+        
+      <ScrollView 
+        ref={scrollViewRef} 
+        style={styles.scrollView}
+        contentContainerStyle={[styles.contentContainer, {paddingBottom: 100 + insets.bottom}]}
+        showsVerticalScrollIndicator={true}
+        keyboardShouldPersistTaps="handled"
+        bounces={true}
+        scrollEnabled={true}
+      >
+        {/* Copertina del libro (click to edit) */}
+        <View style={styles.bookCoverSection}>
+          <View style={styles.coverContainer}>
+            <Pressable onPress={pickBookImage}>
+              {renderCoverPreview()}
+            </Pressable>
           </View>
+        </View>
+        {/* Sezione info libro e metadati */}
+        <View style={styles.bookInfoSection}>
+          <View style={styles.bookMetadata}>
+            <Text style={styles.bookTitle} numberOfLines={3}>{form.title || 'Titolo del Libro'}</Text>
+            <Text style={styles.bookAuthor} numberOfLines={2}> {form.author || 'Nome Autore'}</Text>
+            {/* Tags per anno, generi, ecc... */}
+            <View style={styles.tagsContainer}>
+              {form.publication && (
+                <View style={styles.infoTag}>
+                  <Ionicons name="calendar-outline" size={14} color="#4A90E2" />
+                  <Text style={styles.tagText}>{form.publication}</Text>
+                </View>
+              )}  
+              {selectedGenres.map((genre) => (
+                <View key={genre} style={styles.infoTag}>
+                  <Ionicons name="bookmark-outline" size={14} color="#9F7AEA" />
+                  <Text style={[styles.tagText, { color: '#9F7AEA' }]}>{genre}</Text>
+                </View>
+              ))}
+              {remoteBook?.isbn13 ? (
+                <View style={styles.infoTag}>
+                  <Ionicons name="barcode-outline" size={14} color="#38B2AC" />
+                  <Text style={[styles.tagText, { color: '#38B2AC' }]}>{remoteBook.isbn13}</Text>
+                </View>
+              ) : remoteBook?.isbn10 && (
+                <View style={styles.infoTag}>
+                  <Ionicons name="barcode-outline" size={14} color="#38B2AC" />
+                  <Text style={[styles.tagText, { color: '#38B2AC' }]}>{remoteBook.isbn10}</Text>
+                </View>
+              )}
+              {/* placeholders se non ci sono tags */}
+              {!form.publication && selectedGenres.length === 0 && !remoteBook?.isbn10 && !remoteBook?.isbn13 && (
+                <View style={[styles.infoTag, { backgroundColor: '#F8F9FA', borderColor: '#E9ECEF' }]}>
+                  <Ionicons name="information-circle-outline" size={14} color="#6C757D" />
+                  <Text style={[styles.tagText, { color: '#6C757D', fontStyle: 'italic' }]}>Compila i campi per vedere i dettagli</Text>
+                </View>
+              )}
+            </View>
+            {/*{remoteBook && (
+              <View style={styles.sourceTagContainer}>
+                <View style={styles.sourceTag}>
+                  <Ionicons name="cloud-download-outline" size={14} color="#4A90E2" />
+                  <Text style={styles.sourceText}>Dati da ricerca online</Text>
+                </View>
+              </View>
+            )}*/}
+          </View> 
+          {/* tag fine bookMetadata */}
         </View> 
-        {/* tag fine bookMetadata */}
-      </View> 
-      {/* tag fine bookInfoSection */}
+        {/* tag fine bookInfoSection */}
 
-    {/* Stati */}
-    <View style={styles.tabRow}>
-      {STATI.map(s => {
-        const label = s === 'to_read' ? 'Da leggere' 
-                    : s === 'reading' ? 'In lettura' 
-                    : 'Completato';
-        const isActive = activeStatus === s;
-        return (
-          <MotiView
-            key={s}
-            from={{ backgroundColor: '#eee', translateY: 0 }}
-            animate={{
-              backgroundColor: isActive ? '#4A90E2' : '#eee',
-              translateY: isActive ? -4 : 0,
-            }}
-            transition={{ type: 'timing', duration: 300, easing: Easing.out(Easing.exp) }}
-            style={styles.tabButton}
-          >
-            <Pressable
-              onPress={() => { setActiveStatus(s); setIsDirty(true); }}
+      {/* Stati */}
+      <View style={styles.tabRow}>
+        {STATI.map(s => {
+          const label = s === 'to_read' ? 'Da leggere' 
+                      : s === 'reading' ? 'In lettura' 
+                      : 'Completato';
+          const isActive = activeStatus === s;
+          return (
+            <MotiView
+              key={s}
+              from={{ backgroundColor: '#eee', translateY: 0 }}
+              animate={{
+                backgroundColor: isActive ? '#4A90E2' : '#eee',
+                translateY: isActive ? -4 : 0,
+              }}
+              transition={{ type: 'timing', duration: 300, easing: Easing.out(Easing.exp) }}
               style={styles.tabButton}
             >
-              <Text style={[styles.tabText, isActive && styles.tabTextActive]}>{label}</Text>
-            </Pressable>
-          </MotiView>
-        );
-      })}
-    </View> 
-    {/* fine tag Stati */}
+              <Pressable
+                onPress={() => { setActiveStatus(s); setIsDirty(true); }}
+                style={styles.tabButton}
+              >
+                <Text style={[styles.tabText, isActive && styles.tabTextActive]}>{label}</Text>
+              </Pressable>
+            </MotiView>
+          );
+        })}
+      </View> 
+      {/* fine tag Stati */}
 
-    {/* Form dei dati del libro */}
-    <View style={[styles.formSection, { backgroundColor: '#4A90E2', paddingBottom: 0, marginTop: -12 }]}>
-      <View style={styles.formSection}>
-        {/* Titolo */}
-        <View style={styles.formGroup}>
-          <View style={styles.labelContainer}>
-            <Ionicons name="book-outline" size={18} color="#666" style={styles.labelIcon} />
-            <Text style={styles.label}>Titolo</Text>
-          </View>
-          <TextInput
-              ref={titleInputRef}
-              style={styles.input}
-              value={form.title}
-              autoCapitalize='sentences'       // prima lettera maiuscola
-              onChangeText={(t) => handleChange('title', t)}
-              placeholder="Titolo del libro"
-              placeholderTextColor="#bbb"
-              returnKeyType="next"
-              onSubmitEditing={() => {
-                authorInputRef.current?.focus();
-                scrollToInput(400);
-              }}
-              onFocus={() => scrollToInput(300)}
-              blurOnSubmit={false}
-          />
-        </View>
-
-        {/* Autore */}
-        <View style={styles.formGroup}>
-          <View style={styles.labelContainer}>
-            <Ionicons name="person-outline" size={18} color="#666" style={styles.labelIcon} />
-            <Text style={styles.label}>Autore</Text>
-          </View>
-          <TextInput
-              ref={authorInputRef}
-              style={styles.input}
-              value={form.author}
-              onChangeText={(t) => handleChange('author', t)}
-              placeholder="Nome autore"
-              placeholderTextColor="#bbb"
-              autoCapitalize='words'       // prima lettera maiuscola
-              returnKeyType="next"
-              onSubmitEditing={() => {
-                publicationInputRef.current?.focus();
-                scrollToInput(500);
-              }}
-              onFocus={() => scrollToInput(400)}
-              blurOnSubmit={false}
-          />
-        </View>
-          
-        <View style={[styles.formRow, {marginBottom:0}]}>
-          {/* Anno e copertina */}
-          <View style={[styles.formGroup, { width: 100 }]}>
+      {/* Form dei dati del libro */}
+      <View style={[styles.formSection, { backgroundColor: '#4A90E2', paddingBottom: 0, marginTop: -12 }]}>
+        <View style={styles.formSection}>
+          {/* Titolo */}
+          <View style={styles.formGroup}>
             <View style={styles.labelContainer}>
-              <Ionicons name="calendar-outline" size={18} color="#666" style={styles.labelIcon} />
-              <Text style={styles.label}>Anno</Text>
+              <Ionicons name="book-outline" size={18} color="#666" style={styles.labelIcon} />
+              <Text style={styles.label}>Titolo</Text>
             </View>
             <TextInput
-              ref={publicationInputRef}
-              style={styles.input}
-              value={form.publication}
-              onChangeText={(t) => handleChange('publication', t)}
-              placeholder="YYYY"
-              placeholderTextColor="#bbb"
-              keyboardType="numeric"
-              returnKeyType="next"
-              onSubmitEditing={() => {
-                coverUrlInputRef.current?.focus();
-                scrollToInput(600);
-              }}
-              onFocus={() => scrollToInput(500)}
-              blurOnSubmit={false}
+                ref={titleInputRef}
+                style={styles.input}
+                value={form.title}
+                autoCapitalize='sentences'       // prima lettera maiuscola
+                onChangeText={(t) => handleChange('title', t)}
+                placeholder="Titolo del libro"
+                placeholderTextColor="#bbb"
+                returnKeyType="next"
+                onSubmitEditing={() => {
+                  authorInputRef.current?.focus();
+                  scrollToInput(400);
+                }}
+                onFocus={() => scrollToInput(300)}
+                blurOnSubmit={false}
             />
           </View>
 
-          {/* Url Libro */}
-          <View style={[styles.formGroup, { flex: 1, marginLeft: 10 }]}>
+          {/* Autore */}
+          <View style={styles.formGroup}>
             <View style={styles.labelContainer}>
-              <Ionicons name="image-outline" size={18} color="#666" style={styles.labelIcon} />
-              <Text style={styles.label}>URL Copertina</Text>
+              <Ionicons name="person-outline" size={18} color="#666" style={styles.labelIcon} />
+              <Text style={styles.label}>Autore</Text>
             </View>
             <TextInput
-              ref={coverUrlInputRef}
-              style={styles.input}
-              value={form.cover_url}
-              onChangeText={(t) => handleChange('cover_url', t)}
-              placeholder="https://..."
-              placeholderTextColor="#bbb"
-              returnKeyType="next"
-              onSubmitEditing={() => {
-                descriptionInputRef.current?.focus();
-                scrollToInput(700);
-              }}
-              onFocus={() => scrollToInput(600)}
-              blurOnSubmit={false}
+                ref={authorInputRef}
+                style={styles.input}
+                value={form.author}
+                onChangeText={(t) => handleChange('author', t)}
+                placeholder="Nome autore"
+                placeholderTextColor="#bbb"
+                autoCapitalize='words'       // prima lettera maiuscola
+                returnKeyType="next"
+                onSubmitEditing={() => {
+                  publicationInputRef.current?.focus();
+                  scrollToInput(500);
+                }}
+                onFocus={() => scrollToInput(400)}
+                blurOnSubmit={false}
             />
           </View>
-        </View>
+            
+          <View style={[styles.formRow, {marginBottom:0}]}>
+            {/* Anno e copertina */}
+            <View style={[styles.formGroup, { width: 100 }]}>
+              <View style={styles.labelContainer}>
+                <Ionicons name="calendar-outline" size={18} color="#666" style={styles.labelIcon} />
+                <Text style={styles.label}>Anno</Text>
+              </View>
+              <TextInput
+                ref={publicationInputRef}
+                style={styles.input}
+                value={form.publication}
+                onChangeText={(t) => handleChange('publication', t)}
+                placeholder="YYYY"
+                placeholderTextColor="#bbb"
+                keyboardType="numeric"
+                returnKeyType="next"
+                onSubmitEditing={() => {
+                  coverUrlInputRef.current?.focus();
+                  scrollToInput(600);
+                }}
+                onFocus={() => scrollToInput(500)}
+                blurOnSubmit={false}
+              />
+            </View>
 
-        {/* Trama */}
-        <View style={styles.formGroup}>
-          <View style={styles.labelContainer}>
-            <Ionicons name="document-text-outline" size={18} color="#666" style={styles.labelIcon} />
-            <Text style={styles.label}>Trama</Text>
+            {/* Url Libro */}
+            <View style={[styles.formGroup, { flex: 1, marginLeft: 10 }]}>
+              <View style={styles.labelContainer}>
+                <Ionicons name="image-outline" size={18} color="#666" style={styles.labelIcon} />
+                <Text style={styles.label}>URL Copertina</Text>
+              </View>
+              <TextInput
+                ref={coverUrlInputRef}
+                style={styles.input}
+                value={form.cover_url}
+                onChangeText={(t) => handleChange('cover_url', t)}
+                placeholder="https://..."
+                placeholderTextColor="#bbb"
+                returnKeyType="next"
+                onSubmitEditing={() => {
+                  descriptionInputRef.current?.focus();
+                  scrollToInput(700);
+                }}
+                onFocus={() => scrollToInput(600)}
+                blurOnSubmit={false}
+              />
+            </View>
           </View>
-          <TextInput
-            ref={descriptionInputRef}
-            style={[styles.input, styles.textArea]}
-            value={form.description}
-            onChangeText={(t) => handleChange('description', t)}
-            placeholder="Breve descrizione della trama"
-            placeholderTextColor="#bbb"
-            multiline
-            textAlignVertical="top"
-            returnKeyType="done"
-            onSubmitEditing={() => Keyboard.dismiss()}
-            onFocus={() => scrollToInput(750)}
-            blurOnSubmit={true}
-          />
-        </View>
+
 
         {/* Icon Row per aprire i quattro modal */}
         <View style={[styles.formRow, {flexDirection: 'row', justifyContent: 'space-around'}]}>
@@ -734,130 +724,198 @@ return (
             }
             size={24}
             color="#fff"
-            />
-          </Pressable>
-        </View> 
-        {/* fine tag pulsanti per i Modal */}
 
-          {/* GENRE MODAL */}
-          <Modal 
-            visible={showGenreModal}
-            animationType="slide"
-            transparent
-            onRequestClose={() => setShowGenreModal(false)}>
-            <View style={styles.modalOverlay}>
-              <MotiView {...entry} transition={entryTransition} style={styles.modalContent}>
-                 <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>Seleziona Generi</Text>
-                  <TouchableOpacity onPress={() => setShowGenreModal(false)}>
-                    <Ionicons name="close" size={24} color={Colors.textSecondary} />
-                  </TouchableOpacity>
-                </View>
-                <View style={styles.genreRow}>
-                  {GENRES.map(g => (
-                    <Pressable
-                      key={g}
-                      onPress={() => toggleGenre(g)}
-                      style={[
-                        styles.genrePill,
-                        selectedGenres.includes(g) && styles.genreSelected,
-                      ]}
-                    >
-                      <Text
+          {/* Trama */}
+          <View style={styles.formGroup}>
+            <View style={styles.labelContainer}>
+              <Ionicons name="document-text-outline" size={18} color="#666" style={styles.labelIcon} />
+              <Text style={styles.label}>Trama</Text>
+            </View>
+            <TextInput
+              ref={descriptionInputRef}
+              style={[styles.input, styles.textArea]}
+              value={form.description}
+              onChangeText={(t) => handleChange('description', t)}
+              placeholder="Breve descrizione della trama"
+              placeholderTextColor="#bbb"
+              multiline
+              textAlignVertical="top"
+              returnKeyType="done"
+              onSubmitEditing={() => Keyboard.dismiss()}
+              onFocus={() => scrollToInput(750)}
+              blurOnSubmit={true}
+              scrollEnabled={true}  // Abilitare lo scroll interno
+
+            />
+          </View>
+
+          {/* Icon Row per aprire i quattro modal */}
+          <View style={[styles.formRow, {flexDirection: 'row', justifyContent: 'space-around'}]}>
+            {/* Generi */}
+            <Pressable
+              onPress={() => setShowGenreModal(true)}
+              style={styles.iconButton}
+            ><Ionicons name="book-outline" size={24} color="#fff" />
+            </Pressable>
+            {/* Note */}
+            <Pressable
+              onPress={() => setShowNoteModal(true)}
+              style={styles.iconButton}
+            ><Ionicons name="create-outline" size={24} color="#fff" />
+            </Pressable>
+            {/* Ratings */}
+            <Pressable
+              onPress={() => {
+                setShowRating(v => {
+                  const newValue = !v;
+                  if (newValue) {
+                    // Better timing for scroll after state update
+                    setTimeout(() => {
+                      scrollViewRef.current?.scrollToEnd({ animated: true });
+                    }, 100);
+                  }
+                  return newValue;
+                });
+              }}
+              style={styles.iconButton}
+            ><Ionicons name="star" size={20} color="#fff" />
+            </Pressable>
+            {/* Preferiti o Wishlist */}
+            <Pressable
+              onPress={() => {
+              if(!isInWishlist && !isFavorite) {
+                    setIsInWishlist(true);
+              } else if (isInWishlist && !isFavorite) {
+                setIsInWishlist(false);
+                setIsFavorite(true);
+              } else {
+                setIsFavorite(false);
+              }
+              setIsDirty(true);
+              }}
+              style={[ styles.iconButton, 
+              isFavorite ? { backgroundColor: '#FFA0CC' } :
+              isInWishlist ? { backgroundColor: '#79E18F' } :
+              { backgroundColor: '#BBB' }
+              ]}
+            ><Ionicons
+              name={
+                isInWishlist   ? 'cart'      :
+                isFavorite     ? 'heart'     : 'chevron-down-outline'
+              }
+              size={24}
+              color="#fff"
+              />
+            </Pressable>
+          </View> 
+          {/* fine tag pulsanti per i Modal */}
+
+            {/* GENRE MODAL */}
+            <Modal 
+              visible={showGenreModal}
+              animationType="slide"
+              transparent
+              onRequestClose={() => setShowGenreModal(false)}>
+              <View style={styles.modalOverlay}>
+                <MotiView {...entry} transition={entryTransition} style={styles.modalContent}>
+                   <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>Seleziona Generi</Text>
+                    <TouchableOpacity onPress={() => setShowGenreModal(false)}>
+                      <Ionicons name="close" size={24} color={Colors.textSecondary} />
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.genreRow}>
+                    {GENRES.map(g => (
+                      <Pressable
+                        key={g}
+                        onPress={() => toggleGenre(g)}
                         style={[
-                          styles.genreText,
-                          selectedGenres.includes(g) && styles.genreTextSelected,
+                          styles.genrePill,
+                          selectedGenres.includes(g) && styles.genreSelected,
                         ]}
                       >
-                        {g}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-              </MotiView>
-            </View>
-          </Modal>
-          {/*Notes Modal*/}
-          <Modal
-            visible={showNoteModal}
-            animationType="slide"
-            transparent
-            onRequestClose={() => setShowNoteModal(false)}
-          >
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalContent}>
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>Note</Text>
-                  <TouchableOpacity onPress={() => setShowNoteModal(false)}>
-                    <Ionicons name="close" size={24} color={Colors.textSecondary} />
-                  </TouchableOpacity>
-                </View>
-    
-                <ScrollView style={styles.notesReadContainer}>
-                  <Text style={styles.notesReadText}>{note}</Text>
-                </ScrollView>
-    
-                <View style={styles.modalButtons}>
-                  <TouchableOpacity 
-                    style={[styles.modalButton, styles.primaryButton, {flex: 1}]}
-                    onPress={() => setShowNoteModal(false)}
-                  >
-                    <Text style={styles.primaryButtonText}>Chiudi</Text>
-                  </TouchableOpacity>
+                        <Text
+                          style={[
+                            styles.genreText,
+                            selectedGenres.includes(g) && styles.genreTextSelected,
+                          ]}
+                        >
+                          {g}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                </MotiView>
+              </View>
+            </Modal>
+            {/*Notes Modal*/}
+            <Modal
+              visible={showNoteModal}
+              animationType="slide"
+              transparent
+              onRequestClose={() => setShowNoteModal(false)}
+            >
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalContent}>
+                  <View style={styles.modalHeader}>
+                    <Text style={styles.modalTitle}>Note</Text>
+                    <TouchableOpacity onPress={() => setShowNoteModal(false)}>
+                      <Ionicons name="close" size={24} color={Colors.textSecondary} />
+                    </TouchableOpacity>
+                  </View>
+      
+                  <ScrollView style={styles.notesReadContainer}>
+                    <Text style={styles.notesReadText}>{note}</Text>
+                  </ScrollView>
+      
+                  <View style={styles.modalButtons}>
+                    <TouchableOpacity 
+                      style={[styles.modalButton, styles.primaryButton, {flex: 1}]}
+                      onPress={() => setShowNoteModal(false)}
+                    >
+                      <Text style={styles.primaryButtonText}>Chiudi</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
+            </Modal>
+
             </View>
-          </Modal>
+            {showRating && (
+              <View style={[styles.formSection, {paddingBottom: Spacing.xs}]}>
+                <MotiView style={styles.ratingContainer}>
+                  <Text style={[styles.label, {marginBottom: 16}]}>Aggiungi una Valutazione</Text>
+                  <View style={styles.starsRow}>
+                    {[1,2,3,4,5].map((s,i) => (
+                      <Pressable key={s} onPress={() => {
+                        setRating(s);
+                        setIsDirty(true);    
+                      }}>
+                        <MotiView
+                          from={{ scale: 0.5, opacity: 0 }}
+                          animate={{ scale: rating === s ? 1.3 : 1, opacity: 1 }}
+                          transition={{ type: 'spring', damping: 10, mass: 0.8, delay: i * 150 }}
+                        >
+                          <AntDesign
+                            name={s <= rating ? 'star' : 'staro'}
+                            size={32}
+                            color={s <= rating ? '#f5a623' : '#DDD'}
+                            style={{ marginHorizontal: 4 }}
+                          />
+                        </MotiView>
+                      </Pressable>
+                    ))}
+                  </View>
 
-          </View>
-          {showRating && (
-            <View style={[styles.formSection, {paddingBottom: Spacing.xs}]}>
-              <MotiView style={styles.ratingContainer}>
-                <Text style={[styles.label, {marginBottom: 16}]}>Aggiungi una Valutazione</Text>
-                <View style={styles.starsRow}>
-                  {[1,2,3,4,5].map((s,i) => (
-                    <Pressable key={s} onPress={() => {
-                      setRating(s);
-                      setIsDirty(true);    
-                    }}>
-                      <MotiView
-                        from={{ scale: 0.5, opacity: 0 }}
-                        animate={{ scale: rating === s ? 1.3 : 1, opacity: 1 }}
-                        transition={{ type: 'spring', damping: 10, mass: 0.8, delay: i * 150 }}
-                      >
-                        <AntDesign
-                          name={s <= rating ? 'star' : 'staro'}
-                          size={32}
-                          color={s <= rating ? '#f5a623' : '#DDD'}
-                          style={{ marginHorizontal: 4 }}
-                        />
-                      </MotiView>
-                    </Pressable>
-                  ))}
-                </View>
-
-                <View style={styles.commentWrapper}>
-                <TextInput
-                  ref={commentInputRef}           // ← qui
-                  style={[styles.input, styles.commentInput]}
-                  placeholder="Commento..."
-                  placeholderTextColor="#555"
-                  value={comment}
-                  onChangeText={text => {
-                    setComment(text);
-                    setIsDirty(true);
-                  }}
-                  returnKeyType="done"
-                  onSubmitEditing={() => Keyboard.dismiss()}
-                  blurOnSubmit={true}
-                />
-              </View>
-                <View style={styles.modalButtons}>
-                  <TouchableOpacity 
-                    style={[styles.modalButton, styles.primaryButton, {flex: 1}]}
-                    onPress={() => {
-                      setRating(0);
-                      setComment('');
+                  <View style={styles.commentWrapper}>
+                  <TextInput
+                    ref={commentInputRef}           // ← qui
+                    style={[styles.input, styles.commentInput]}
+                    placeholder="Commento..."
+                    placeholderTextColor="#555"
+                    value={comment}
+                    onChangeText={text => {
+                      setComment(text);
                       setIsDirty(true);
                     }}
                     >
@@ -870,40 +928,73 @@ return (
                   >
                     <Text style={[styles.primaryButtonText, {fontSize: 12}]}>Modifica commento</Text>
                   </TouchableOpacity>
+                    returnKeyType="done"
+                    onSubmitEditing={() => Keyboard.dismiss()}
+                    blurOnSubmit={true}
+                  />
                 </View>
-              </MotiView>
+                  <View style={styles.modalButtons}>
+                    <TouchableOpacity 
+                      style={[styles.modalButton, styles.primaryButton, {flex: 1}]}
+                      onPress={() => {
+                        setRating(0);
+                        setComment('');
+                        setIsDirty(true);
+                      }}
+                      >
+                      <Text style={styles.primaryButtonText}>Rimuovi valutazione</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={[styles.modalButton, styles.primaryButton, {flex: 1}]}
+                      onPress={() => {commentInputRef.current?.focus();
+                      }} 
+                    >
+                      <Text style={styles.primaryButtonText}>Modifica commento</Text>
+                    </TouchableOpacity>
+                  </View>
+                </MotiView>
+              </View>
+            )}
+            {/* Suggerimento ricerca - solo per nuovi libri */}
+            {!isEditing && (
+              <View style={styles.tipContainer}>
+                <Ionicons name="information-circle-outline" size={24} color="#4A90E2" />
+                <Text style={styles.tipText}>
+                  Puoi cercare un libro online per compilare automaticamente tutti i campi
+                </Text>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+        
+        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
+          {isEditing ? (
+            <View style={styles.footerButtons}>
+              <TouchableOpacity 
+                style={styles.deleteButton}
+                onPress={handleDelete}
+              >
+                <Ionicons name="trash-outline" size={22} color="#fff" />
+                <Text style={styles.deleteButtonText}>Elimina</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.saveButton}
+                onPress={handleSave}
+              >
+                <Ionicons name="save-outline" size={22} color="#fff" />
+                <Text style={styles.saveButtonText}>Aggiorna</Text>
+              </TouchableOpacity>
             </View>
-          )}
-          {/* Suggerimento ricerca - solo per nuovi libri */}
-          {!isEditing && (
-            <View style={styles.tipContainer}>
-              <Ionicons name="information-circle-outline" size={24} color="#4A90E2" />
-              <Text style={styles.tipText}>
-                Puoi cercare un libro online per compilare automaticamente tutti i campi
-              </Text>
-            </View>
-          )}
-        </View>
-      </ScrollView>
-      
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 16) }]}>
-        {isEditing ? (
-          <View style={styles.footerButtons}>
-            <TouchableOpacity 
-              style={styles.deleteButton}
-              onPress={handleDelete}
-            >
-              <Ionicons name="trash-outline" size={22} color="#fff" />
-              <Text style={styles.deleteButtonText}>Elimina</Text>
-            </TouchableOpacity>
-            
+          ) : (
             <TouchableOpacity 
               style={styles.saveButton}
               onPress={handleSave}
             >
               <Ionicons name="save-outline" size={22} color="#fff" />
-              <Text style={styles.saveButtonText}>Aggiorna</Text>
+              <Text style={styles.saveButtonText}>Salva libro</Text>
             </TouchableOpacity>
+
           </View>
         ) : (
           <TouchableOpacity 
@@ -916,19 +1007,18 @@ return (
         )}
       </View>
 
-      <Modal
-        visible={showSearch}
-        animationType="slide"
-        onRequestClose={() => setShowSearch(false)}
-      >
-        <SearchModal
-          mode="remote"
-          onSelectRemote={handleRemoteSelect}
-          onClose={() => setShowSearch(false)}
-        />
-      </Modal>
+        <Modal
+          visible={showSearch}
+          animationType="slide"
+          onRequestClose={() => setShowSearch(false)}
+        >
+          <SearchModal
+            mode="remote"
+            onSelectRemote={handleRemoteSelect}
+            onClose={() => setShowSearch(false)}
+          />
+        </Modal>
       </View>
-    </TouchableWithoutFeedback>
   </KeyboardAvoidingView>
   );
 }
@@ -938,6 +1028,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
+  },
+  scrollView: {
+    flex: 1,
+    marginTop: 100, // Add margin to account for the fixed header height
   },
   loadingContainer: {
     justifyContent: 'center',
@@ -958,7 +1052,8 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#eaeaea',
-    zIndex: 10,  
+    zIndex: 10,
+    elevation: 10, // For Android
   },
   headerRow: {
     flexDirection: 'row',
@@ -992,6 +1087,7 @@ const styles = StyleSheet.create({
       },
       contentContainer: {
       padding: 16,
+      paddingTop: 20, // Remove the dynamic padding that was causing issues
       },
       bookDisplaySection: {
         backgroundColor: '#fff',
@@ -1216,8 +1312,10 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   textArea: {
-    minHeight: 100,
+    height: 120,
+    maxHeight: 220,
     textAlignVertical: 'top',
+    paddingTop: 12,
   },
   isbnContainer: {
     flexDirection: 'row',
@@ -1268,10 +1366,6 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: '#eaeaea',
     padding: 16,
-    position: 'absolute', 
-    bottom: 0,
-    left: 0,
-    right: 0,
   },
   saveButton: {
     flexDirection: 'row',
