@@ -24,7 +24,7 @@ import { Easing } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SearchModal from '../../components/SearchModal';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '../../constants/styles';
-import { Book, deleteBook, deleteRating, getBookById, insertBook, saveNotes, saveRating, toggleFavorite, toggleWishlist, updateBook, updateReadingStatus } from '../../services/bookApi';
+import { Book, deleteBook, deleteRating, getBookById, insertBook, saveNotes, saveRating, toggleFavorite, updateBook, updateReadingStatus } from '../../services/bookApi';
 
 const initialForm = {
   title: '',
@@ -66,7 +66,6 @@ export default function AddBookScreen() {
   // per la bottom‐sheet delle note
   const [note, setNote] = useState('')
   // wishlist o preferiti
-  const [isInWishlist, setIsInWishlist] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false); 
   // lista generi e selezione
   const GENRES = ['Giallo','Rosa','Azione','Fantasy','Storico']
@@ -159,7 +158,6 @@ export default function AddBookScreen() {
         setRating(bookData.rating?.rating || 0);
         setComment(bookData.rating?.comment || '');
         setNote(bookData.notes || '');
-        setIsInWishlist(bookData.is_in_wishlist || false); 
         setIsFavorite(bookData.is_favorite || false); 
         
         // Set remote book data if ISBN exists to show in display
@@ -351,8 +349,7 @@ export default function AddBookScreen() {
     if (note.trim()) await saveNotes(bookId, note)
  
 
-    // salva wishlist e favorite
-    await toggleWishlist(bookId, isInWishlist);
+    // salva favorite
     await toggleFavorite(bookId, isFavorite);
 
     setIsDirty(false);
@@ -494,7 +491,7 @@ return (
       <ScrollView 
         ref={scrollViewRef} 
         style={styles.scrollView}
-        contentContainerStyle={[styles.contentContainer, {paddingBottom: 100 + insets.bottom}]}
+        contentContainerStyle={[styles.contentContainer]}
         showsVerticalScrollIndicator={true}
         keyboardShouldPersistTaps="handled"
         bounces={true}
@@ -723,7 +720,7 @@ return (
             {/* Note */}
             <Pressable
               onPress={() => setShowNoteModal(true)}
-              style={styles.iconButton}
+              style={[styles.iconButton, {paddingBottom: 3}]}
             ><Ionicons name="create-outline" size={24} color="#fff" />
             </Pressable>
             {/* Ratings */}
@@ -743,13 +740,10 @@ return (
               style={styles.iconButton}
             ><Ionicons name="star" size={20} color="#fff" />
             </Pressable>
-            {/* Preferiti o Wishlist */}
+            {/* Preferiti */}
             <Pressable
               onPress={() => {
-              if(!isInWishlist && !isFavorite) {
-                    setIsInWishlist(true);
-              } else if (isInWishlist && !isFavorite) {
-                setIsInWishlist(false);
+              if(!isFavorite) {
                 setIsFavorite(true);
               } else {
                 setIsFavorite(false);
@@ -757,14 +751,12 @@ return (
               setIsDirty(true);
               }}
               style={[ styles.iconButton, 
-              isFavorite ? { backgroundColor: '#FFA0CC' } :
-              isInWishlist ? { backgroundColor: '#79E18F' } :
+              isFavorite ? { backgroundColor: Colors.accent } :
               { backgroundColor: '#BBB' }
               ]}
             ><Ionicons
               name={
-                isInWishlist   ? 'cart'      :
-                isFavorite     ? 'heart'     : 'chevron-down-outline'
+                isFavorite     ? 'heart'     : 'heart-outline'
               }
               size={24}
               color="#fff"
@@ -941,7 +933,7 @@ return (
             </View>
           ) : (
             <TouchableOpacity 
-              style={styles.saveButton}
+              style={[styles.saveButton, {width: '100%'}]}
               onPress={handleSave}
             >
               <Ionicons name="save-outline" size={22} color="#fff" />
@@ -974,7 +966,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    marginTop: 100, // Add margin to account for the fixed header height
+    marginTop: 110, 
   },
   loadingContainer: {
     justifyContent: 'center',
@@ -1318,6 +1310,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 10,
+    width: '48%', 
   },
   saveButtonText: {
     fontSize: 16,
@@ -1337,7 +1330,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 10,
-    flex: 0.48, 
+    width: '48%', 
   },
   deleteButtonText: {
     fontSize: 16,
@@ -1356,7 +1349,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
   },
   primaryButtonText: {
-    fontSize: Typography.fontSize.md,
+    fontSize: Typography.fontSize.xs,
     color: Colors.textOnPrimary,
     fontWeight: Typography.fontWeight.medium,
   },

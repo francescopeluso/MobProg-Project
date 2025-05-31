@@ -46,8 +46,7 @@ export default function BookDetailsScreen() {
   const [tempRating, setTempRating] = useState(0);
   const [tempComment, setTempComment] = useState('');
   const insets = useSafeAreaInsets();
-  const [inWishlist, setInWishlist] = useState(false);
-  const [favorite, setFavorite]     = useState(false);
+  const [favorite, setFavorite] = useState(false);
 
   // Stati per le raccomandazioni
   const [authorRecommendations, setAuthorRecommendations] = useState<Book[]>([]);
@@ -76,8 +75,6 @@ export default function BookDetailsScreen() {
           author: authorString,
           status: bookData.reading_status?.status || 'to_read'
         });
-        
-        setInWishlist(bookData.is_in_wishlist ?? false);
         setFavorite(bookData.is_favorite ?? false);
         setStatus(bookData.reading_status?.status || 'to_read');
         setComment(bookData.rating?.comment || '');
@@ -247,16 +244,20 @@ return (
   <View style={styles.container}>
     <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         {/* Header */}
-        <View style={styles.headerContent}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color="#4A90E2" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.editButton} onPress={() => router.push(`/add-book?id=${book.id}`)}>
-            <Ionicons name="create-outline" size={24} color="#fff" />
-          </TouchableOpacity>
-        </View>
+              <View style={[styles.header, {paddingTop: insets.top}]}>
+                <View style={styles.headerRow}></View>
+                <View style={styles.headerRow}>
+                  <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                    <Ionicons name="arrow-back" size={24} color="#4A90E2" />
+                  </TouchableOpacity>
+                  <Text style={styles.title}>Dettagli Libro</Text>
+                  <TouchableOpacity style={styles.editButton} onPress={() => router.push(`/add-book?id=${book.id}`)}>
+                    <Ionicons name="create-outline" size={24} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+              </View>
         {/* Sezione Principale*/}
-        <View style={[styles.heroSection, {alignItems: 'center'}]}>
+        <View style={[styles.heroSection, {alignItems: 'center'}, {marginTop: 135}]}>
           {/* Copertina */}
           <View style={styles.bookImageContainer}>
             {book.cover_url ? (
@@ -266,14 +267,9 @@ return (
                 <Ionicons name="book" size={48} color={Colors.textSecondary} />
               </View>
             )}  
-            {/* Floating Favorite or Wishlist */}
-            {inWishlist && (
-              <View style={[styles.statusBadge, { backgroundColor:'#79E18F' }]}>
-                <Ionicons name="cart" size={24} color="#fff" style={{ margin: 13, marginLeft: 12, marginRight: 15 }} />
-              </View>
-            )}
+            {/* Floating Favorite */}
             {favorite && (
-              <View style={[styles.statusBadge, { backgroundColor: '#FFA0CC' }]}>
+              <View style={[styles.statusBadge, { backgroundColor: Colors.accent }]}>
                 <Ionicons name="heart" size={24} color="#fff" style={{ margin: 13}}  />
               </View>
             )}
@@ -294,7 +290,7 @@ return (
               )}
               {book.genres && book.genres.length > 0 && (
                 <View style={styles.metadataTag}>
-                  <Ionicons name="bookmark-outline" size={14} color={Colors.accent} />
+                  <Ionicons name="heart" size={14} color={Colors.accent} />
                   <Text style={[styles.metadataText, {color: Colors.accent} ]}>
                     {Array.isArray(book.genres) 
                       ? book.genres.map(g => typeof g === 'string' ? g : g.name).join(', ')
@@ -347,7 +343,7 @@ return (
             {/* Contenitore Stati */}
             <View style={[{width: '97%'}]}>
               {/* Stati */}
-              <View style={styles.statusSection}>
+              <View style={[styles.innerSection, {paddingHorizontal: Spacing.md}]}>
                 <Text style={styles.sectionTitle}>Stato di Lettura</Text>
                 <View style={styles.statusGrid}>
                   {(['to_read', 'reading', 'completed'] as const).map((s) => (
@@ -380,7 +376,7 @@ return (
 
               {/* Description */}
               {book.description && (
-                <View style={styles.statusSection}>
+                <View style={styles.innerSection}>
                   <Text style={styles.sectionTitle}>Descrizione</Text>
                   <ScrollView 
                     style={styles.descriptionScrollContainer}
@@ -394,7 +390,7 @@ return (
 
               {/* Note */}
               {notes.length > 0 && (
-                <View style={styles.descriptionSection}>
+                <View style={styles.innerSection}>
                   <Text style={styles.sectionTitle}>Le tue note</Text>
                   <Text style={styles.description}>{previewNotes}</Text>
                   {isNotesLong && (
@@ -644,19 +640,42 @@ const styles = StyleSheet.create({
   editButton: {
       flexDirection: 'row',
       backgroundColor: '#4A90E2',
-      paddingTop: 8,
-      paddingBottom: 11,
+      paddingTop: 6,
+      paddingBottom: 9, 
       paddingRight: 10,
       paddingLeft: 12,
       borderRadius: 8,
       alignItems: 'center',
       justifyContent: 'center', 
-      marginTop: 10,
+      marginTop: 8,
       alignSelf: 'center',
   },
   backButton: {
     padding: Spacing.sm,
   },
+  header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eaeaea',
+    zIndex: 10,
+    elevation: 10, // For Android
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  title: {
+      fontWeight: 'bold',
+      color: '#333',
+      fontSize: 15,
+      },
 
   // Scroll content
   scrollView: {
@@ -672,7 +691,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xxxl,
     paddingHorizontal: Spacing.lg,
     borderRadius: BorderRadius.lg, 
-    marginHorizontal: Spacing.xl, 
+    marginHorizontal: Spacing.md, 
     ...Shadows.large,
   },
   bookImageContainer: {
@@ -683,11 +702,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 8,
   },
+
   bookImage: {
-    width: width * 0.45,
-    height: width * 0.65,
+    width: 130,
+    height: 200,
     borderRadius: BorderRadius.lg,
     ...Shadows.large,
+    overflow: 'hidden',   
   },
   placeholderImage: {
     width: width * 0.45,
@@ -703,7 +724,7 @@ const styles = StyleSheet.create({
     top: -10,
     right: -10,
     borderRadius: 999,
-    ...Shadows.medium,
+    ...Shadows.large,
   },
   bookInfo: {
     alignItems: 'center',
@@ -806,10 +827,11 @@ const styles = StyleSheet.create({
   },
 
   // Status section
-  statusSection: {
+  innerSection: {
     marginTop: Spacing.xl,
     marginHorizontal: Spacing.lg,
-    marginBottom: Spacing.xl,
+    width: '100%',
+    alignSelf: 'center',
   },
   sectionTitle: {
     fontSize: Typography.fontSize.xl,
@@ -859,12 +881,6 @@ const styles = StyleSheet.create({
   },
 
   // Description and notes section
-  descriptionSection: {
-    marginHorizontal: Spacing.lg,
-    marginBottom: Spacing.xl,
-    width: '100%',
-    alignSelf: 'center',
-  },
   description: {
     fontSize: Typography.fontSize.md,
     color: Colors.textPrimary,

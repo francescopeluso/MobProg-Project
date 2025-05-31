@@ -40,33 +40,26 @@ export default function Layout() {
             ),
           }}
         />
-        <Tabs.Screen
+         <Tabs.Screen
           name="aggiungi"
           options={{
-            title: 'Aggiungi',
-            tabBarIcon: ({focused, size}) => (
+            title: 'Aggiungi',    // <--- rimuovo del tutto 'tabBarLabel'
+            tabBarIcon: ({ focused, size }) => (
               <View style={{
-                backgroundColor: focused ? '#4A90E2' : '#6BA3E8',
+                backgroundColor: focused ? '#4A90E2' : '#888',
                 borderRadius: 20,
-                width: 40,
-                height: 40,
+                width: 30,
+                height: 30,
                 justifyContent: 'center',
                 alignItems: 'center',
-                marginTop: -5
               }}>
                 <Ionicons 
                   name="add" 
-                  size={24} 
+                  size={size} 
                   color="white" 
                 />
               </View>
             ),
-            tabBarLabelStyle: {
-              fontSize: 12,
-              fontWeight: '500',
-              marginTop: 4,
-              color: '#4A90E2'
-            }
           }}
         />
         <Tabs.Screen
