@@ -365,7 +365,13 @@ return (
                           color={status === s ? getStatusColor(s) : getStatusColor(s)} 
                         />
                       </View>
-                      <Text style={[styles.statusText,status === s && styles.statusTextActive]}>{getStatusLabel(s)}</Text>
+                      <Text 
+                        style={[styles.statusText, status === s && styles.statusTextActive]} 
+                        numberOfLines={1} 
+                        adjustsFontSizeToFit
+                      >
+                        {getStatusLabel(s)}
+                      </Text>
                     </TouchableOpacity>
                   ))}
                 </View>
