@@ -340,8 +340,6 @@ export default function AddBookScreen() {
     else {
       await deleteComment(bookId);
     }
- 
-
     // salva wishlist e favorite
     await toggleWishlist(bookId, isInWishlist);
     await toggleFavorite(bookId, isFavorite);
@@ -680,6 +678,53 @@ return (
             </View>
           </View>
 
+
+        {/* Icon Row per aprire i quattro modal */}
+        <View style={[styles.formRow, {flexDirection: 'row', justifyContent: 'space-around'}]}>
+          {/* Generi */}
+          <Pressable
+            onPress={() => setShowGenreModal(true)}
+            style={styles.iconButton}
+          ><Ionicons name="book-outline" size={24} color="#fff" />
+          </Pressable>
+          {/* Note */}
+          <Pressable
+            onPress={() => setShowNoteModal(true)}
+            style={styles.iconButton}
+          ><Ionicons name="create-outline" size={24} color="#fff" />
+          </Pressable>
+          {/* Ratings */}
+          <Pressable
+            onPress={() => { // scorri in fondo
+            setShowRating(v => !v);
+            scrollViewRef.current?.scrollTo({ y: 99999, animated: true })            }}
+            style={styles.iconButton}
+          ><Ionicons name="star" size={20} color="#fff" />
+          </Pressable>
+          {/* Preferiti o Wishlist */}
+          <Pressable
+            onPress={() => {
+            if(!isInWishlist && !isFavorite) {
+                  setIsInWishlist(true);
+            } else if (isInWishlist && !isFavorite) {
+              setIsInWishlist(false);
+              setIsFavorite(true);
+            } else {
+              setIsFavorite(false);
+            }
+            setIsDirty(true);
+            }}
+            style={[ styles.iconButton, 
+            isFavorite ? { backgroundColor: Colors.accent } :
+            { backgroundColor: '#BBB' }
+            ]}
+          ><Ionicons
+            name={
+              isFavorite     ? 'heart'     : 'heart-outline'
+            }
+            size={24}
+            color="#fff"
+
           {/* Trama */}
           <View style={styles.formGroup}>
             <View style={styles.labelContainer}>
@@ -700,6 +745,7 @@ return (
               onFocus={() => scrollToInput(750)}
               blurOnSubmit={true}
               scrollEnabled={true}  // Abilitare lo scroll interno
+
             />
           </View>
 
@@ -872,6 +918,16 @@ return (
                       setComment(text);
                       setIsDirty(true);
                     }}
+                    >
+                    <Text style={[styles.primaryButtonText, {fontSize: 12}]}>Rimuovi valutazione</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.modalButton, styles.primaryButton, {flex: 1}]}
+                    onPress={() => {commentInputRef.current?.focus();
+                    }} 
+                  >
+                    <Text style={[styles.primaryButtonText, {fontSize: 12}]}>Modifica commento</Text>
+                  </TouchableOpacity>
                     returnKeyType="done"
                     onSubmitEditing={() => Keyboard.dismiss()}
                     blurOnSubmit={true}
@@ -938,8 +994,18 @@ return (
               <Ionicons name="save-outline" size={22} color="#fff" />
               <Text style={styles.saveButtonText}>Salva libro</Text>
             </TouchableOpacity>
-          )}
-        </View>
+
+          </View>
+        ) : (
+          <TouchableOpacity 
+            style={[styles.saveButton, {width: '100%'}]}
+            onPress={handleSave}
+          >
+            <Ionicons name="save-outline" size={22} color="#fff" />
+            <Text style={styles.saveButtonText}>Salva libro</Text>
+          </TouchableOpacity>
+        )}
+      </View>
 
         <Modal
           visible={showSearch}
@@ -1309,6 +1375,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 10,
+    width: '47%', 
   },
   saveButtonText: {
     fontSize: 16,
@@ -1328,7 +1395,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 10,
-    flex: 0.48, 
+    width: '47%', 
   },
   deleteButtonText: {
     fontSize: 16,
