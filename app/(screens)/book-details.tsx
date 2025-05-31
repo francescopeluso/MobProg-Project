@@ -46,6 +46,7 @@ export default function BookDetailsScreen() {
   const [tempRating, setTempRating] = useState(0);
   const [tempComment, setTempComment] = useState('');
   const insets = useSafeAreaInsets();
+  const [inWishlist, setInWishlist] = useState(false);
   const [favorite, setFavorite]     = useState(false);
 
   // Stati per le raccomandazioni
@@ -76,6 +77,7 @@ export default function BookDetailsScreen() {
           status: bookData.reading_status?.status || 'to_read'
         });
         
+        setInWishlist(bookData.is_in_wishlist ?? false);
         setFavorite(bookData.is_favorite ?? false);
         setStatus(bookData.reading_status?.status || 'to_read');
         setComment(bookData.rating?.comment || '');
@@ -245,16 +247,13 @@ return (
   <View style={styles.container}>
     <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         {/* Header */}
-        <View style={[styles.header, {paddingTop: insets.top}]}>
-          <View style={styles.headerRow}>
-            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-              <Ionicons name="arrow-back" size={24} color="#4A90E2" />
-            </TouchableOpacity>
-                <Text style={styles.title}>Dettagli Libro</Text>
-            <TouchableOpacity style={styles.editButton} onPress={() => router.push(`/add-book?id=${book.id}`)}>
-              <Ionicons name="create-outline" size={24} color="#fff" />
-            </TouchableOpacity>
-          </View>
+        <View style={styles.headerContent}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color="#4A90E2" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.editButton} onPress={() => router.push(`/add-book?id=${book.id}`)}>
+            <Ionicons name="create-outline" size={24} color="#fff" />
+          </TouchableOpacity>
         </View>
         {/* Sezione Principale*/}
         <View style={[styles.heroSection, {alignItems: 'center'}]}>
@@ -267,9 +266,14 @@ return (
                 <Ionicons name="book" size={48} color={Colors.textSecondary} />
               </View>
             )}  
-            {/* Floating Favorite*/}
+            {/* Floating Favorite or Wishlist */}
+            {inWishlist && (
+              <View style={[styles.statusBadge, { backgroundColor:'#79E18F' }]}>
+                <Ionicons name="cart" size={24} color="#fff" style={{ margin: 13, marginLeft: 12, marginRight: 15 }} />
+              </View>
+            )}
             {favorite && (
-              <View style={[styles.statusBadge, { backgroundColor:Colors.accent }]}>
+              <View style={[styles.statusBadge, { backgroundColor: '#FFA0CC' }]}>
                 <Ionicons name="heart" size={24} color="#fff" style={{ margin: 13}}  />
               </View>
             )}
@@ -343,7 +347,7 @@ return (
             {/* Contenitore Stati */}
             <View style={[{width: '97%'}]}>
               {/* Stati */}
-              <View style={styles.section}>
+              <View style={styles.statusSection}>
                 <Text style={styles.sectionTitle}>Stato di Lettura</Text>
                 <View style={styles.statusGrid}>
                   {(['to_read', 'reading', 'completed'] as const).map((s) => (
@@ -390,7 +394,7 @@ return (
 
               {/* Note */}
               {notes.length > 0 && (
-                <View style={styles.section}>
+                <View style={styles.descriptionSection}>
                   <Text style={styles.sectionTitle}>Le tue note</Text>
                   <Text style={styles.description}>{previewNotes}</Text>
                   {isNotesLong && (
@@ -638,26 +642,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
   },
   editButton: {
-    flexDirection: 'row',
-    backgroundColor: '#4A90E2',
-    paddingTop: 8,
-    paddingBottom: 11,
-    paddingRight: 10,
-    paddingLeft: 12,
-    alignItems: 'center',
-    justifyContent: 'center', 
-    marginTop: 10,
-    alignSelf: 'center',
-    borderRadius: 8,
+      flexDirection: 'row',
+      backgroundColor: '#4A90E2',
+      paddingTop: 8,
+      paddingBottom: 11,
+      paddingRight: 10,
+      paddingLeft: 12,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center', 
+      marginTop: 10,
+      alignSelf: 'center',
   },
   backButton: {
-    padding: 8,
+    padding: Spacing.sm,
   },
-  title: {
-      fontWeight: 'bold',
-      color: '#333',
-      fontSize: 15,
-      },
 
   // Scroll content
   scrollView: {
@@ -673,9 +672,8 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xxxl,
     paddingHorizontal: Spacing.lg,
     borderRadius: BorderRadius.lg, 
-    marginHorizontal: Spacing.md, 
+    marginHorizontal: Spacing.xl, 
     ...Shadows.large,
-    marginTop: 135,
   },
   bookImageContainer: {
     position: 'relative',
@@ -686,9 +684,9 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   bookImage: {
-    width: 150,
-    height: 220,
-    borderRadius: 12,
+    width: width * 0.45,
+    height: width * 0.65,
+    borderRadius: BorderRadius.lg,
     ...Shadows.large,
   },
   placeholderImage: {
@@ -808,10 +806,10 @@ const styles = StyleSheet.create({
   },
 
   // Status section
-  section: {
-    marginTop: Spacing.md,
-    marginBottom: Spacing.md,
-    paddingHorizontal: Spacing.md, 
+  statusSection: {
+    marginTop: Spacing.xl,
+    marginHorizontal: Spacing.lg,
+    marginBottom: Spacing.xl,
   },
   sectionTitle: {
     fontSize: Typography.fontSize.xl,
@@ -957,23 +955,6 @@ const styles = StyleSheet.create({
     fontSize: Typography.fontSize.xl,
     fontWeight: Typography.fontWeight.bold,
     color: Colors.textPrimary,
-  },
-  header: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eaeaea',
-    zIndex: 10,  
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
   },
 
   // Rating modal
