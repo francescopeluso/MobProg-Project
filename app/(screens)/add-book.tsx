@@ -344,8 +344,6 @@ export default function AddBookScreen() {
     else {
       await deleteComment(bookId);
     }
- 
-
     // salva wishlist e favorite
     await toggleWishlist(bookId, isInWishlist);
     await toggleFavorite(bookId, isFavorite);
@@ -534,14 +532,6 @@ return (
               </View>
             )}
           </View>
-          {/*{remoteBook && (
-            <View style={styles.sourceTagContainer}>
-              <View style={styles.sourceTag}>
-                <Ionicons name="cloud-download-outline" size={14} color="#4A90E2" />
-                <Text style={styles.sourceText}>Dati da ricerca online</Text>
-              </View>
-            </View>
-          )}*/}
         </View> 
         {/* tag fine bookMetadata */}
       </View> 
@@ -735,14 +725,12 @@ return (
             setIsDirty(true);
             }}
             style={[ styles.iconButton, 
-            isFavorite ? { backgroundColor: '#FFA0CC' } :
-            isInWishlist ? { backgroundColor: '#79E18F' } :
+            isFavorite ? { backgroundColor: Colors.accent } :
             { backgroundColor: '#BBB' }
             ]}
           ><Ionicons
             name={
-              isInWishlist   ? 'cart'      :
-              isFavorite     ? 'heart'     : 'chevron-down-outline'
+              isFavorite     ? 'heart'     : 'heart-outline'
             }
             size={24}
             color="#fff"
