@@ -149,7 +149,7 @@ export default function BookDetailsScreen() {
       
       if (success) {
         setStatus(newStatus);
-        Alert.alert('Successo', 'Stato di lettura aggiornato');
+        // Alert removed: no more "Successo" message
       } else {
         Alert.alert('Errore', 'Impossibile aggiornare lo stato di lettura.');
       }
