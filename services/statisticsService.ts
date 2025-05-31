@@ -443,35 +443,6 @@ export async function getReadingStreak(): Promise<number> {
   return streak;
 }
 
-/**
- * 
- * @function getFavoriteBooks
- * @param limit Numero massimo di libri preferiti da restituire (default: 5)
- * @description Restituisce i libri preferiti dell'utente.
- * @returns {Promise<any[]>} Array dei libri preferiti
- * @async
- */
-export async function getFavoriteBooks(limit: number = 5): Promise<any[]> {
-  const db = getDBConnection();
-  
-  return await db.getAllAsync(`
-    SELECT 
-      b.id,
-      b.title,
-      b.cover_url,
-      COALESCE(
-        (SELECT GROUP_CONCAT(a.name, ', ') 
-         FROM book_authors ba 
-         JOIN authors a ON ba.author_id = a.id 
-         WHERE ba.book_id = b.id), 
-        'Autore sconosciuto'
-      ) as author,
-      f.added_at
-    FROM favorites f
-    JOIN books b ON f.book_id = b.id
-    ORDER BY f.added_at DESC
-    LIMIT ?
-  `, [limit]);
-}
+
 
 
