@@ -108,12 +108,24 @@ export default function AddBookScreen() {
     }
   }, [params.id, params.prefilledData]);
 
+  const [isUserModifiedComment, setIsUserModifiedComment] = useState(false);
+  const ratingLabels = ['Terribile', 'Scarso', 'Discreto', 'Buono', 'Ottimo'];
+
   useEffect(() => {
-    if (rating >= 1 && comment === '') {
-      const labels = ['Terribile','Scarso','Discreto','Buono','Ottimo']
-      setComment(labels[rating - 1])
+    if (rating >= 1) {
+      const currentLabel = ratingLabels[rating - 1];
+      
+      // Only auto-set comment if:
+      // 1. Comment is empty and user hasn't manually cleared it, OR
+      // 2. Current comment is one of our standard labels (so we can update it)
+      if (
+        (comment === '' && !isUserModifiedComment) || 
+        ratingLabels.includes(comment)
+      ) {
+        setComment(currentLabel);
+      }
     }
-  }, [rating, comment])
+  }, [rating]); // Only depend on rating changes, not comment
 
   useEffect(() => {
   if (showRating) {
@@ -826,17 +838,40 @@ return (
                       <Ionicons name="close" size={24} color={Colors.textSecondary} />
                     </TouchableOpacity>
                   </View>
-      
-                  <ScrollView style={styles.notesReadContainer}>
-                    <Text style={styles.notesReadText}>{note}</Text>
-                  </ScrollView>
-      
+
+                  <TextInput
+                    style={[styles.notesTextInput, {
+                      marginBottom: Spacing.xl,
+                      maxHeight: 300  // Add fixed maximum height
+                    }]}
+                    placeholder="Aggiungi le tue note..."
+                    placeholderTextColor="#999"
+                    multiline
+                    textAlignVertical="top"
+                    value={note}
+                    onChangeText={(text) => {
+                      setNote(text);
+                      setIsDirty(true);
+                    }}
+                    scrollEnabled={true}  // Enable scrolling inside the TextInput
+                    autoFocus={true}
+                  />
+
                   <View style={styles.modalButtons}>
                     <TouchableOpacity 
-                      style={[styles.modalButton, styles.primaryButton, {flex: 1}]}
+                      style={[styles.modalButton, styles.cancelButton]}
                       onPress={() => setShowNoteModal(false)}
                     >
-                      <Text style={styles.primaryButtonText}>Chiudi</Text>
+                      <Text style={styles.cancelButtonText}>Annulla</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={[styles.modalButton, styles.primaryButton]}
+                      onPress={() => {
+                        setIsDirty(true);
+                        setShowNoteModal(false);
+                      }}
+                    >
+                      <Text style={styles.primaryButtonText}>Salva</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -872,13 +907,14 @@ return (
 
                   <View style={styles.commentWrapper}>
                   <TextInput
-                    ref={commentInputRef}           // ← qui
+                    ref={commentInputRef}
                     style={[styles.input, styles.commentInput]}
                     placeholder="Commento..."
                     placeholderTextColor="#555"
                     value={comment}
                     onChangeText={text => {
                       setComment(text);
+                      setIsUserModifiedComment(true); // Mark that user has modified the comment
                       setIsDirty(true);
                     }}
                     returnKeyType="done"
@@ -892,6 +928,7 @@ return (
                       onPress={() => {
                         setRating(0);
                         setComment('');
+                        setIsUserModifiedComment(false); // Reset this flag when removing rating
                         setIsDirty(true);
                       }}
                       >
