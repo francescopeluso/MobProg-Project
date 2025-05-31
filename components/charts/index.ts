@@ -8,7 +8,8 @@ import MonthlyReadingChart from './MonthlyReadingChart';
 import ReadingProgressChart from './ReadingProgressChart';
 
 export {
-  GenreChart,
-  MonthlyReadingChart,
-  ReadingProgressChart
+    GenreChart,
+    MonthlyReadingChart,
+    ReadingProgressChart
 };
+
