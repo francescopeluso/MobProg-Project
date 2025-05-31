@@ -861,14 +861,14 @@ return (
                       setIsDirty(true);
                     }}
                     >
-                    <Text style={styles.primaryButtonText}>Rimuovi valutazione</Text>
+                    <Text style={[styles.primaryButtonText, {fontSize: 12}]}>Rimuovi valutazione</Text>
                   </TouchableOpacity>
                   <TouchableOpacity 
                     style={[styles.modalButton, styles.primaryButton, {flex: 1}]}
                     onPress={() => {commentInputRef.current?.focus();
                     }} 
                   >
-                    <Text style={styles.primaryButtonText}>Modifica commento</Text>
+                    <Text style={[styles.primaryButtonText, {fontSize: 12}]}>Modifica commento</Text>
                   </TouchableOpacity>
                 </View>
               </MotiView>
@@ -907,7 +907,7 @@ return (
           </View>
         ) : (
           <TouchableOpacity 
-            style={styles.saveButton}
+            style={[styles.saveButton, {width: '100%'}]}
             onPress={handleSave}
           >
             <Ionicons name="save-outline" size={22} color="#fff" />
@@ -1281,6 +1281,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 10,
+    width: '47%', 
   },
   saveButtonText: {
     fontSize: 16,
@@ -1300,7 +1301,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderRadius: 10,
-    flex: 0.48, 
+    width: '47%', 
   },
   deleteButtonText: {
     fontSize: 16,

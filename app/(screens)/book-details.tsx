@@ -46,7 +46,6 @@ export default function BookDetailsScreen() {
   const [tempRating, setTempRating] = useState(0);
   const [tempComment, setTempComment] = useState('');
   const insets = useSafeAreaInsets();
-  const [inWishlist, setInWishlist] = useState(false);
   const [favorite, setFavorite]     = useState(false);
 
   // Stati per le raccomandazioni
@@ -76,7 +75,6 @@ export default function BookDetailsScreen() {
           status: bookData.reading_status?.status || 'to_read'
         });
         
-        setInWishlist(bookData.is_in_wishlist ?? false);
         setFavorite(bookData.is_favorite ?? false);
         setStatus(bookData.reading_status?.status || 'to_read');
         setComment(bookData.rating?.comment || '');
@@ -268,12 +266,7 @@ return (
                 <Ionicons name="book" size={48} color={Colors.textSecondary} />
               </View>
             )}  
-            {/* Floating Favorite or Wishlist */}
-            {inWishlist && (
-              <View style={[styles.statusBadge, { backgroundColor:Colors.accentSecondary }]}>
-                <Ionicons name="cart" size={24} color='#fff' style={{ margin: 13, marginLeft: 12, marginRight: 15}} />
-              </View>
-            )}
+            {/* Floating Favorite*/}
             {favorite && (
               <View style={[styles.statusBadge, { backgroundColor:Colors.accent }]}>
                 <Ionicons name="heart" size={24} color="#fff" style={{ margin: 13}}  />
