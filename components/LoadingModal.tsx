@@ -1,13 +1,13 @@
+import { Colors } from '@/constants/styles';
 import React from 'react';
 import {
-  Modal,
-  View,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-  Dimensions,
+    ActivityIndicator,
+    Dimensions,
+    Modal,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
-import { Colors } from '@/constants/styles';
 
 interface LoadingModalProps {
   visible: boolean;
