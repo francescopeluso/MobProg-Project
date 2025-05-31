@@ -148,7 +148,7 @@ export default function AddBookScreen() {
         setForm({
           title: bookData.title || '',
           author: authorString,
-          description: bookData.description ? bookData.description.substring(0, 300) + ' [...]' : '',
+          description: bookData.description || '',  // Mantieni il testo completo
           cover_url: bookData.cover_url || '',
           publication: bookData.publication ? bookData.publication.toString() : '',
         });
@@ -204,10 +204,7 @@ export default function AddBookScreen() {
       setForm({
         title: bookData.title || '',
         author: authorString,
-        description: bookData.description ? 
-          (bookData.description.length > 300 ? 
-            bookData.description.substring(0, 300) + '...' : 
-            bookData.description) : '',
+        description: bookData.description || '',  // Mantieni il testo completo
         cover_url: bookData.cover_url || '',
         publication: bookData.publication ? bookData.publication.toString() : '',
       });
@@ -276,7 +273,7 @@ export default function AddBookScreen() {
     setForm({
       title: book.title,
       author: Array.isArray(book.authors) ? book.authors.join(', ') : '',
-      description: (book.description ? book.description.substring(0, 300) + ' [...]' : '') || (form.description ? form.description.substring(0, 300) + ' [...]' : ''),
+      description: book.description || form.description || '',  // Mantieni il testo completo
       cover_url: book.cover_url || '',
       publication: book.published?.toString() || book.publication?.toString() || '',
     });
@@ -696,6 +693,7 @@ return (
             onSubmitEditing={() => Keyboard.dismiss()}
             onFocus={() => scrollToInput(750)}
             blurOnSubmit={true}
+            scrollEnabled={true}  // Abilitare lo scroll interno
           />
         </View>
 
@@ -1228,8 +1226,10 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   textArea: {
-    minHeight: 100,
+    height: 120,
+    maxHeight: 220,
     textAlignVertical: 'top',
+    paddingTop: 12,
   },
   isbnContainer: {
     flexDirection: 'row',
