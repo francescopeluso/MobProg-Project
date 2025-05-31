@@ -863,23 +863,3 @@ export async function deleteRating(bookId: number): Promise<boolean> {
     return false;
   }
 }
-
-/**
- * Rimuove il commento della valutazione di un libro
- */
-export async function deleteComment(bookId: number): Promise<boolean> {
-  const db = getDBConnection();
-  try {
-    await db.runAsync(
-      `UPDATE ratings
-      SET comment = NULL
-      WHERE book_id = ?
-      `,
-      bookId
-    );
-    return true;
-  } catch (error) {
-    console.error('Error deleting comment:', error);
-    return false;
-  }
-}

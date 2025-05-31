@@ -24,7 +24,7 @@ import { Easing } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import SearchModal from '../../components/SearchModal';
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '../../constants/styles';
-import { Book, deleteBook, deleteComment, deleteRating, getBookById, insertBook, saveNotes, saveRating, toggleFavorite, toggleWishlist, updateBook, updateReadingStatus } from '../../services/bookApi';
+import { Book, deleteBook, deleteRating, getBookById, insertBook, saveNotes, saveRating, toggleFavorite, toggleWishlist, updateBook, updateReadingStatus } from '../../services/bookApi';
 
 const initialForm = {
   title: '',
@@ -336,10 +336,7 @@ export default function AddBookScreen() {
     else {
       await deleteRating(bookId);
     }
-    if (note.trim()) await saveNotes(bookId, note) 
-    else {
-      await deleteComment(bookId);
-    }
+    if (note.trim()) await saveNotes(bookId, note)
  
 
     // salva wishlist e favorite
