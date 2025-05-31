@@ -159,7 +159,7 @@ export default function BookDetailsScreen() {
     }
   };
 
-  const handleSaveRating = async () => {
+  const handleSaveRating: () => Promise<void> = async () => {
     if (!book) return;
     
     try {
