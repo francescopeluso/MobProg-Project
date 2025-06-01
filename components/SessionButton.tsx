@@ -1,5 +1,6 @@
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/styles';
 import { Ionicons } from '@expo/vector-icons';
+import * as Notifications from 'expo-notifications';
 import React, { useEffect, useState } from 'react';
 import {
   ActionSheetIOS,
@@ -49,9 +50,72 @@ export default function SessionButton({ variant = 'default' }: Props) {
       const id = await startSession();
       setSessionId(id);
       setActive(true);
+      
+      // Richiedi attivazione modalità Focus/Non Disturbare
+      await requestFocusMode();
     } catch (e) {
       console.error('startSession error', e);
       Alert.alert('Errore', 'Impossibile avviare la sessione.');
+    }
+  };
+
+  /* ─────────── Focus Mode Management ─────────── */
+  const requestFocusMode = async () => {
+    if (Platform.OS === 'ios') {
+      Alert.alert(
+        'Modalità Lettura',
+        'Vuoi attivare la modalità Focus per concentrarti sulla lettura? Questo ridurrà le distrazioni.',
+        [
+          { text: 'No, grazie', style: 'cancel' },
+          { 
+            text: 'Attiva Focus', 
+            onPress: async () => {
+              try {
+                // Richiedi permessi per le notifiche se non già concessi
+                const { status } = await Notifications.requestPermissionsAsync();
+                if (status === 'granted') {
+                  // Programma una notifica silenziosa che indica la modalità lettura attiva
+                  await Notifications.scheduleNotificationAsync({
+                    content: {
+                      title: '📚 Sessione di lettura attiva',
+                      body: 'Focus mode attivato - Buona lettura!',
+                      sound: false,
+                      priority: Notifications.AndroidNotificationPriority.LOW,
+                    },
+                    trigger: null, // Mostra immediatamente
+                  });
+                }
+                
+                // Su iOS, possiamo suggerire all'utente di attivare manualmente Focus
+                Alert.alert(
+                  'Attiva Focus manualmente',
+                  'Apri il Centro di Controllo (scorri dall\'alto a destra) e tocca "Focus" per attivare la modalità Non Disturbare o Lettura.',
+                  [{ text: 'OK' }]
+                );
+              } catch (error) {
+                console.error('Error setting up focus mode:', error);
+              }
+            }
+          }
+        ]
+      );
+    }
+  };
+
+  const clearFocusMode = async () => {
+    try {
+      // Cancella tutte le notifiche programmate da questa app
+      await Notifications.cancelAllScheduledNotificationsAsync();
+      
+      if (Platform.OS === 'ios') {
+        Alert.alert(
+          'Sessione terminata',
+          'Ricordati di disattivare la modalità Focus dal Centro di Controllo se l\'hai attivata.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      console.error('Error clearing focus mode:', error);
     }
   };
 
@@ -80,6 +144,9 @@ export default function SessionButton({ variant = 'default' }: Props) {
           return result;
         }
       };
+
+      // Pulisci la modalità Focus
+      await clearFocusMode();
 
       Alert.alert('Termina sessione', `Hai letto per ${formatTime(seconds)}.`, [
         { text: 'Continua', style: 'cancel' },
