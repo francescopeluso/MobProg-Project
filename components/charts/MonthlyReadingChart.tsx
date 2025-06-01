@@ -8,6 +8,9 @@ interface MonthlyReadingChartProps {
 }
 
 const MonthlyReadingChart: React.FC<MonthlyReadingChartProps> = ({ data }) => {
+  // Tutti gli hook devono essere chiamati sempre, prima di qualsiasi return condizionale
+  const scrollViewRef = React.useRef<ScrollView>(null);
+
   /* 1.  Se non ci sono dati, mostriamo un messaggio elegante e usciamo */
   if (!data?.length) {
     return (
@@ -18,8 +21,7 @@ const MonthlyReadingChart: React.FC<MonthlyReadingChartProps> = ({ data }) => {
     );
   }
 
-  /* 2.  NON filtriamo più i mesi con valore 0: il grafico resta uniforme.
-        Se vuoi ancora nasconderli, cambia `sourceData` in `data.filter(...)`. */
+  /* 2.  NON filtriamo più i mesi con valore 0: il grafico resta uniforme. */
   const sourceData = data;
 
   /* 3.  Layout dinamico ---------------------------------------------------- */
@@ -43,7 +45,6 @@ const MonthlyReadingChart: React.FC<MonthlyReadingChartProps> = ({ data }) => {
   const finalWidth             = needsScroll ? calcWidth : availableWidth;
 
   /* 4.  Scroll automatico verso la fine per mostrare sempre il mese più recente */
-  const scrollViewRef = React.useRef<ScrollView>(null);
   const scrollToEnd   = () => {
     if (needsScroll && scrollViewRef.current) {
       scrollViewRef.current.scrollToEnd({ animated: false });
@@ -109,7 +110,7 @@ const MonthlyReadingChart: React.FC<MonthlyReadingChartProps> = ({ data }) => {
   );
 };
 
-/* ─────────── Styles ─────────── */
+// Stili componente
 const styles = StyleSheet.create({
   chartContainer: { alignItems: 'center', marginTop: Spacing.sm },
   chartWrapper  : { alignItems: 'center', width: '100%' },

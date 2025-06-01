@@ -1,17 +1,15 @@
 import { Colors, Spacing, Typography } from '@/constants/styles';
 import React, { useRef } from 'react';
 import {
-  Dimensions,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    Dimensions,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from 'react-native';
 import { CurveType, LineChart } from 'react-native-gifted-charts';
 
-// ────────────────────────────────────────────────────────────────
-// TYPES
-// ────────────────────────────────────────────────────────────────
+// Tipi per il componente
 interface ReadingDatum {
   /** Numero di pagine (o altro) lette quel giorno */
   value: number;
@@ -39,9 +37,7 @@ const ReadingProgressChart: React.FC<Props> = ({
   data,
   title = 'Sessioni di lettura giornaliere',
 }) => {
-  // ──────────────────────────────────────────────────────────
-  // LAYOUT CALCULATIONS
-  // ──────────────────────────────────────────────────────────
+  // Calcoli per il layout del grafico
   const screenWidth = Dimensions.get('window').width;
   const containerPadding = 32; // SectionCard padding
   const chartPadding = 32; // internal padding
@@ -78,9 +74,7 @@ const ReadingProgressChart: React.FC<Props> = ({
     ),
   }));
 
-  // ──────────────────────────────────────────────────────────
-  // CHART COMPONENT
-  // ──────────────────────────────────────────────────────────
+  // Componente grafico
   const Chart = (
     <LineChart
       data={processedData}
@@ -116,9 +110,7 @@ const ReadingProgressChart: React.FC<Props> = ({
     />
   );
 
-  // ──────────────────────────────────────────────────────────
-  // RENDER
-  // ──────────────────────────────────────────────────────────
+  // Rendering del componente
   return (
     <View style={styles.chartContainer}>
       <Text style={styles.chartTitle}>{title}</Text>
@@ -149,9 +141,7 @@ const ReadingProgressChart: React.FC<Props> = ({
   );
 };
 
-// ────────────────────────────────────────────────────────────────
-// Styles
-// ────────────────────────────────────────────────────────────────
+// Stili del componente
 const styles = StyleSheet.create({
   chartContainer: {
     alignItems: 'center',

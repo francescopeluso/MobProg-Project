@@ -31,6 +31,8 @@ export const dropTables = async (db: SQLite.SQLiteDatabase): Promise<void> => {
     // così che alla prossima apertura si mostri di nuovo l’intro
     await AsyncStorage.removeItem('session_intro_shown');
     console.log('AsyncStorage: session_intro_shown rimossa, intro sarà mostrata di nuovo.');
+    await AsyncStorage.removeItem('hasSeenIntro');
+    console.log('AsyncStorage: hasSeenIntro rimossa, intro sarà mostrata di nuovo.');
 
     // Disabilita il controllo delle chiavi esterne, in modo da non incorrere in errori durante il drop
     await db.execAsync(`PRAGMA foreign_keys = OFF;`);
