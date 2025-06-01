@@ -1,6 +1,19 @@
+/**
+ * @file services/onboardingService.ts
+ * @description Servizio per la gestione dei libri consigliati durante l'onboarding
+ * 
+ * In questo file definiamo le funzioni per:
+ *   - generazione di raccomandazioni iniziali basate sui generi selezionati
+ *   - validazione della completezza dei dati dei libri
+ *   - salvataggio delle raccomandazioni per il primo accesso
+ */
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-/* Tipo usato dalla Home per visualizzare i consigliati -------------------- */
+/**
+ * Interfaccia per i libri consigliati visualizzati nella Home
+ * Contiene tutti i campi necessari per la visualizzazione nelle card di raccomandazione
+ */
 export interface RecommendedBook {
   id: string;
   title: string;
@@ -16,8 +29,15 @@ export interface RecommendedBook {
 }
 
 /**
- * Calcola i consigliati per il primissimo accesso basandosi sui generi selezionati.
- * Garantisce che tutti i libri abbiano copertina, descrizione e tutti i campi necessari.
+ * Prepara le raccomandazioni iniziali basate sui generi selezionati durante l'onboarding
+ * 
+ * Questa funzione garantisce che tutti i libri raccomandati abbiano informazioni complete:
+ *   - URL immagine copertina valido
+ *   - Descrizione significativa (minimo 50 caratteri)
+ *   - Titolo e autori
+ * 
+ * @param selectedGenres - Array dei nomi dei generi selezionati durante l'onboarding
+ * @returns Promise che si risolve quando le raccomandazioni sono salvate in AsyncStorage
  */
 export async function prepareInitialRecommendations(
   selectedGenres: string[],
@@ -25,23 +45,35 @@ export async function prepareInitialRecommendations(
   if (!selectedGenres.length) return;
 
   const recs: RecommendedBook[] = [];
-  const addedIds = new Set<string>(); // Per evitare duplicati
+  const addedIds = new Set<string>(); // Previene duplicati
 
-  // Funzione per verificare se un libro ha tutti i campi necessari
+  /**
+   * Valida se un libro ha tutti i campi richiesti per essere mostrato come raccomandazione
+   * NOTA: nested function - solo prepareInitialRecommendations() può chiamarla
+   * 
+   * @param book - Oggetto libro dall'API Google Books
+   * @returns true se il libro ha copertina valida, descrizione, titolo e autori
+   */
   const isCompleteBook = (book: any): boolean => {
     const volumeInfo = book.volumeInfo;
     const hasValidThumbnail = volumeInfo?.imageLinks?.thumbnail && 
                              volumeInfo.imageLinks.thumbnail.trim() !== '' && 
                              volumeInfo.imageLinks.thumbnail.startsWith('http');
     const hasDescription = volumeInfo?.description && 
-                          volumeInfo.description.trim().length > 50; // Almeno 50 caratteri
+                          volumeInfo.description.trim().length > 50; // Almeno 50 caratteri per descrizione significativa
     const hasTitle = volumeInfo?.title && volumeInfo.title.trim().length > 0;
     const hasAuthors = volumeInfo?.authors && volumeInfo.authors.length > 0;
 
     return hasValidThumbnail && hasDescription && hasTitle && hasAuthors;
   };
 
-  // Funzione per aggiungere un libro alla lista se completo e non duplicato
+  /**
+   * Aggiunge un libro alla lista delle raccomandazioni se completo e non duplicato
+   * NOTA: nested function - solo prepareInitialRecommendations() può chiamarla
+   * 
+   * @param book - Oggetto libro dall'API Google Books
+   * @returns true se il libro è stato aggiunto con successo, false altrimenti
+   */
   const addBookIfNew = (book: any) => {
     if (!book?.id || addedIds.has(book.id) || recs.length >= 12) return false;
     
@@ -66,7 +98,10 @@ export async function prepareInitialRecommendations(
     return false;
   };
 
-  // Mappatura generi per query più specifiche
+  /**
+   * Mappatura generi per query più specifiche
+   * Mappa le categorie di genere generali a termini di ricerca più specifici per migliorare i risultati API
+   */
   const genreQueries: Record<string, string[]> = {
     'Fiction': ['fiction bestsellers', 'contemporary fiction', 'literary fiction'],
     'Fantasy': ['fantasy novels', 'epic fantasy', 'urban fantasy'],
@@ -108,7 +143,7 @@ export async function prepareInitialRecommendations(
           }
         }
       } catch (err) {
-        console.warn('Genre search failed for', query, err);
+        console.warn('Ricerca per genere fallita per', query, err);
       }
     }
   }
@@ -141,7 +176,7 @@ export async function prepareInitialRecommendations(
           }
         }
       } catch (err) {
-        console.warn('Fallback search failed for', query, err);
+        console.warn('Ricerca fallback fallita per', query, err);
       }
     }
   }
@@ -171,20 +206,20 @@ export async function prepareInitialRecommendations(
           }
         }
       } catch (err) {
-        console.warn('Author search failed for', author, err);
+        console.warn('Ricerca per autore fallita per', author, err);
       }
     }
   }
 
-  console.log(`Generated ${recs.length} complete recommendations from ${selectedGenres.length} selected genres`);
+  console.log(`Generate ${recs.length} raccomandazioni complete da ${selectedGenres.length} generi selezionati`);
 
-  // Salva solo se abbiamo almeno 5 libri completi
+  // Salva le raccomandazioni in AsyncStorage solo se abbiamo un numero minimo di libri completi
   if (recs.length >= 5) {
     await AsyncStorage.setItem(
       'firstLaunchRecommendations',
-      JSON.stringify(recs.slice(0, 10)), // Massimo 10 libri
+      JSON.stringify(recs.slice(0, 10)), // Limite massimo di 10 libri per performance
     );
   } else {
-    console.warn('Not enough complete recommendations found, skipping save');
+    console.warn('Non trovate abbastanza raccomandazioni complete, salvataggio saltato');
   }
 }
