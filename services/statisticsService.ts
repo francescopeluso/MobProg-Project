@@ -195,7 +195,8 @@ export async function getYearlyReadingData(): Promise<MonthlyData[]> {
 export async function getGenreDistribution(): Promise<GenreData[]> {
   const db = getDBConnection();
   
-  const genreStats = await db.getAllAsync(`
+  // Prima ottieni tutti i generi senza limite
+  const allGenreStats = await db.getAllAsync(`
     SELECT 
       g.name,
       COUNT(bg.book_id) as count
@@ -204,21 +205,56 @@ export async function getGenreDistribution(): Promise<GenreData[]> {
     JOIN books b ON bg.book_id = b.id
     GROUP BY g.id, g.name
     ORDER BY count DESC
-    LIMIT 5
   `) as any[];
 
-  const colors = ['#4A90E2', '#9F7AEA', '#38B2AC', '#ED64A6', '#48BB78'];
-  const total = genreStats.reduce((sum, genre) => sum + genre.count, 0);
+  if (allGenreStats.length === 0) return [];
+
+  const colors = ['#4A90E2', '#9F7AEA', '#38B2AC', '#ED64A6', '#48BB78', '#9e9e9e'];
+  const total = allGenreStats.reduce((sum, genre) => sum + genre.count, 0);
   
-  return genreStats.map((genre, index) => {
-    const percentage = Math.round((genre.count / total) * 100);
-    return {
-      value: percentage,
-      color: colors[index] || '#9e9e9e',
-      text: `${percentage}%`,
-      label: genre.name
-    };
-  });
+  let result: GenreData[] = [];
+  
+  if (allGenreStats.length <= 5) {
+    // Se abbiamo 5 o meno generi, mostriamo tutti
+    result = allGenreStats.map((genre, index) => {
+      const percentage = Math.round((genre.count / total) * 100);
+      return {
+        value: percentage,
+        color: colors[index] || '#9e9e9e',
+        text: `${percentage}%`,
+        label: genre.name
+      };
+    });
+  } else {
+    // Se abbiamo più di 5 generi, mostriamo i primi 4 + "Altri"
+    const topGenres = allGenreStats.slice(0, 4);
+    const otherGenres = allGenreStats.slice(4);
+    const otherCount = otherGenres.reduce((sum, genre) => sum + genre.count, 0);
+    
+    // Aggiungi i primi 4 generi
+    result = topGenres.map((genre, index) => {
+      const percentage = Math.round((genre.count / total) * 100);
+      return {
+        value: percentage,
+        color: colors[index],
+        text: `${percentage}%`,
+        label: genre.name
+      };
+    });
+    
+    // Aggiungi la categoria "Altri"
+    if (otherCount > 0) {
+      const otherPercentage = Math.round((otherCount / total) * 100);
+      result.push({
+        value: otherPercentage,
+        color: colors[4], // Colore grigio per "Altri"
+        text: `${otherPercentage}%`,
+        label: 'Altri'
+      });
+    }
+  }
+
+  return result;
 }
 
 /**

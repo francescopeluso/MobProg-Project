@@ -8,6 +8,9 @@ interface MonthlyReadingChartProps {
 }
 
 const MonthlyReadingChart: React.FC<MonthlyReadingChartProps> = ({ data }) => {
+  // Filtra i dati per rimuovere i mesi con 0 libri letti
+  const filteredData = data.filter(item => item.value > 0);
+  
   // Layout calculations
   const screenWidth = Dimensions.get('window').width;
   const containerPadding = 32; // SectionCard padding in parent
@@ -19,7 +22,7 @@ const MonthlyReadingChart: React.FC<MonthlyReadingChartProps> = ({ data }) => {
   const yAxisWidth = 45;
   const endPadding = 10;
 
-  const totalBars = data.length;
+  const totalBars = filteredData.length;
   const totalSpacing = (totalBars - 1) * spacing;
   const barsWidth = totalBars * barWidth;
   const chartContentWidth = barsWidth + totalSpacing + endPadding;
@@ -38,16 +41,11 @@ const MonthlyReadingChart: React.FC<MonthlyReadingChartProps> = ({ data }) => {
     }
   };
 
-
-  // Prepare data: hide top‑labels for zero‑value months
-  const processed = data.map((item) => ({
+  // Prepare data: usa i dati filtrati
+  const processed = filteredData.map((item) => ({
     ...item,
     frontColor: item.frontColor || Colors.secondary,
-    // The library renders topLabelComponent when present. Returning undefined removes the label.
-    topLabelComponent:
-      item.value > 0 
-        ? () => <Text style={styles.topLabel}>{item.value}</Text>
-        : undefined,
+    topLabelComponent: () => <Text style={styles.topLabel}>{item.value}</Text>,
   }));
 
   const Chart = (
@@ -63,11 +61,10 @@ const MonthlyReadingChart: React.FC<MonthlyReadingChartProps> = ({ data }) => {
       yAxisTextStyle={{ color: Colors.textTertiary, fontSize: 11 }}
       xAxisLabelTextStyle={{ color: Colors.textTertiary, fontSize: 10 }}
       noOfSections={4}
-      maxValue={Math.max(...data.map((d) => d.value), 1)}
+      maxValue={Math.max(...filteredData.map((d) => d.value), 1)}
       isAnimated
       animationDuration={800}
       disablePress={true}
-      // Rimosso renderTooltip per eliminare completamente i tooltip
     />
   );
 
