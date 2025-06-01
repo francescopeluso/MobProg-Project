@@ -264,15 +264,148 @@ export default function AddBookScreen() {
 
   /**
    * 
+   * @function validateForm
+   * @description Funzione per validare tutti i campi del form prima del salvataggio
+   * @returns {object} Oggetto con isValid (boolean) e errors (array di stringi)
+   */
+  const validateForm = () => {
+    const errors: string[] = [];
+    
+    // Validazione titolo
+    if (!form.title.trim()) {
+      errors.push('Il titolo del libro è obbligatorio.');
+    } else if (form.title.trim().length < 2) {
+      errors.push('Il titolo deve contenere almeno 2 caratteri.');
+    } else if (form.title.trim().length > 200) {
+      errors.push('Il titolo non può superare i 200 caratteri.');
+    }
+    
+    // Validazione autore
+    if (!form.author.trim()) {
+      errors.push('L\'autore del libro è obbligatorio.');
+    } else if (form.author.trim().length < 2) {
+      errors.push('Il nome dell\'autore deve contenere almeno 2 caratteri.');
+    } else if (form.author.trim().length > 150) {
+      errors.push('Il nome dell\'autore non può superare i 150 caratteri.');
+    }
+    
+    // Validazione anno di pubblicazione
+    if (form.publication.trim()) {
+      const year = parseInt(form.publication.trim(), 10);
+      const currentYear = new Date().getFullYear();
+      
+      if (isNaN(year)) {
+        errors.push('L\'anno di pubblicazione deve essere un numero valido.');
+      } else if (year < 0) {
+        errors.push('L\'anno di pubblicazione non può essere negativo.');
+      } else if (year > currentYear + 5) {
+        errors.push(`L\'anno di pubblicazione non può essere superiore a ${currentYear + 5}.`);
+      } else if (year < 1000) {
+        errors.push('L\'anno di pubblicazione deve essere di almeno 4 cifre.');
+      }
+    }
+    
+    // Validazione URL copertina
+    if (form.cover_url.trim()) {
+      const urlPattern = /^https?:\/\/.+\..+/i;
+      if (!urlPattern.test(form.cover_url.trim())) {
+        errors.push('L\'URL della copertina deve essere un link valido (http:// o https://).');
+      }
+    }
+    
+    // Validazione descrizione
+    if (form.description.trim() && form.description.trim().length > 2000) {
+      errors.push('La descrizione non può superare i 2000 caratteri.');
+    }
+    
+    // Validazione commento rating
+    if (comment.trim() && comment.trim().length > 500) {
+      errors.push('Il commento della valutazione non può superare i 500 caratteri.');
+    }
+    
+    // Validazione note
+    if (note.trim() && note.trim().length > 5000) {
+      errors.push('Le note non possono superare i 5000 caratteri.');
+    }
+    
+    return {
+      isValid: errors.length === 0,
+      errors
+    };
+  };
+
+  /**
+   * 
+   * @function formatYear
+   * @param text Testo inserito dall'utente
+   * @description Funzione per formattare l'input dell'anno, accettando solo numeri
+   * @returns {string} Anno formattato
+   */
+  const formatYear = (text: string): string => {
+    // Rimuovi tutti i caratteri non numerici
+    const numbersOnly = text.replace(/[^0-9]/g, '');
+    
+    // Limita a 4 cifre
+    return numbersOnly.slice(0, 4);
+  };
+
+  /**
+   * 
+   * @function formatTitle
+   * @param text Testo inserito dall'utente
+   * @description Funzione per formattare il titolo, rimuovendo caratteri speciali pericolosi
+   * @returns {string} Titolo formattato
+   */
+  const formatTitle = (text: string): string => {
+    // Rimuovi caratteri potenzialmente pericolosi ma mantieni punteggiatura comune
+    return text.replace(/[<>{}]/g, '').slice(0, 200);
+  };
+
+  /**
+   * 
+   * @function formatAuthor
+   * @param text Testo inserito dall'utente
+   * @description Funzione per formattare il nome dell'autore
+   * @returns {string} Nome autore formattato
+   */
+  const formatAuthor = (text: string): string => {
+    // Permetti lettere, spazi, apostrofi, trattini e virgole per più autori
+    return text.replace(/[^a-zA-ZÀ-ÿ\s',.-]/g, '').slice(0, 150);
+  };
+
+  /**
+   * 
    * @function handleChange
    * @param key Chiave del form da aggiornare
    * @param value Valore da impostare per la chiave specificata
-   * @description Funzione per gestire il cambiamento dei valori nei campi del form.
-   *              Viene utilizzata per aggiornare lo stato del form quando l'utente modifica un campo.
+   * @description Funzione per gestire il cambiamento dei valori nei campi del form con validazione
    * @returns {void}
    */
   const handleChange = (key: keyof typeof form, value: string) => {
-    setForm({ ...form, [key]: value });
+    let formattedValue = value;
+    
+    // Applica formattazione specifica per campo
+    switch (key) {
+      case 'title':
+        formattedValue = formatTitle(value);
+        break;
+      case 'author':
+        formattedValue = formatAuthor(value);
+        break;
+      case 'publication':
+        formattedValue = formatYear(value);
+        break;
+      case 'description':
+        formattedValue = value.slice(0, 2000); // Limita caratteri
+        break;
+      case 'cover_url':
+        formattedValue = value.trim(); // Rimuovi spazi
+        break;
+      default:
+        break;
+    }
+    
+    setForm({ ...form, [key]: formattedValue });
     setIsDirty(true);
   };
 
@@ -315,24 +448,36 @@ export default function AddBookScreen() {
   /**
    * 
    * @function handleSave
-   * @description Funzione per gestire il salvataggio del libro.
-   *              Viene utilizzata sia per aggiungere un nuovo libro che per aggiornare uno esistente.
+   * @description Funzione per gestire il salvataggio del libro con validazione completa
    * @returns {Promise<void>}
    * @throws {Error}
    * @async
    */
   const handleSave = async () => {
   try {
-    // Validazione campi obbligatori
-    if (!form.title.trim()) {
-      Alert.alert('Errore', 'Il titolo del libro è obbligatorio.');
-      titleInputRef.current?.focus();
-      return;
-    }
-
-    if (!form.author.trim()) {
-      Alert.alert('Errore', 'L\'autore del libro è obbligatorio.');
-      authorInputRef.current?.focus();
+    // Validazione completa del form
+    const validation = validateForm();
+    
+    if (!validation.isValid) {
+      Alert.alert(
+        'Errori di validazione',
+        validation.errors.join('\n\n'),
+        [{ text: 'OK', style: 'default' }]
+      );
+      
+      // Focus sul primo campo con errore
+      if (validation.errors.some(e => e.includes('titolo'))) {
+        titleInputRef.current?.focus();
+      } else if (validation.errors.some(e => e.includes('autore'))) {
+        authorInputRef.current?.focus();
+      } else if (validation.errors.some(e => e.includes('anno'))) {
+        publicationInputRef.current?.focus();
+      } else if (validation.errors.some(e => e.includes('URL'))) {
+        coverUrlInputRef.current?.focus();
+      } else if (validation.errors.some(e => e.includes('descrizione'))) {
+        descriptionInputRef.current?.focus();
+      }
+      
       return;
     }
 
@@ -340,28 +485,29 @@ export default function AddBookScreen() {
     const title = form.title.trim();
     const description = form.description.trim() || undefined;
     const cover_url = form.cover_url.trim() || undefined;
-    const publication = parseInt(form.publication, 10) || undefined;
+    const publication = form.publication.trim() ? parseInt(form.publication.trim(), 10) : undefined;
     const isbn10 = remoteBook?.isbn10;
     const isbn13 = remoteBook?.isbn13;
     const authors = form.author
       .split(',')
       .map(a => a.trim())
       .filter(Boolean);
-      // Crea l'oggetto libro da salvare
-      const bookToSave: Book = {
-        title,
-        description,
-        cover_url,
-        publication,
-        isbn10,
-        isbn13,
-        authors,
-        editor: remoteBook?.editor,
-        language: remoteBook?.language,
-        genres: selectedGenres.length > 0 ? selectedGenres : remoteBook?.genres || []
-      };
+      
+    // Crea l'oggetto libro da salvare
+    const bookToSave: Book = {
+      title,
+      description,
+      cover_url,
+      publication,
+      isbn10,
+      isbn13,
+      authors,
+      editor: remoteBook?.editor,
+      language: remoteBook?.language,
+      genres: selectedGenres.length > 0 ? selectedGenres : remoteBook?.genres || []
+    };
 
-      let bookId: number;                 
+    let bookId: number;                 
 
     if (isEditing && params.id) {
       bookToSave.id = +params.id;
@@ -376,12 +522,11 @@ export default function AddBookScreen() {
 
     // salva stato di lettura, rating e note
     await updateReadingStatus(bookId, activeStatus);
-    if (rating > 0) await saveRating(bookId, rating, comment);
+    if (rating > 0) await saveRating(bookId, rating, comment.trim());
     else {
       await deleteRating(bookId);
     }
-    if (note.trim()) await saveNotes(bookId, note)
- 
+    if (note.trim()) await saveNotes(bookId, note.trim());
 
     // salva favorite
     await toggleFavorite(bookId, isFavorite);
@@ -686,6 +831,7 @@ return (
                 placeholder="YYYY"
                 placeholderTextColor="#bbb"
                 keyboardType="numeric"
+                maxLength={4}
                 returnKeyType="next"
                 onSubmitEditing={() => {
                   coverUrlInputRef.current?.focus();
@@ -709,6 +855,9 @@ return (
                 onChangeText={(t) => handleChange('cover_url', t)}
                 placeholder="https://..."
                 placeholderTextColor="#bbb"
+                keyboardType="url"
+                autoCapitalize="none"
+                autoCorrect={false}
                 returnKeyType="next"
                 onSubmitEditing={() => {
                   descriptionInputRef.current?.focus();
@@ -734,13 +883,19 @@ return (
               placeholder="Breve descrizione della trama"
               placeholderTextColor="#bbb"
               multiline
+              maxLength={2000}
               textAlignVertical="top"
               returnKeyType="done"
               onSubmitEditing={() => Keyboard.dismiss()}
               onFocus={() => scrollToInput(750)}
               blurOnSubmit={true}
-              scrollEnabled={true}  // Abilitare lo scroll interno
+              scrollEnabled={true}
             />
+            {form.description.length > 1800 && (
+              <Text style={styles.characterCount}>
+                {form.description.length}/2000 caratteri
+              </Text>
+            )}
           </View>
 
           {/* Icon Row per aprire i quattro modal */}
@@ -860,12 +1015,13 @@ return (
 
                     <TextInput
                       style={[styles.notesTextInput, {
-                        marginBottom: Spacing.md,  // Ridotto da Spacing.xl
+                        marginBottom: Spacing.md,
                         maxHeight: 300
                       }]}
                       placeholder="Aggiungi le tue note..."
                       placeholderTextColor="#999"
                       multiline
+                      maxLength={5000}
                       textAlignVertical="top"
                       value={note}
                       onChangeText={(text) => {
@@ -875,6 +1031,11 @@ return (
                       scrollEnabled={true}
                       autoFocus={true}
                     />
+                    {note.length > 4500 && (
+                      <Text style={styles.characterCount}>
+                        {note.length}/5000 caratteri
+                      </Text>
+                    )}
 
                     <View style={styles.modalButtons}>
                       <TouchableOpacity 
@@ -932,16 +1093,18 @@ return (
                     placeholder="Commento..."
                     placeholderTextColor="#555"
                     value={comment}
+                    maxLength={500}
                     onChangeText={text => {
                       setComment(text);
-                      setIsUserModifiedComment(true); // Mark that user has modified the comment
+                      setIsUserModifiedComment(true);
                       setIsDirty(true);
                     }}
                     returnKeyType="done"
                     onSubmitEditing={() => Keyboard.dismiss()}
                     blurOnSubmit={true}
                   />
-                </View>
+
+                  </View>
                   <View style={styles.modalButtons}>
                     <TouchableOpacity 
                       style={[styles.modalButton, styles.primaryButton, {flex: 1}]}
@@ -1653,6 +1816,12 @@ modalOverlay: {
     fontSize: Typography.fontSize.md,
     color: Colors.textPrimary,
     lineHeight: 24,
+  },
+  characterCount: {
+    fontSize: 12,
+    color: '#999',
+    textAlign: 'right',
+    marginTop: 4,
   },
 
 });
