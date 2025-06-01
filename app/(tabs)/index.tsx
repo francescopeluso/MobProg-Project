@@ -26,6 +26,12 @@ import SessionButton from '../../components/SessionButton';
 import { Book, getBooksByStatus } from '../../services/bookApi';
 import { getPersonalizedWishlistRecommendations } from '../../services/recommendationApi';
 
+// ───── Import del nostro hook “first launch” ─────
+import type { RecommendedBook } from '@/services/onboardingService';
+import { useFirstLaunchRecommendations } from '../../hooks/useFirstLaunchRecommendations';
+
+
+
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
@@ -35,23 +41,25 @@ export default function HomeScreen() {
   const [toRead, setToRead] = useState<Book[]>([]);
   const [reading, setReading] = useState<Book[]>([]);
   const [completed, setCompleted] = useState<Book[]>([]);
-  const [suggested, setSuggested] = useState<Book[]>([]);
   const [wishlistRecommendations, setWishlistRecommendations] = useState<Book[]>([]);
   const [loadingWishlistRecommendations, setLoadingWishlistRecommendations] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showRecommendationModal, setShowRecommendationModal] = useState(false);
   const [selectedRecommendation, setSelectedRecommendation] = useState<Book | null>(null);
-  
+
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  /* Init DB once */
+  /* Questo hook legge da AsyncStorage i "first launch recommendations" */
+  const { recommendations: firstLaunchRecs, isLoading: loadingFirstLaunch } = useFirstLaunchRecommendations();
+
+  /* Init DB una volta */
   useEffect(() => {
     const dbSync = getDBConnection();
     createTables(dbSync).then(() => setDbReady(true));
   }, []);
 
-  /* Fetch lists every time screen gains focus */
+  /* Fetch liste ogni volta che lo screen torna in focus */
   const fetchLists = useCallback(async () => {
     const toReadBooks = await getBooksByStatus('to_read');
     const readingBooks = await getBooksByStatus('reading');
@@ -61,10 +69,9 @@ export default function HomeScreen() {
     setToRead(toReadBooks);
     setReading(readingBooks);
     setCompleted(completedBooks);
-    setSuggested([]); // TODO suggeriti
   }, []);
 
-  /* Fetch wishlist recommendations */
+  /* Fetch delle raccomandazioni “wishlist” (personalizzate) */
   const fetchWishlistRecommendations = useCallback(async () => {
     try {
       setLoadingWishlistRecommendations(true);
@@ -80,10 +87,10 @@ export default function HomeScreen() {
 
   const handleRecommendationPress = (recommendedBook: Book) => {
     if (recommendedBook.id) {
-      // Il libro è già nel database, naviga ai suoi dettagli
+      // Il libro è già nel database, naviga ai dettagli
       router.push(`/book-details?id=${recommendedBook.id}`);
     } else {
-      // Il libro non è nel database, mostra i dettagli nel modal
+      // Mostra il modal per i dettagli del libro (non ancora nel DB)
       setSelectedRecommendation(recommendedBook);
       setShowRecommendationModal(true);
     }
@@ -91,30 +98,36 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      if (dbReady) {
+      if (dbReady && !loadingFirstLaunch) {
         fetchLists();
-        fetchWishlistRecommendations();
+        // Se non ci sono first-launch-recs, facciamo partire quelle "wishlist"
+        if (!firstLaunchRecs) {
+          fetchWishlistRecommendations();
+        }
       }
-    }, [dbReady, fetchLists, fetchWishlistRecommendations])
+    }, [dbReady, loadingFirstLaunch, fetchLists, fetchWishlistRecommendations, firstLaunchRecs])
   );
 
-  if (!dbReady) {
+  if (!dbReady || loadingFirstLaunch) {
     return (
       <View style={styles.loader}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={Colors.primary} />
+        <Text style={styles.loadingText}>
+          {loadingFirstLaunch ? 'Preparando i tuoi consigli...' : 'Caricamento...'}
+        </Text>
       </View>
     );
   }
 
   return (
     <View style={CommonStyles.container}>
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={[
           CommonStyles.contentContainer,
           {
             paddingTop: 0,
-            paddingBottom: getTabContentBottomPadding(insets.bottom)
-          }
+            paddingBottom: getTabContentBottomPadding(insets.bottom),
+          },
         ]}
         scrollIndicatorInsets={{ right: 1 }}
       >
@@ -137,55 +150,122 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/* Book sections */}
+        {/*
+          ────────────────────────────────────────────────────────────────────────
+          SEZIONE "PRIMO AVVIO": se ci sono firstLaunchRecs, le mostriamo COME PRIMA SEZIONE
+          MA SOLO se non ci sono ancora libri nella libreria
+          ────────────────────────────────────────────────────────────────────────
+        */}
+        {firstLaunchRecs && 
+         firstLaunchRecs.length > 0 && 
+         toRead.length === 0 && 
+         reading.length === 0 && 
+         completed.length === 0 && (
+          <SectionCard title="Consigliati per te">
+            <RecommendationCarousel
+              books={firstLaunchRecs.map((rb: RecommendedBook) => ({
+                // mappo RecommendedBook → Book, ora con tutti i campi necessari
+                id: undefined, // These books are not yet in the database
+                title: rb.title,
+                authors: [rb.authors],
+                cover_url: rb.thumbnail,
+                description: rb.description,
+                editor: rb.editor,
+                publication: rb.publication,
+                isbn10: rb.isbn10,
+                isbn13: rb.isbn13,
+                language: rb.language,
+                genres: rb.genres,
+              }))}
+              onPress={(b) => handleRecommendationPress(b)}
+            />
+          </SectionCard>
+        )}
+
+        {/* Sezione "In lettura" */}
         <SectionCard title="In lettura">
           {reading.length > 0 ? (
-            <BookCarousel books={reading} onPress={(id) => router.push({ pathname: '/book-details', params: { id } })} />
+            <BookCarousel
+              books={reading}
+              onPress={(id) => router.push({ pathname: '/book-details', params: { id } })}
+            />
           ) : (
             <Text style={styles.emptyText}>Nessun libro in lettura</Text>
           )}
         </SectionCard>
-        
+
+        {/* Sezione "Da leggere" */}
         <SectionCard title="Da leggere">
           {toRead.length > 0 ? (
-            <BookCarousel books={toRead} onPress={(id) => router.push({ pathname: '/book-details', params: { id } })} />
+            <BookCarousel
+              books={toRead}
+              onPress={(id) => router.push({ pathname: '/book-details', params: { id } })}
+            />
           ) : (
             <Text style={styles.emptyText}>Nessun libro da leggere</Text>
           )}
         </SectionCard>
-        
+
+        {/* Sezione "Completati" */}
         <SectionCard title="Completati">
           {completed.length > 0 ? (
-            <BookCarousel books={completed} onPress={(id) => router.push({ pathname: '/book-details', params: { id } })} />
+            <BookCarousel
+              books={completed}
+              onPress={(id) => router.push({ pathname: '/book-details', params: { id } })}
+            />
           ) : (
             <Text style={styles.emptyText}>Nessun libro completato</Text>
           )}
         </SectionCard>
-        
-        {/* Personalized Wishlist Recommendations */}
-        <SectionCard title="Consigli personalizzati per te">
-          {loadingWishlistRecommendations ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="small" color={Colors.primary} />
-              <Text style={styles.loadingText}>Caricamento consigli personalizzati...</Text>
-            </View>
-          ) : wishlistRecommendations.length > 0 ? (
-            <RecommendationCarousel 
-              books={wishlistRecommendations} 
-              onPress={handleRecommendationPress}
-            />
-          ) : (
-            <Text style={styles.emptyText}>Aggiungi più libri alla tua libreria per ricevere consigli personalizzati</Text>
-          )}
-        </SectionCard>
-        
-        {suggested.length > 0 && (
-          <SectionCard title="Suggeriti">
-            <BookCarousel books={suggested} onPress={(id) => router.push({ pathname: '/book-details', params: { id } })} />
+
+        {/*
+          ────────────────────────────────────────────────────────────────────────
+          SEZIONE CONSIGLI PERSONALIZZATI: quando NON ci sono firstLaunchRecs 
+          OPPURE quando ci sono già libri nella libreria
+          ────────────────────────────────────────────────────────────────────────
+        */}
+        {((!firstLaunchRecs || firstLaunchRecs.length === 0) || 
+          (toRead.length > 0 || reading.length > 0 || completed.length > 0)) && (
+          <SectionCard title="Consigli personalizzati per te">
+            {loadingWishlistRecommendations ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color={Colors.primary} />
+                <Text style={styles.loadingText}>
+                  Caricamento consigli personalizzati...
+                </Text>
+              </View>
+            ) : wishlistRecommendations.length > 0 ? (
+              <RecommendationCarousel
+                books={wishlistRecommendations}
+                onPress={handleRecommendationPress}
+              />
+            ) : (
+              <Text style={styles.emptyText}>
+                Aggiungi più libri alla tua libreria per ricevere consigli personalizzati
+              </Text>
+            )}
           </SectionCard>
         )}
+
+        {/*
+          ────────────────────────────────────────────────────────────────────────
+          La vecchia sezione `suggested` (volendo puoi rimuoverla: non
+          è più necessaria ora che abbiamo firstLaunchRecs + wishlistRecommendations)
+          ────────────────────────────────────────────────────────────────────────
+        */}
+        {/*
+        {suggested.length > 0 && (
+          <SectionCard title="Suggeriti">
+            <BookCarousel
+              books={suggested}
+              onPress={(id) => router.push({ pathname: '/book-details', params: { id } })}
+            />
+          </SectionCard>
+        )}
+        */}
       </ScrollView>
 
+      {/* Modale di ricerca */}
       <Modal visible={showSearch} animationType="slide" onRequestClose={() => setShowSearch(false)}>
         <SearchModal
           mode="local"
@@ -197,7 +277,7 @@ export default function HomeScreen() {
         />
       </Modal>
 
-      {/* Recommendation Detail Modal */}
+      {/* Modale dettagli raccomandazione */}
       <RecommendationDetailModal
         visible={showRecommendationModal}
         book={selectedRecommendation}
@@ -210,48 +290,8 @@ export default function HomeScreen() {
   );
 }
 
+/* ───────── Styles ───────── */
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  contentContainer: {
-    padding: 16,
-  },
-  header: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  iconButton: {
-    padding: 5,
-    marginRight: 8,
-  },
   emptyText: {
     textAlign: 'center',
     color: '#888',
@@ -268,11 +308,13 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     color: '#888',
     fontStyle: 'italic',
+    textAlign: 'center',
+    marginTop: 8,
   },
-  loader: { 
-    flex: 1, 
-    justifyContent: 'center', 
+  loader: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa'
+    backgroundColor: '#f8f9fa',
   },
 });
