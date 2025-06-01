@@ -1,14 +1,12 @@
-// SessionButton.tsx – versione completa con alone “breathing” e coach‑mark
+// SessionButton.tsx – versione leggera: solo feedback aptico e coach‑mark al primo click
 
 import { BorderRadius, Colors, Shadows, Spacing, Typography } from '@/constants/styles';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActionSheetIOS,
   Alert,
-  Animated,
-  Easing,
   Platform,
   StyleSheet,
   Text,
@@ -37,11 +35,8 @@ export default function SessionButton({ variant = 'default' }: Props) {
   const [sessionId, setSessionId] = useState<number | null>(null);
   const [showIntro, setShowIntro] = useState(false);
 
-  /* ───── breathing animation value (0 → 1) ───── */
-  const pulse = useRef(new Animated.Value(0)).current;
-
+  /* Ripristina eventuale sessione attiva salvata */
   useEffect(() => {
-    /* restore active session on mount */
     (async () => {
       const existing = await getActiveSessionId();
       if (existing) {
@@ -49,50 +44,30 @@ export default function SessionButton({ variant = 'default' }: Props) {
         setActive(true);
       }
     })();
-
-    /* show coach‑mark only once */
-    (async () => {
-      const already = await AsyncStorage.getItem('session_intro_shown');
-      if (!already) {
-        setShowIntro(true);
-      }
-    })();
   }, []);
 
-  /* ───── start pulsing when active, stop otherwise ───── */
-  useEffect(() => {
-    if (active) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulse, {
-            toValue: 1,
-            duration: 1500,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulse, {
-            toValue: 0,
-            duration: 1500,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
+  /* -------------------------------- helpers -------------------------------- */
+  const formatTime = (totalSeconds: number) => {
+    if (totalSeconds < 60) {
+      return `${totalSeconds} second${totalSeconds === 1 ? 'o' : 'i'}`;
+    } else if (totalSeconds < 3600) {
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      return `${minutes} minut${minutes === 1 ? 'o' : 'i'}${seconds > 0 ? ` e ${seconds} second${seconds === 1 ? 'o' : 'i'}` : ''}`;
     } else {
-      pulse.stopAnimation();
-      pulse.setValue(0);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      let result = `${hours} or${hours === 1 ? 'a' : 'e'}`;
+      if (minutes > 0) result += ` ${minutes} minut${minutes === 1 ? 'o' : 'i'}`;
+      if (seconds > 0) result += ` e ${seconds} second${seconds === 1 ? 'o' : 'i'}`;
+      return result;
     }
-  }, [active]);
-
-  const reset = () => {
-    setActive(false);
-    setSessionId(null);
   };
 
-  /* ──────────────── start ──────────────── */
-  const onStart = async () => {
+  /* ------------------------------ start/stop ------------------------------ */
+  const startSessionOps = async () => {
     try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       const id = await startSession();
       setSessionId(id);
       setActive(true);
@@ -102,30 +77,29 @@ export default function SessionButton({ variant = 'default' }: Props) {
     }
   };
 
-  /* ──────────────── stop / manage ──────────────── */
+  const handleStartPress = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    // Coach‑mark solo la prima volta
+    const seen = await AsyncStorage.getItem('session_intro_shown');
+    if (!seen) {
+      setShowIntro(true);
+      return;
+    }
+    startSessionOps();
+  };
+
+  const confirmIntro = async () => {
+    await AsyncStorage.setItem('session_intro_shown', 'true');
+    setShowIntro(false);
+    startSessionOps();
+  };
+
   const onStop = async () => {
     if (!sessionId) return;
     try {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       const seconds = await getDurationToNow(sessionId);
-      const formatTime = (totalSeconds: number) => {
-        if (totalSeconds < 60) {
-          return `${totalSeconds} second${totalSeconds === 1 ? 'o' : 'i'}`;
-        } else if (totalSeconds < 3600) {
-          const minutes = Math.floor(totalSeconds / 60);
-          const seconds = totalSeconds % 60;
-          return `${minutes} minut${minutes === 1 ? 'o' : 'i'}$${seconds > 0 ? ` e ${seconds} second${seconds === 1 ? 'o' : 'i'}` : ''}`;
-        } else {
-          const hours = Math.floor(totalSeconds / 3600);
-          const minutes = Math.floor((totalSeconds % 3600) / 60);
-          const seconds = totalSeconds % 60;
-          let result = `${hours} or${hours === 1 ? 'a' : 'e'}`;
-          if (minutes > 0) result += ` ${minutes} minut${minutes === 1 ? 'o' : 'i'}`;
-          if (seconds > 0) result += ` e ${seconds} second${seconds === 1 ? 'o' : 'i'}`;
-          return result;
-        }
-      };
-
       Alert.alert('Termina sessione', `Hai letto per ${formatTime(seconds)}.`, [
         { text: 'Continua', style: 'cancel' },
         {
@@ -154,7 +128,12 @@ export default function SessionButton({ variant = 'default' }: Props) {
     }
   };
 
-  /* ─────────── associate book ─────────── */
+  const reset = () => {
+    setActive(false);
+    setSessionId(null);
+  };
+
+  /* --------------------------- associazione libro -------------------------- */
   const showBookPicker = async (seconds: number) => {
     if (!sessionId) return;
     try {
@@ -165,11 +144,13 @@ export default function SessionButton({ variant = 'default' }: Props) {
         reset();
         return;
       }
+
       const handle = async (book: any, markCompleted = false) => {
         await endSession(sessionId);
         await saveSessionWithBook(sessionId, book.id, markCompleted);
         reset();
       };
+
       if (Platform.OS === 'ios') {
         ActionSheetIOS.showActionSheetWithOptions(
           {
@@ -202,36 +183,30 @@ export default function SessionButton({ variant = 'default' }: Props) {
     }
   };
 
-  /* ──────────────── render ──────────────── */
-  const ringScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.8] });
-  const ringOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.5, 0] });
-
+  /* -------------------------------- render -------------------------------- */
   if (variant === 'compact') {
     return (
-      <TouchableOpacity onPress={active ? onStop : onStart} hitSlop={10} style={{ marginLeft: 12 }}>
-        <Ionicons
-          name={active ? 'book' : 'book-outline'}
-          size={24}
-          color={active ? Colors.error : Colors.primary}
-        />
-      </TouchableOpacity>
+      <>
+        <TouchableOpacity onPress={active ? onStop : handleStartPress} hitSlop={10} style={{ marginLeft: 12 }}>
+          <Ionicons
+            name={active ? 'book' : 'book-outline'}
+            size={24}
+            color={active ? Colors.error : Colors.primary}
+          />
+        </TouchableOpacity>
+
+        <Modal isVisible={showIntro} onBackdropPress={() => setShowIntro(false)}>
+          <IntroCard onConfirm={confirmIntro} />
+        </Modal>
+      </>
     );
   }
 
   return (
-    <View style={styles.wrapper}>
-      {/* Pulsing ring */}
-      {active && (
-        <Animated.View
-          pointerEvents="none"
-          style={[styles.pulseRing, { transform: [{ scale: ringScale }], opacity: ringOpacity }]}
-        />
-      )}
-
-      {/* Main button */}
+    <>
       <TouchableOpacity
         style={[styles.btn, active ? styles.stopBtn : styles.startBtn]}
-        onPress={active ? onStop : onStart}
+        onPress={active ? onStop : handleStartPress}
       >
         <Ionicons
           name={active ? 'stop-circle-outline' : 'play-circle-outline'}
@@ -242,44 +217,29 @@ export default function SessionButton({ variant = 'default' }: Props) {
         <Text style={styles.txt}>{active ? 'Termina Sessione' : 'Inizia Sessione'}</Text>
       </TouchableOpacity>
 
-      {/* Intro coach‑mark */}
       <Modal isVisible={showIntro} onBackdropPress={() => setShowIntro(false)}>
-        <View style={styles.modalCard}>
-          <Text style={styles.modalTitle}>Timer di Lettura</Text>
-          <Text style={styles.modalBody}>
-            Premi "Inizia" per registrare quanto tempo dedichi alla lettura. Puoi interrompere
-            in qualsiasi momento e associare la sessione a un libro. Consigliato: attiva la
-            Focus Mode per evitare distrazioni!
-          </Text>
-          <TouchableOpacity
-            style={[styles.btn, styles.startBtn, { alignSelf: 'stretch' }]}
-            onPress={async () => {
-              setShowIntro(false);
-              await AsyncStorage.setItem('session_intro_shown', 'true');
-            }}
-          >
-            <Text style={[styles.txt, { textAlign: 'center' }]}>Capito</Text>
-          </TouchableOpacity>
-        </View>
+        <IntroCard onConfirm={confirmIntro} />
       </Modal>
-    </View>
+    </>
   );
 }
 
+/* ------------------------------- Intro card ------------------------------- */
+const IntroCard = ({ onConfirm }: { onConfirm: () => void }) => (
+  <View style={styles.modalCard}>
+    <Text style={styles.modalTitle}>Timer di Lettura</Text>
+    <Text style={styles.modalBody}>
+      Hai iniziato una sessione di lettura.
+      Al termine, clicca nuovamente per interrompere e potrai associare la sessione a uno dei libri disponibili.
+    </Text>
+    <TouchableOpacity style={[styles.btn, styles.startBtn]} onPress={onConfirm}>
+      <Text style={styles.txt}>Capito</Text>
+    </TouchableOpacity>
+  </View>
+);
+
+/* -------------------------------- styles -------------------------------- */
 const styles = StyleSheet.create({
-  wrapper: {
-    alignSelf: 'center',
-    marginVertical: Spacing.lg,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  pulseRing: {
-    position: 'absolute',
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: Colors.primary,
-  },
   btn: {
     padding: Spacing.md,
     borderRadius: BorderRadius.md,
@@ -287,7 +247,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     ...Shadows.small,
-    width: 140,
+    alignSelf: 'center',
+    marginVertical: Spacing.lg,
   },
   startBtn: { backgroundColor: Colors.primary },
   stopBtn: { backgroundColor: Colors.error },
@@ -302,15 +263,17 @@ const styles = StyleSheet.create({
   modalCard: {
     backgroundColor: Colors.surface,
     padding: Spacing.lg,
-    borderRadius: BorderRadius.lg,
+    borderRadius: BorderRadius.md,
   },
   modalTitle: {
     fontSize: Typography.fontSize.xl,
     fontWeight: Typography.fontWeight.bold,
     marginBottom: Spacing.md,
+    textAlign: 'center',
   },
   modalBody: {
     fontSize: Typography.fontSize.md,
     marginBottom: Spacing.lg,
+    textAlign: 'center',
   },
 });
