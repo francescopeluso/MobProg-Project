@@ -19,9 +19,12 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BookCarousel from '../../components/BookCarousel';
+import RecommendationCarousel from '../../components/RecommendationCarousel';
+import RecommendationDetailModal from '../../components/RecommendationDetailModal';
 import SearchModal from '../../components/SearchModal';
 import SessionButton from '../../components/SessionButton';
 import { Book, getBooksByStatus } from '../../services/bookApi';
+import { getPersonalizedWishlistRecommendations } from '../../services/recommendationApi';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -33,7 +36,11 @@ export default function HomeScreen() {
   const [reading, setReading] = useState<Book[]>([]);
   const [completed, setCompleted] = useState<Book[]>([]);
   const [suggested, setSuggested] = useState<Book[]>([]);
+  const [wishlistRecommendations, setWishlistRecommendations] = useState<Book[]>([]);
+  const [loadingWishlistRecommendations, setLoadingWishlistRecommendations] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [showRecommendationModal, setShowRecommendationModal] = useState(false);
+  const [selectedRecommendation, setSelectedRecommendation] = useState<Book | null>(null);
   
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -57,10 +64,38 @@ export default function HomeScreen() {
     setSuggested([]); // TODO suggeriti
   }, []);
 
+  /* Fetch wishlist recommendations */
+  const fetchWishlistRecommendations = useCallback(async () => {
+    try {
+      setLoadingWishlistRecommendations(true);
+      const recommendations = await getPersonalizedWishlistRecommendations();
+      setWishlistRecommendations(recommendations);
+    } catch (error) {
+      console.error('Errore nel caricamento delle raccomandazioni wishlist:', error);
+      setWishlistRecommendations([]);
+    } finally {
+      setLoadingWishlistRecommendations(false);
+    }
+  }, []);
+
+  const handleRecommendationPress = (recommendedBook: Book) => {
+    if (recommendedBook.id) {
+      // Il libro è già nel database, naviga ai suoi dettagli
+      router.push(`/book-details?id=${recommendedBook.id}`);
+    } else {
+      // Il libro non è nel database, mostra i dettagli nel modal
+      setSelectedRecommendation(recommendedBook);
+      setShowRecommendationModal(true);
+    }
+  };
+
   useFocusEffect(
     useCallback(() => {
-      if (dbReady) fetchLists();
-    }, [dbReady, fetchLists])
+      if (dbReady) {
+        fetchLists();
+        fetchWishlistRecommendations();
+      }
+    }, [dbReady, fetchLists, fetchWishlistRecommendations])
   );
 
   if (!dbReady) {
@@ -127,6 +162,23 @@ export default function HomeScreen() {
           )}
         </SectionCard>
         
+        {/* Personalized Wishlist Recommendations */}
+        <SectionCard title="Consigli personalizzati per te">
+          {loadingWishlistRecommendations ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color={Colors.primary} />
+              <Text style={styles.loadingText}>Caricamento consigli personalizzati...</Text>
+            </View>
+          ) : wishlistRecommendations.length > 0 ? (
+            <RecommendationCarousel 
+              books={wishlistRecommendations} 
+              onPress={handleRecommendationPress}
+            />
+          ) : (
+            <Text style={styles.emptyText}>Aggiungi più libri alla tua libreria per ricevere consigli personalizzati</Text>
+          )}
+        </SectionCard>
+        
         {suggested.length > 0 && (
           <SectionCard title="Suggeriti">
             <BookCarousel books={suggested} onPress={(id) => router.push({ pathname: '/book-details', params: { id } })} />
@@ -144,6 +196,16 @@ export default function HomeScreen() {
           onClose={() => setShowSearch(false)}
         />
       </Modal>
+
+      {/* Recommendation Detail Modal */}
+      <RecommendationDetailModal
+        visible={showRecommendationModal}
+        book={selectedRecommendation}
+        onClose={() => {
+          setShowRecommendationModal(false);
+          setSelectedRecommendation(null);
+        }}
+      />
     </View>
   );
 }
@@ -194,6 +256,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#888',
     padding: 16,
+    fontStyle: 'italic',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  loadingText: {
+    marginLeft: 8,
+    color: '#888',
     fontStyle: 'italic',
   },
   loader: { 
