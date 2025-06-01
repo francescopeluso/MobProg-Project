@@ -1,18 +1,19 @@
 // app/(screens)/scan.tsx
 import { Ionicons } from '@expo/vector-icons';
 import { BarcodeScanningResult, Camera, CameraView } from 'expo-camera';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Image,
-  Linking,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Image,
+    Linking,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -34,6 +35,37 @@ export default function ScanScreen() {
   const [scannedBook, setScannedBook] = useState<Book | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Haptic feedback wrapper functions
+  const handleBack = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.back();
+  };
+
+  const handleOpenSettings = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Linking.openSettings();
+  };
+
+  const handleToggleScanning = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setScanning(!scanning);
+  };
+
+  const handleAddManual = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push("/add-book");
+  };
+
+  const handleSaveBookWithHaptic = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    handleSaveBook();
+  };
+
+  const handleCancelScannedBookWithHaptic = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    handleCancelScannedBook();
+  };
+
   // Richiedi il permesso di accesso alla fotocamera all'avvio
   useEffect(() => {
     (async () => {
@@ -46,6 +78,9 @@ export default function ScanScreen() {
   const handleBarCodeScanned = async ({ type, data }: BarcodeScanningResult) => {
     // Ignora la scansione se stiamo già elaborando una
     if (scanned || loading) return;
+    
+    // Add haptic feedback for successful scan
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
     // Segna come scansionato per evitare scansioni multiple
     setScanned(true);
@@ -161,7 +196,7 @@ export default function ScanScreen() {
         </Text>
         <TouchableOpacity
           style={styles.permissionButton}
-          onPress={() => Linking.openSettings()}
+          onPress={handleOpenSettings}
         >
           <Text style={styles.permissionButtonText}>Apri Impostazioni</Text>
         </TouchableOpacity>
@@ -173,8 +208,8 @@ export default function ScanScreen() {
   if (scannedBook) {
     return <ScannedBookView 
       book={scannedBook} 
-      onConfirm={handleSaveBook} 
-      onCancel={handleCancelScannedBook} 
+      onConfirm={handleSaveBookWithHaptic} 
+      onCancel={handleCancelScannedBookWithHaptic} 
     />;
   }
 
@@ -184,7 +219,7 @@ export default function ScanScreen() {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => router.back()}
+          onPress={handleBack}
         >
           <Ionicons name="arrow-back" size={24} color="#4A90E2" />
         </TouchableOpacity>
@@ -227,7 +262,7 @@ export default function ScanScreen() {
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.footerButton}
-          onPress={() => setScanning(!scanning)}
+          onPress={handleToggleScanning}
         >
           <Ionicons
             name={scanning ? "pause-circle-outline" : "play-circle-outline"}
@@ -241,7 +276,7 @@ export default function ScanScreen() {
 
         <TouchableOpacity
           style={styles.footerButton}
-          onPress={() => router.push("/add-book")}
+          onPress={handleAddManual}
         >
           <Ionicons name="add-circle-outline" size={28} color="#4A90E2" />
           <Text style={styles.footerButtonText}>Manuale</Text>

@@ -1,24 +1,25 @@
 import { AntDesign, Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MotiView } from 'moti';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Dimensions,
-  Image,
-  Keyboard,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    Alert,
+    Dimensions,
+    Image,
+    Keyboard,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -102,11 +103,59 @@ export default function AddBookScreen() {
     }, 100);
   };
 
-  const toggleGenre = (g: string) => {
+  const toggleGenre = async (g: string) => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setIsDirty(true);
     setSelectedGenres(prev =>
       prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g]
-  )}; 
+  )};
+
+  const handleShowSearch = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setShowSearch(true);
+  };
+
+  const handleShowGenreModal = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setShowGenreModal(true);
+  };
+
+  const handleShowNoteModal = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setShowNoteModal(true);
+  };
+
+  const handleToggleFavorite = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setIsFavorite(!isFavorite);
+    setIsDirty(true);
+  };
+
+  const handleStatusChange = async (s: typeof STATI[number]) => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setActiveStatus(s);
+    setIsDirty(true);
+  };
+
+  const handleRatingPress = async (s: number) => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setRating(s);
+    setIsDirty(true);
+  };
+
+  const handleRemoveRating = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    setRating(0);
+    setComment('');
+    setIsUserModifiedComment(false);
+    setIsDirty(true);
+  };
+
+  const handleSaveNotes = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setIsDirty(true);
+    setShowNoteModal(false);
+  }; 
 
   useEffect(() => {
     if (params.id) {
@@ -409,7 +458,8 @@ export default function AddBookScreen() {
     setIsDirty(true);
   };
 
-  const handleBack = () => {
+  const handleBack = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (isDirty) {
       Alert.alert(
         'Modifiche non salvate',
@@ -455,6 +505,7 @@ export default function AddBookScreen() {
    */
   const handleSave = async () => {
   try {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     // Validazione completa del form
     const validation = validateForm();
     
@@ -552,6 +603,7 @@ export default function AddBookScreen() {
    * @async
    */
   const handleDelete = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     // Chiedi conferma prima di eliminare
     Alert.alert(
       'Elimina libro',
@@ -568,6 +620,7 @@ export default function AddBookScreen() {
             try {
               if (!params.id) return;
               
+              await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               const bookId = parseInt(params.id);
               const success = await deleteBook(bookId);
               
@@ -592,6 +645,7 @@ export default function AddBookScreen() {
 
 // Funzione che permette di selezionare la copertina dalla galleria
   const pickBookImage = async () => {
+  await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   const { granted } = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (!granted) {
     Alert.alert('Permesso negato', 'Devi consentire l\'accesso alla galleria');
@@ -661,7 +715,7 @@ return (
           <Text style={styles.title}>
             {isEditing ? 'Modifica Libro' : 'Nuovo Libro'}
           </Text>
-          <TouchableOpacity style={styles.searchButton} onPress={() => setShowSearch(true)}>
+          <TouchableOpacity style={styles.searchButton} onPress={handleShowSearch}>
             <Ionicons name="search-outline" size={22} color="#fff" />
           </TouchableOpacity>
         </View>
@@ -754,7 +808,7 @@ return (
               style={styles.tabButton}
             >
               <Pressable
-                onPress={() => { setActiveStatus(s); setIsDirty(true); }}
+                onPress={() => handleStatusChange(s)}
                 style={styles.tabButton}
               >
                 <Text style={[styles.tabText, isActive && styles.tabTextActive]}>{label}</Text>
@@ -902,13 +956,13 @@ return (
           <View style={[styles.formRow, {flexDirection: 'row', justifyContent: 'space-around'}]}>
             {/* Generi */}
             <Pressable
-              onPress={() => setShowGenreModal(true)}
+              onPress={handleShowGenreModal}
               style={styles.iconButton}
             ><Ionicons name="book-outline" size={24} color="#fff" />
             </Pressable>
             {/* Note */}
             <Pressable
-              onPress={() => setShowNoteModal(true)}
+              onPress={handleShowNoteModal}
               style={[styles.iconButton, {paddingBottom: 3}]}
             ><Ionicons name="create-outline" size={24} color="#fff" />
             </Pressable>
@@ -931,14 +985,7 @@ return (
             </Pressable>
             {/* Preferiti */}
             <Pressable
-              onPress={() => {
-              if(!isFavorite) {
-                setIsFavorite(true);
-              } else {
-                setIsFavorite(false);
-              }
-              setIsDirty(true);
-              }}
+              onPress={handleToggleFavorite}
               style={[ styles.iconButton, 
               isFavorite ? { backgroundColor: Colors.accent } :
               { backgroundColor: '#BBB' }
@@ -1046,10 +1093,7 @@ return (
                       </TouchableOpacity>
                       <TouchableOpacity 
                         style={[styles.modalButton, styles.primaryButton]}
-                        onPress={() => {
-                          setIsDirty(true);
-                          setShowNoteModal(false);
-                        }}
+                        onPress={handleSaveNotes}
                       >
                         <Text style={styles.primaryButtonText}>Salva</Text>
                       </TouchableOpacity>
@@ -1066,10 +1110,7 @@ return (
                   <Text style={[styles.label, {marginBottom: 16}]}>Aggiungi una Valutazione</Text>
                   <View style={styles.starsRow}>
                     {[1,2,3,4,5].map((s,i) => (
-                      <Pressable key={s} onPress={() => {
-                        setRating(s);
-                        setIsDirty(true);    
-                      }}>
+                      <Pressable key={s} onPress={() => handleRatingPress(s)}>
                         <MotiView
                           from={{ scale: 0.5, opacity: 0 }}
                           animate={{ scale: rating === s ? 1.3 : 1, opacity: 1 }}
@@ -1108,12 +1149,7 @@ return (
                   <View style={styles.modalButtons}>
                     <TouchableOpacity 
                       style={[styles.modalButton, styles.primaryButton, {flex: 1}]}
-                      onPress={() => {
-                        setRating(0);
-                        setComment('');
-                        setIsUserModifiedComment(false); // Reset this flag when removing rating
-                        setIsDirty(true);
-                      }}
+                      onPress={handleRemoveRating}
                       >
                       <Text style={styles.primaryButtonText}>Rimuovi valutazione</Text>
                     </TouchableOpacity>

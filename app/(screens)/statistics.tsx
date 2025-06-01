@@ -1,15 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
+import React from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
-  BookRatingCard,
-  GenreChart,
-  MonthlyReadingChart,
-  RatingDistributionChart,
-  ReadingProgressChart,
-  SectionCard
+    BookRatingCard,
+    GenreChart,
+    MonthlyReadingChart,
+    RatingDistributionChart,
+    ReadingProgressChart,
+    SectionCard
 } from '@/components';
 
 import { getTabContentBottomPadding } from '@/constants/layout';
@@ -18,6 +20,12 @@ import { useStatistics } from '@/hooks/useStatistics';
 
 export default function StatisticsScreen() {
   const insets = useSafeAreaInsets();
+  
+  // Haptic feedback wrapper function
+  const handleBack = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.back();
+  };
   
   // Utilizziamo il hook personalizzato per le statistiche
   const {
@@ -63,7 +71,7 @@ export default function StatisticsScreen() {
           <View style={CommonStyles.headerTop}>
             <TouchableOpacity 
               style={CommonStyles.iconButton}
-              onPress={() => router.back()}
+              onPress={handleBack}
             >
               <Ionicons name="arrow-back" size={24} color={Colors.primary} />
             </TouchableOpacity>

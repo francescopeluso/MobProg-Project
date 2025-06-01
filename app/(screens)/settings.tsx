@@ -3,6 +3,7 @@ import { Colors, CommonStyles } from '@/constants/styles';
 import { createTables, dropTables, getDBConnection } from '@/utils/database';
 import { populateWithDemoDataFromAPI } from '@/utils/demoInitialize';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -14,6 +15,72 @@ export default function SettingsScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [loadingMessage, setLoadingMessage] = useState('');
+
+  // Haptic feedback wrapper functions
+  const handleBack = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.back();
+  };
+
+  const handleReinitializeDB = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Alert.alert(
+      "Conferma reinizializzazione",
+      "Sei sicuro? Tutti i dati esistenti verranno eliminati e il database sarà ripristinato.",
+      [
+        { text: "Annulla", style: "cancel" },
+        { 
+          text: "Conferma", 
+          style: "destructive",
+          onPress: async () => {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+            try {
+              await dropTables(db);
+              await createTables(db);
+              Alert.alert('Successo', 'Database reinizializzato con successo.');
+            } catch (error) {
+              console.error('Errore durante la reinizializzazione del database:', error);
+              Alert.alert('Errore', 'Errore durante la reinizializzazione del database.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handlePopulateDemo = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Alert.alert(
+      'Popola con libri demo',
+      'Vuoi popolare il database con dati demo? Questa operazione può richiedere alcuni minuti.',
+      [
+        { text: 'Annulla', style: 'cancel' },
+        {
+          text: "Conferma",
+          onPress: async () => {
+            await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            try {
+              setIsLoading(true);
+              setLoadingProgress(0);
+              setLoadingMessage('Inizializzazione...');
+
+              await populateWithDemoDataFromAPI((progress, message) => {
+                setLoadingProgress(progress);
+                setLoadingMessage(message);
+              });
+              
+              setIsLoading(false);
+              Alert.alert('Successo', 'Database popolato con libri demo!');
+            } catch (error) {
+              setIsLoading(false);
+              console.error('Errore durante il popolamento API:', error);
+              Alert.alert('Errore', 'Errore durante il popolamento del database.');
+            }
+          }
+        }
+      ]
+    );
+  };
 
   return (
     <View style={CommonStyles.container}>
@@ -31,7 +98,7 @@ export default function SettingsScreen() {
           <View style={styles.headerRow}>
             <TouchableOpacity 
               style={CommonStyles.iconButton} 
-              onPress={() => router.back()}
+              onPress={handleBack}
             >
               <Ionicons name="arrow-back" size={24} color={Colors.secondary} />
             </TouchableOpacity>
@@ -45,29 +112,7 @@ export default function SettingsScreen() {
             </Text>
           <TouchableOpacity 
             style={[CommonStyles.secondaryButton, styles.dangerButton]}
-            onPress={() => {
-              Alert.alert(
-          "Conferma reinizializzazione",
-          "Sei sicuro? Tutti i dati esistenti verranno eliminati e il database sarà ripristinato.",
-          [
-            { text: "Annulla", style: "cancel" },
-            { 
-              text: "Conferma",
-              style: "destructive",
-              onPress: async () => {
-                try {
-            await dropTables(db);
-            await createTables(db);
-            Alert.alert('Successo', 'Database reinizializzato con successo.');
-                } catch (error) {
-            console.error('Errore durante la reinizializzazione del database:', error);
-            Alert.alert('Errore', 'Errore durante la reinizializzazione del database.');
-                }
-              }
-            }
-          ]
-              );
-            }}
+            onPress={handleReinitializeDB}
           >
             <Ionicons name="refresh-outline" size={22} color="#fff" />
             <Text style={CommonStyles.secondaryButtonText}>Reinizializza Database</Text>
@@ -75,37 +120,7 @@ export default function SettingsScreen() {
 
           <TouchableOpacity 
             style={[CommonStyles.primaryButton, { marginTop: 8 }]}
-            onPress={() => {
-              Alert.alert(
-                'Popola con libri demo',
-                'Vuoi popolare il database con dati demo? Questa operazione può richiedere alcuni minuti.',
-                [
-                  { text: 'Annulla', style: 'cancel' },
-                  {
-                    text: "Conferma",
-                    onPress: async () => {
-                      try {
-                        setIsLoading(true);
-                        setLoadingProgress(0);
-                        setLoadingMessage('Inizializzazione...');
-
-                        await populateWithDemoDataFromAPI((progress, message) => {
-                          setLoadingProgress(progress);
-                          setLoadingMessage(message);
-                        });
-                        
-                        setIsLoading(false);
-                        Alert.alert('Successo', 'Database popolato con libri demo!');
-                      } catch (error) {
-                        setIsLoading(false);
-                        console.error('Errore durante il popolamento API:', error);
-                        Alert.alert('Errore', 'Errore durante il popolamento del database.');
-                      }
-                    }
-                  }
-                ]
-              );
-            }}
+            onPress={handlePopulateDemo}
           >
             <Ionicons name="library-outline" size={22} color="#fff" />
             <Text style={CommonStyles.primaryButtonText}>Popola con libri demo</Text>

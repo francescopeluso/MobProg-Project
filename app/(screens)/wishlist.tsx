@@ -1,21 +1,22 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Animated,
-  FlatList,
-  Keyboard,
-  PanResponder,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View
+    ActivityIndicator,
+    Alert,
+    Animated,
+    FlatList,
+    Keyboard,
+    PanResponder,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -23,11 +24,11 @@ import { SectionCard } from '@/components';
 import { getTabContentBottomPadding } from '@/constants/layout';
 import { BorderRadius, Colors, CommonStyles, Spacing, Typography } from '@/constants/styles';
 import {
-  addToWishlist,
-  getWishlistItems,
-  isTitleInWishlist,
-  removeFromWishlist,
-  WishlistItem
+    addToWishlist,
+    getWishlistItems,
+    isTitleInWishlist,
+    removeFromWishlist,
+    WishlistItem
 } from '@/services/wishlistService';
 
 const SWIPE_THRESHOLD = 50;
@@ -63,6 +64,7 @@ export default function WishlistScreen() {
     if (!newBookTitle.trim()) return;
 
     try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       // Verifica se il titolo è già presente
       const alreadyExists = await isTitleInWishlist(newBookTitle);
       if (alreadyExists) {
@@ -81,6 +83,7 @@ export default function WishlistScreen() {
 
   const removeFromWishlistHandler = async (id: number) => {
     try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       await removeFromWishlist(id);
       await loadWishlist(); // Ricarica la lista
     } catch (error) {

@@ -1,5 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import * as Haptics from 'expo-haptics';
+import { router, useFocusEffect } from 'expo-router';
+import React, { useCallback } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -10,6 +12,34 @@ import { BorderRadius, Colors, CommonStyles, Spacing, Typography } from '@/const
 
 export default function ProfiloScreen() {
   const insets = useSafeAreaInsets();
+
+  // Add haptic feedback when tab is focused
+  useFocusEffect(
+    useCallback(() => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }, [])
+  );
+
+  // Haptic feedback wrapper functions for menu navigation
+  const handleStatistics = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push('/(screens)/statistics');
+  };
+
+  const handleFavorites = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push('/(screens)/favorites');
+  };
+
+  const handleWishlist = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push('/(screens)/wishlist');
+  };
+
+  const handleSettings = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push('/(screens)/settings');
+  };
 
   return (
     <View style={CommonStyles.container}>
@@ -40,7 +70,7 @@ export default function ProfiloScreen() {
           <View style={styles.menuGrid}>
             <TouchableOpacity 
               style={styles.menuItem} 
-              onPress={() => router.push('/(screens)/statistics')}
+              onPress={handleStatistics}
             >
               <View style={[styles.menuIcon, { backgroundColor: Colors.info + '15' }]}>
                 <Ionicons name="stats-chart" size={28} color={Colors.info} />
@@ -54,7 +84,7 @@ export default function ProfiloScreen() {
 
             <TouchableOpacity 
               style={styles.menuItem} 
-              onPress={() => router.push('/(screens)/favorites')}
+              onPress={handleFavorites}
             >
               <View style={[styles.menuIcon, { backgroundColor: Colors.accent + '15' }]}>
                 <Ionicons name="heart" size={28} color={Colors.accent} />
@@ -68,7 +98,7 @@ export default function ProfiloScreen() {
 
             <TouchableOpacity 
               style={styles.menuItem} 
-              onPress={() => router.push('/(screens)/wishlist')}
+              onPress={handleWishlist}
             >
               <View style={[styles.menuIcon, { backgroundColor: Colors.secondary + '15' }]}>
                 <Ionicons name="cart" size={28} color={Colors.secondary} />
@@ -87,7 +117,7 @@ export default function ProfiloScreen() {
           <View style={styles.menuGrid}>
             <TouchableOpacity 
               style={styles.menuItem} 
-              onPress={() => router.push('/(screens)/settings')}
+              onPress={handleSettings}
             >
               <View style={[styles.menuIcon, { backgroundColor: Colors.accentSecondary + '15' }]}>
                 <Ionicons name="settings" size={28} color={Colors.accentSecondary} />

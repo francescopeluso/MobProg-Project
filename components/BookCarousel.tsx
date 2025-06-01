@@ -1,13 +1,13 @@
-
 import { BorderRadius, Colors, CommonStyles, Shadows, Spacing, Typography } from '@/constants/styles';
+import * as Haptics from 'expo-haptics';
 import React from 'react';
 import {
-    FlatList,
-    Image,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
 /**
@@ -33,6 +33,11 @@ export default function BookCarousel({ books, onPress }: Props) {
     );
   }
 
+  const handleBookPress = async (id: number) => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress(id);
+  };
+
   return (
     <FlatList
       data={books}
@@ -43,7 +48,7 @@ export default function BookCarousel({ books, onPress }: Props) {
       renderItem={({ item }) => (
         <TouchableOpacity
           style={styles.card}
-          onPress={() => item.id && onPress(item.id)}
+          onPress={() => item.id && handleBookPress(item.id)}
         >
           <Image source={{ uri: item.cover_url }} style={styles.cover} />
           <Text numberOfLines={2} style={styles.title}>

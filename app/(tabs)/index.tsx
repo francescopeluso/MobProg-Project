@@ -2,6 +2,7 @@ import { getTabContentBottomPadding } from '@/constants/layout';
 import { Colors, CommonStyles } from '@/constants/styles';
 import { createTables, getDBConnection } from '@/utils/database';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useFocusEffect, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
@@ -96,6 +97,9 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      // Add haptic feedback when tab is focused
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      
       if (dbReady && !loadingFirstLaunch) {
         fetchLists();
         // Se non ci sono first-launch-recs, facciamo partire quelle "wishlist"

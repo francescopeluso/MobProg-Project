@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -31,6 +32,17 @@ export default function FavoritesScreen() {
     }
   };
 
+  // Haptic feedback wrapper functions
+  const handleBack = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.back();
+  };
+
+  const handleBookPress = async (bookId: number) => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push(`/book-details?id=${bookId}`);
+  };
+
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, index) => (
       <Ionicons
@@ -59,7 +71,7 @@ export default function FavoritesScreen() {
           <View style={CommonStyles.headerTop}>
             <TouchableOpacity 
               style={CommonStyles.iconButton}
-              onPress={() => router.back()}
+              onPress={handleBack}
             >
               <Ionicons name="arrow-back" size={24} color={Colors.primary} />
             </TouchableOpacity>
@@ -86,7 +98,7 @@ export default function FavoritesScreen() {
                       key={book.id} 
                       style={styles.bookCard}
                       activeOpacity={0.7}
-                      onPress={() => router.push(`/(screens)/book-details?id=${book.id}`)}
+                      onPress={() => handleBookPress(book.id)}
                     >
                       <View style={styles.bookCover}>
                         {book.cover_url ? (

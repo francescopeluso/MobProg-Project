@@ -1,21 +1,22 @@
 import { AntDesign, Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MotiView } from 'moti';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Dimensions,
-  Image,
-  Keyboard,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View
+    ActivityIndicator,
+    Alert,
+    Dimensions,
+    Image,
+    Keyboard,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import RecommendationCarousel from '../../components/RecommendationCarousel';
@@ -142,6 +143,7 @@ export default function BookDetailsScreen() {
     if (!book) return;
     
     try {
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       const success = await updateReadingStatus(book.id, newStatus);
       
       if (success) {
@@ -161,6 +163,7 @@ export default function BookDetailsScreen() {
     
     try {
       if (tempRating > 0) {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         const success = await saveRating(book.id, tempRating, tempComment);
         if (success) {
           setRating(tempRating);
@@ -205,7 +208,18 @@ export default function BookDetailsScreen() {
   };
 
   const handleBack = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.back();
+  };
+
+  const handleEditPress = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push(`/add-book?id=${book?.id}`);
+  };
+
+  const handleStarPress = async (star: number) => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setTempRating(star);
   };
 
   const handleRecommendationPress = (recommendedBook: Book) => {
@@ -247,11 +261,11 @@ return (
               <View style={[styles.header, {paddingTop: insets.top}]}>
                 <View style={styles.headerRow}></View>
                 <View style={styles.headerRow}>
-                  <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                  <TouchableOpacity style={styles.backButton} onPress={handleBack}>
                     <Ionicons name="arrow-back" size={24} color="#4A90E2" />
                   </TouchableOpacity>
                   <Text style={styles.title}>Dettagli Libro</Text>
-                  <TouchableOpacity style={styles.editButton} onPress={() => router.push(`/add-book?id=${book.id}`)}>
+                  <TouchableOpacity style={styles.editButton} onPress={handleEditPress}>
                     <Ionicons name="create-outline" size={24} color="#fff" />
                   </TouchableOpacity>
                 </View>
@@ -493,7 +507,7 @@ return (
                   {[1, 2, 3, 4, 5].map((star) => (
                     <TouchableOpacity
                       key={star}
-                      onPress={() => setTempRating(star)}
+                      onPress={() => handleStarPress(star)}
                     >
                       <AntDesign
                         name={star <= tempRating ? 'star' : 'staro'}

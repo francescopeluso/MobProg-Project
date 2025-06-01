@@ -1,5 +1,6 @@
 import { BorderRadius, Colors, CommonStyles, Shadows, Spacing, Typography } from '@/constants/styles';
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import React from 'react';
 import {
     FlatList,
@@ -48,7 +49,7 @@ function isValidTitle(title: string): boolean {
 
 /**
  * RecommendationCarousel
- * Carousel orizzontale per mostrare libri raccomandati.
+ * Carousel oizzontale per mostrare libri raccomandati.
  * A differenza di BookCarousel, questo gestisce libri che potrebbero non avere un ID.
  */
 export default function RecommendationCarousel({ books, onPress }: Props) {
@@ -63,6 +64,11 @@ export default function RecommendationCarousel({ books, onPress }: Props) {
     );
   }
 
+  const handleRecommendationPress = async (book: Book) => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress(book);
+  };
+
   return (
     <FlatList
       data={validBooks}
@@ -73,7 +79,7 @@ export default function RecommendationCarousel({ books, onPress }: Props) {
       renderItem={({ item }) => (
         <TouchableOpacity
           style={styles.card}
-          onPress={() => onPress(item)}
+          onPress={() => handleRecommendationPress(item)}
         >
           {item.cover_url ? (
             <Image source={{ uri: item.cover_url }} style={styles.cover} />
