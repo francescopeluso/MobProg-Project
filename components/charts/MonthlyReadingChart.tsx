@@ -8,47 +8,51 @@ interface MonthlyReadingChartProps {
 }
 
 const MonthlyReadingChart: React.FC<MonthlyReadingChartProps> = ({ data }) => {
-  // Calcola dimensioni ottimali per garantire leggibilità
+  // Layout calculations
   const screenWidth = Dimensions.get('window').width;
-  const containerPadding = 32; // Padding del SectionCard  
-  const chartPadding = 32; // Padding del chart container
+  const containerPadding = 32; // SectionCard padding in parent
+  const chartPadding = 32; // Local horizontal padding
   const availableContainerWidth = screenWidth - containerPadding - chartPadding;
-  
-  // Dimensioni fisse per garantire leggibilità
-  const barWidth = 35; // Larghezza fissa per buona leggibilità
-  const spacing = 15; // Spaziatura fissa tra le barre
-  const yAxisWidth = 45; // Spazio per le etichette Y
-  const endPadding = 20; // Padding aggiuntivo alla fine per evitare il taglio
-  
+
+  const barWidth = 35;
+  const spacing = 15;
+  const yAxisWidth = 45;
+  const endPadding = 10;
+
   const totalBars = data.length;
   const totalSpacing = (totalBars - 1) * spacing;
   const barsWidth = totalBars * barWidth;
-  const chartContentWidth = barsWidth + totalSpacing + endPadding; // Aggiunto padding finale
+  const chartContentWidth = barsWidth + totalSpacing + endPadding;
   const totalChartWidth = chartContentWidth + yAxisWidth;
-  
-  // Se il grafico è più largo del container, permettiamo lo scroll
+
   const needsScroll = totalChartWidth > availableContainerWidth;
   const finalWidth = needsScroll ? totalChartWidth : availableContainerWidth;
 
-  // Riferimento per lo ScrollView per partire da destra
+  // Scroll management – keep the **current month** (last bar) visible
   const scrollViewRef = React.useRef<ScrollView>(null);
 
-  React.useEffect(() => {
+  // When the ScrollView finishes measuring its content we scroll to the end
+  const handleContentSizeChange = () => {
     if (needsScroll && scrollViewRef.current) {
-      // Calcola la posizione per mostrare gli ultimi mesi
-      const scrollToX = Math.max(0, totalChartWidth - availableContainerWidth);
-      setTimeout(() => {
-        scrollViewRef.current?.scrollTo({ x: scrollToX, animated: false });
-      }, 100);
+      scrollViewRef.current.scrollToEnd({ animated: false });
     }
-  }, [needsScroll, totalChartWidth, availableContainerWidth]);
+  };
 
-  const ChartComponent = (
+
+  // Prepare data: hide top‑labels for zero‑value months
+  const processed = data.map((item) => ({
+    ...item,
+    frontColor: item.frontColor || Colors.secondary,
+    // The library renders topLabelComponent when present. Returning undefined removes the label.
+    topLabelComponent:
+      item.value > 0 
+        ? () => <Text style={styles.topLabel}>{item.value}</Text>
+        : undefined,
+  }));
+
+  const Chart = (
     <BarChart
-      data={data.map(item => ({ 
-        ...item,
-        frontColor: item.frontColor || Colors.secondary 
-      }))}
+      data={processed}
       width={finalWidth}
       barWidth={barWidth}
       spacing={spacing}
@@ -59,39 +63,44 @@ const MonthlyReadingChart: React.FC<MonthlyReadingChartProps> = ({ data }) => {
       yAxisTextStyle={{ color: Colors.textTertiary, fontSize: 11 }}
       xAxisLabelTextStyle={{ color: Colors.textTertiary, fontSize: 10 }}
       noOfSections={4}
-      maxValue={Math.max(...data.map(item => item.value), 1)}
+      maxValue={Math.max(...data.map((d) => d.value), 1)}
       isAnimated
       animationDuration={800}
-      showValuesAsTopLabel={true}
-      topLabelTextStyle={{ color: Colors.textSecondary, fontSize: 10, fontWeight: '500' }}
+      disablePress={true}
+      // Rimosso renderTooltip per eliminare completamente i tooltip
     />
   );
 
+
+  // Render – Scroll only when needed, always start from the rightmost month
   return (
     <View style={styles.chartContainer}>
       <Text style={styles.chartTitle}>Libri letti per mese</Text>
       {needsScroll && (
-        <Text style={styles.scrollHint}>← Scorri per vedere tutti gli ultimi mesi →</Text>
+        <Text style={styles.scrollHint}>← Scorri per vedere i mesi precedenti →</Text>
       )}
+
       {needsScroll ? (
-        <ScrollView 
+        <ScrollView
           ref={scrollViewRef}
-          horizontal 
+          horizontal
           showsHorizontalScrollIndicator={false}
+          onContentSizeChange={handleContentSizeChange}
           style={styles.scrollContainer}
           contentContainerStyle={[styles.scrollContent, { paddingRight: endPadding }]}
         >
-          {ChartComponent}
+          {Chart}
         </ScrollView>
       ) : (
-        <View style={styles.chartWrapper}>
-          {ChartComponent}
-        </View>
+        <View style={styles.chartWrapper}>{Chart}</View>
       )}
     </View>
   );
 };
 
+// ────────────────────────────────────────────────────────────────
+// Styles
+// ────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   chartContainer: {
     alignItems: 'center',
@@ -121,6 +130,23 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: Spacing.md,
     fontStyle: 'italic',
+  },
+  tooltipBox: {
+    backgroundColor: Colors.background,
+    padding: 4,
+    borderRadius: 4,
+    alignItems: 'center',
+  },
+  tooltipText: {
+    color: Colors.textSecondary,
+    fontSize: 10,
+    fontWeight: '500',
+  },
+  topLabel: {
+    color: Colors.textSecondary,
+    fontSize: 10,
+    fontWeight: '500',
+    textAlign: 'center',
   },
 });
 
