@@ -1,50 +1,77 @@
-# Welcome to your Expo app 👋
+# 📚 Readit - Mobile Programming course project - Group 10
+- ⚙️ Mobile Programming team project, Academic Year 2024-25
+- 🎓 Computer Engineering Bachelor's degree course, cohort 2022-23
+- 🏫 Dept. of Information, Electrical Engineering and Applied Mathematics @ [University of Salerno](https://unisa.it/)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## ✨ Features
 
-## Get started
+- **📖 Library Management** - Add, edit and organize your books
+- **🔍 Smart Search** - Search books online and automatically add details
+- **📱 ISBN Scanner** - Scan barcodes to instantly add books
+- **📊 Detailed Statistics** - Track your progress with charts and metrics
+- **⭐ Ratings & Notes** - Rate and add personal notes to your books
+- **❤️ Favorites & Wishlist** - Save your favorite books and create wish lists
+- **🎯 Recommendations** - Discover new books based on your tastes
 
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## 🚀 Quick Start
 
 ```bash
-npm run reset-project
+# Install dependencies
+npm install
+
+# Start the app
+npx expo start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## 🛠️ Tech Stack
 
-## Learn more
+- **Framework**: React Native + Expo
+- **Navigation**: Expo Router
+- **Database**: SQLite
+- **UI**: React Native + Moti (animations)
+- **Charts**: React Native Gifted Charts
+- **Icons**: Expo Vector Icons
 
-To learn more about developing your project with Expo, look at the following resources:
+## 📁 Project Structure
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```
+📁 BookTrack/
+├── 📁 app/                     # App screens and navigation
+│   ├── 📁 (screens)/           # Secondary screens
+│   └── 📁 (tabs)/              # Main tab navigation
+│
+├── 📁 components/              # Reusable UI components
+│   └── 📁 charts/              # Data visualization
+│
+├── 📁 services/                # Business logic and APIs
+│
+├── 📁 utils/                   # Utilities and configuration
+│
+├── 📁 constants/               # App-wide constants
+│
+├── 📁 hooks/                   # Custom React hooks
+│
+└── 📁 assets/                  # Static resources
+    ├── 📁 images/              # App icons and images
+    └── 📁 fonts/               # Custom fonts
+```
 
-## Join the community
+## 🔧 Development
 
-Join our community of developers creating universal apps.
+The app uses:
+- **File-based routing** with Expo Router
+- **SQLite** for local storage
+- **External APIs** for book search
+- **Camera** for ISBN scanning
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## 📱 Platforms
+
+- ✅ iOS and iPadOS
+- ✅ Android
+
+App works fine both in landscape or portrait mode.
+
+## 🧑🏻‍💻 Team members
+- Elettra Palmisano - [uni email](mailto:e.palmisano1@studenti.unisa.it )
+- Gennaro Francesco Landi - [uni email](mailto:g.landi83@studenti.unisa.it)
+- Francesco Peluso - [uni email](mailto:f.peluso29@studenti.unisa.it)
