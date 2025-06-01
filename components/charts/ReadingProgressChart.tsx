@@ -1,3 +1,4 @@
+import { Colors, Spacing, Typography } from '@/constants/styles';
 import React, { useRef } from 'react';
 import {
   Dimensions,
@@ -6,8 +7,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { LineChart, CurveType } from 'react-native-gifted-charts';
-import { Colors, Spacing, Typography } from '@/constants/styles';
+import { CurveType, LineChart } from 'react-native-gifted-charts';
 
 // ────────────────────────────────────────────────────────────────
 // TYPES
@@ -37,7 +37,7 @@ interface Props {
  */
 const ReadingProgressChart: React.FC<Props> = ({
   data,
-  title = 'Progressione settimanale',
+  title = 'Sessioni di lettura giornaliere',
 }) => {
   // ──────────────────────────────────────────────────────────
   // LAYOUT CALCULATIONS
@@ -66,16 +66,28 @@ const ReadingProgressChart: React.FC<Props> = ({
   const maxDataValue = Math.max(...data.map(d => d.value));
   const maxValue = maxDataValue === 0 ? 5 : Math.max(maxDataValue + 1, 4);
 
+  // Preprocessa i dati per aggiungere etichette più chiare
+  const processedData = data.map(item => ({
+    ...item,
+    dataPointText: item.value === 0 ? '' : `${item.value}`,
+    // Aggiungi un'icona o testo per chiarire il significato
+    labelComponent: () => (
+      <View style={styles.labelContainer}>
+        <Text style={styles.dayLabel}>{item.label}</Text>
+      </View>
+    ),
+  }));
+
   // ──────────────────────────────────────────────────────────
   // CHART COMPONENT
   // ──────────────────────────────────────────────────────────
   const Chart = (
     <LineChart
-      data={data}
+      data={processedData}
       width={chartWidth}
       height={200}
       curved
-      curveType={CurveType.QUADRATIC} // evita overshoot sotto 0
+      curveType={CurveType.QUADRATIC}
       curvature={0.25}
       maxValue={maxValue}
       noOfSections={4}
@@ -85,6 +97,11 @@ const ReadingProgressChart: React.FC<Props> = ({
       xAxisLabelTextStyle={{ color: Colors.textTertiary, fontSize: 10 }}
       hideDataPoints={false}
       dataPointsColor={Colors.secondary}
+      dataPointsRadius={4}
+      textShiftY={-8}
+      textShiftX={0}
+      textColor={Colors.textPrimary}
+      textFontSize={12}
       startFillColor={Colors.secondary}
       startOpacity={0.25}
       endOpacity={0}
@@ -105,6 +122,12 @@ const ReadingProgressChart: React.FC<Props> = ({
   return (
     <View style={styles.chartContainer}>
       <Text style={styles.chartTitle}>{title}</Text>
+      <View style={styles.legendContainer}>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDot, { backgroundColor: Colors.secondary }]} />
+          <Text style={styles.legendText}>Numero di sessioni di lettura</Text>
+        </View>
+      </View>
       {needsScroll && (
         <Text style={styles.scrollHint}>← Scorri per vedere i giorni precedenti →</Text>
       )}
@@ -158,6 +181,31 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: Spacing.md,
     fontStyle: 'italic',
+  },
+  legendContainer: {
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  legendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: Spacing.xs,
+  },
+  legendText: {
+    fontSize: Typography.fontSize.sm,
+    color: Colors.textSecondary,
+  },
+  labelContainer: {
+    alignItems: 'center',
+  },
+  dayLabel: {
+    fontSize: Typography.fontSize.xs,
+    color: Colors.textTertiary,
   },
 });
 
