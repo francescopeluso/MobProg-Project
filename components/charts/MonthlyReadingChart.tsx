@@ -18,16 +18,30 @@ const MonthlyReadingChart: React.FC<MonthlyReadingChartProps> = ({ data }) => {
   const barWidth = 35; // Larghezza fissa per buona leggibilità
   const spacing = 15; // Spaziatura fissa tra le barre
   const yAxisWidth = 45; // Spazio per le etichette Y
+  const endPadding = 20; // Padding aggiuntivo alla fine per evitare il taglio
   
   const totalBars = data.length;
   const totalSpacing = (totalBars - 1) * spacing;
   const barsWidth = totalBars * barWidth;
-  const chartContentWidth = barsWidth + totalSpacing;
+  const chartContentWidth = barsWidth + totalSpacing + endPadding; // Aggiunto padding finale
   const totalChartWidth = chartContentWidth + yAxisWidth;
   
   // Se il grafico è più largo del container, permettiamo lo scroll
   const needsScroll = totalChartWidth > availableContainerWidth;
   const finalWidth = needsScroll ? totalChartWidth : availableContainerWidth;
+
+  // Riferimento per lo ScrollView per partire da destra
+  const scrollViewRef = React.useRef<ScrollView>(null);
+
+  React.useEffect(() => {
+    if (needsScroll && scrollViewRef.current) {
+      // Calcola la posizione per mostrare gli ultimi mesi
+      const scrollToX = Math.max(0, totalChartWidth - availableContainerWidth);
+      setTimeout(() => {
+        scrollViewRef.current?.scrollTo({ x: scrollToX, animated: false });
+      }, 100);
+    }
+  }, [needsScroll, totalChartWidth, availableContainerWidth]);
 
   const ChartComponent = (
     <BarChart
@@ -48,6 +62,8 @@ const MonthlyReadingChart: React.FC<MonthlyReadingChartProps> = ({ data }) => {
       maxValue={Math.max(...data.map(item => item.value), 1)}
       isAnimated
       animationDuration={800}
+      showValuesAsTopLabel={true}
+      topLabelTextStyle={{ color: Colors.textSecondary, fontSize: 10, fontWeight: '500' }}
     />
   );
 
@@ -59,10 +75,11 @@ const MonthlyReadingChart: React.FC<MonthlyReadingChartProps> = ({ data }) => {
       )}
       {needsScroll ? (
         <ScrollView 
+          ref={scrollViewRef}
           horizontal 
           showsHorizontalScrollIndicator={false}
           style={styles.scrollContainer}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingRight: endPadding }]}
         >
           {ChartComponent}
         </ScrollView>
