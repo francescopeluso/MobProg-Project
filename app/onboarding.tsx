@@ -14,6 +14,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+
+// importa il componente Onboarding, ma ignora i tipi TypeScript per evitare errori
 // @ts-ignore
 import Onboarding from 'react-native-onboarding-swiper';
 
@@ -58,7 +60,7 @@ export default function OnboardingScreen() {
           title: (
             <View style={styles.logoContainer}>
               <Image 
-                source={require('../../assets/images/logo-long.png')} 
+                source={require('../assets/images/logo-long.png')} 
                 style={styles.logo}
                 resizeMode="contain"
               />
