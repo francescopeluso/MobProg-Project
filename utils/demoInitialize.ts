@@ -159,7 +159,7 @@ export async function populateWithDemoDataFromAPI(
     console.log('Inizio popolamento database con dati reali da Google Books API...');
     console.log(`Cercando ${bookTitles.length} libri...`);
     
-    onProgress?.(5, 'Inizializzazione in corso...');
+    onProgress?.(0, 'Inizializzazione in corso...');
     
     const fetchedBooks: Book[] = [];
     
@@ -167,9 +167,9 @@ export async function populateWithDemoDataFromAPI(
     for (let i = 0; i < bookTitles.length; i++) {
       const title = bookTitles[i];
       
-      // Progresso fase di ricerca (5% - 40%)
-      const searchProgress = 5 + (i / bookTitles.length) * 35;
-      onProgress?.(searchProgress, `Ricerca libri... ${i + 1}/${bookTitles.length}`);
+      // Progresso per il download dei libri (0% - 90%)
+      const searchProgress = (i / bookTitles.length) * 90;
+      onProgress?.(searchProgress, `Download libri... ${i + 1}/${bookTitles.length}`);
       
       try {
         const book = await searchBookByTitle(title);
@@ -190,18 +190,35 @@ export async function populateWithDemoDataFromAPI(
       }
     }
     
+    // Cambio messaggio a 90%
+    onProgress?.(90, 'Caricamento in memoria...');
+    
     console.log(`Trovati ${fetchedBooks.length} libri. Inserimento nel database...`);
-    onProgress?.(40, `Trovati ${fetchedBooks.length} libri. Inserimento nel database...`);
     
     // Inserisce i libri nel database
     for (let i = 0; i < fetchedBooks.length; i++) {
       const book = fetchedBooks[i];
       
-      // Progresso fase di inserimento (40% - 85%)
-      const insertProgress = 40 + (i / fetchedBooks.length) * 45;
-      onProgress?.(insertProgress, `Inserimento libro ${i + 1}/${fetchedBooks.length}: ${book.title}`);
+      // Progresso per l'inserimento nel database (90% - 100%)
+      const insertProgress = 90 + ((i + 1) / fetchedBooks.length) * 10;
       
       try {
+        // Controlla se il libro esiste già nel database
+        const existingBook = await db.getFirstAsync<{id: number}>(
+          'SELECT id FROM books WHERE title = ? AND (isbn10 = ? OR isbn13 = ?)',
+          [book.title, book.isbn10 || '', book.isbn13 || '']
+        );
+        
+        if (existingBook) {
+          console.log(`⚠️ Libro già presente: ${book.title}`);
+          
+          // Aggiorna il progresso solo ogni 3 libri per non bombardare l'UI
+          if (i % 3 === 0 || i === fetchedBooks.length - 1) {
+            onProgress?.(insertProgress, 'Caricamento in memoria...');
+          }
+          continue;
+        }
+        
         // Inserisce gli autori
         const authorIds: number[] = [];
         if (book.authors && Array.isArray(book.authors)) {
@@ -332,15 +349,18 @@ export async function populateWithDemoDataFromAPI(
           console.log(`✓ Inserito: ${book.title} (${status})`);
         }
         
+        // Aggiorna il progresso solo ogni 3 libri per non bombardare l'UI
+        if (i % 3 === 0 || i === fetchedBooks.length - 1) {
+          onProgress?.(insertProgress, 'Caricamento in memoria...');
+        }
+        
       } catch (error) {
         console.error(`Errore durante l'inserimento di "${book.title}":`, error);
         continue;
       }
     }
     
-    onProgress?.(85, 'Aggiunta elementi wishlist...');
-    
-    // Aggiunge alcuni elementi alla wishlist
+    // Aggiunge alcuni elementi alla wishlist (senza notifiche di progresso)
     const wishlistItems = [
       "The Expanse Leviathan Wakes - James S.A. Corey",
       "Red Mars - Kim Stanley Robinson", 
@@ -354,8 +374,6 @@ export async function populateWithDemoDataFromAPI(
     
     for (let i = 0; i < wishlistItems.length; i++) {
       const item = wishlistItems[i];
-      const wishlistProgress = 85 + (i / wishlistItems.length) * 10;
-      onProgress?.(wishlistProgress, `Aggiunta wishlist ${i + 1}/${wishlistItems.length}...`);
       
       if (Math.random() > 0.4) { // 60% di probabilità per ogni elemento
         await db.runAsync(
@@ -365,6 +383,7 @@ export async function populateWithDemoDataFromAPI(
       }
     }
     
+    // Progresso finale al 100%
     onProgress?.(100, 'Completato!');
     
     console.log('✅ Database popolato con successo con dati reali da Google Books API!');
