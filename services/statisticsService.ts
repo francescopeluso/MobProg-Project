@@ -96,51 +96,53 @@ export async function getReadingStatistics(): Promise<ReadingStats> {
  * 
  * @function getMonthlyReadingData
  * @description Restituisce i dati per il grafico delle letture mensili degli ultimi 6 mesi.
+ * Restituisce i dati di lettura mensile degli **ultimi 6 mesi completi**,
+ * compreso il mese corrente, senza tagliare i primi giorni del mese iniziale
+ * e senza duplicare i libri se lo status fosse salvato più volte.
  * @returns {Promise<MonthlyData[]>} Array di dati per il grafico mensile
  * @async
  */
 export async function getMonthlyReadingData(): Promise<MonthlyData[]> {
   const db = getDBConnection();
-  
+
+  /* Dal primo giorno del mese corrente, risali di 5 mesi.
+     Esempio: oggi 1 giu 2025  →  range 1 gen 2025 – 31 mag 2025 + giugno. */
   const monthlyStats = await db.getAllAsync(`
-    SELECT 
-      strftime('%m', rs.end_time) as month,   -- equivale a EXTRACT(MONTH FROM rs.end_time) di psql
-      strftime('%Y', rs.end_time) as year,    -- equivale a EXTRACT(YEAR FROM rs.end_time) di psql
-      COUNT(*) as count
-    FROM reading_status rs
-    WHERE rs.status = 'completed' 
-      AND rs.end_time IS NOT NULL
-      AND rs.end_time >= date('now', '-6 months')
-    GROUP BY strftime('%Y-%m', rs.end_time)
-    ORDER BY year, month
+    SELECT
+      strftime('%m', rs.end_time) AS month,
+      strftime('%Y', rs.end_time) AS year,
+      COUNT(DISTINCT rs.book_id)     AS count
+    FROM   reading_status rs
+    WHERE  rs.status   = 'completed'
+      AND  rs.end_time IS NOT NULL
+      AND  rs.end_time >= date('now','start of month','-5 months')
+    GROUP BY year, month
+    ORDER BY year, month;
   `) as any[];
 
-  // Nomi dei mesi abbreviati
-  const monthNames = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 
-                     'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+  const monthNames = ['Gen','Feb','Mar','Apr','Mag','Giu',
+                      'Lug','Ago','Set','Ott','Nov','Dic'];
 
-  // Crea array degli ultimi 6 mesi
-  const result: MonthlyData[] = [];
   const now = new Date();
-  
+  const result: MonthlyData[] = [];
+
   for (let i = 5; i >= 0; i--) {
-    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const monthNum = date.getMonth();
-    const yearNum = date.getFullYear();
-    
-    const stat = monthlyStats.find(s => 
-      parseInt(s.month) === monthNum + 1 && parseInt(s.year) === yearNum
-    );
-    
+    const date     = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const m        = date.getMonth();        // 0-based
+    const y        = date.getFullYear();
+    const row      = monthlyStats.find(
+                       s => parseInt(s.month,10) === m + 1 && parseInt(s.year,10) === y);
+
     result.push({
-      value: stat?.count || 0,
-      label: monthNames[monthNum],
-      frontColor: '#4A90E2'
+      value      : row?.count ?? 0,
+      label      : monthNames[m],
+      frontColor : '#4A90E2',
     });
   }
 
   return result;
 }
+
 
 /**
  * 
