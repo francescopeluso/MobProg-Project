@@ -150,12 +150,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        {/*
-          ────────────────────────────────────────────────────────────────────────
-          SEZIONE "PRIMO AVVIO": se ci sono firstLaunchRecs, le mostriamo COME PRIMA SEZIONE
-          MA SOLO se non ci sono ancora libri nella libreria
-          ────────────────────────────────────────────────────────────────────────
-        */}
+        {/* Raccomandazioni primo avvio - solo se la libreria è vuota */}
         {firstLaunchRecs && 
          firstLaunchRecs.length > 0 && 
          toRead.length === 0 && 
@@ -164,8 +159,8 @@ export default function HomeScreen() {
           <SectionCard title="Consigliati per te">
             <RecommendationCarousel
               books={firstLaunchRecs.map((rb: RecommendedBook) => ({
-                // mappo RecommendedBook → Book, ora con tutti i campi necessari
-                id: undefined, // These books are not yet in the database
+                // Converto RecommendedBok in Book per il carousel
+                id: undefined, // Questi libri non sono ancora nel database
                 title: rb.title,
                 authors: [rb.authors],
                 cover_url: rb.thumbnail,
@@ -218,12 +213,7 @@ export default function HomeScreen() {
           )}
         </SectionCard>
 
-        {/*
-          ────────────────────────────────────────────────────────────────────────
-          SEZIONE CONSIGLI PERSONALIZZATI: quando NON ci sono firstLaunchRecs 
-          OPPURE quando ci sono già libri nella libreria
-          ────────────────────────────────────────────────────────────────────────
-        */}
+        {/* Consigli personalizzati - quando non ci sono raccomandazioni primo avvio o la libreria non è vuota */}
         {((!firstLaunchRecs || firstLaunchRecs.length === 0) || 
           (toRead.length > 0 || reading.length > 0 || completed.length > 0)) && (
           <SectionCard title="Consigli personalizzati per te">
@@ -247,13 +237,7 @@ export default function HomeScreen() {
           </SectionCard>
         )}
 
-        {/*
-          ────────────────────────────────────────────────────────────────────────
-          La vecchia sezione `suggested` (volendo puoi rimuoverla: non
-          è più necessaria ora che abbiamo firstLaunchRecs + wishlistRecommendations)
-          ────────────────────────────────────────────────────────────────────────
-        */}
-        {/*
+        {/* Vecchia sezione suggeriti - non più necessaria
         {suggested.length > 0 && (
           <SectionCard title="Suggeriti">
             <BookCarousel
@@ -290,7 +274,7 @@ export default function HomeScreen() {
   );
 }
 
-/* ───────── Styles ───────── */
+// Styles
 const styles = StyleSheet.create({
   emptyText: {
     textAlign: 'center',

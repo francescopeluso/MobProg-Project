@@ -7,23 +7,23 @@ import { ActivityIndicator, View } from 'react-native';
 import { Colors } from '@/constants/styles';
 
 export default function RootLayout() {
-  /* ───────── Stato locale ───────── */
-  const [isReady, setIsReady]           = useState(false);
+  // Stato locale
+  const [isReady, setIsReady] = useState(false);
   const [hasSeenIntro, setHasSeenIntro] = useState<boolean | null>(null);
 
-  /* ───────── Leggi il flag dall’AsyncStorage ───────── */
+  // Leggi il flag dall'AsyncStorage
   useEffect(() => {
     (async () => {
       try {
         const seen = await AsyncStorage.getItem('hasSeenIntro');
         setHasSeenIntro(seen === 'true');
       } finally {
-        setIsReady(true);               // in ogni caso sblocca il layout
+        setIsReady(true); // In ogni caso sblocca il layout
       }
     })();
   }, []);
 
-  /* ───────── Splash finché non siamo pronti ───────── */
+  // Splash finché non siamo pronti
   if (!isReady) {
     return (
       <SafeAreaProvider>
@@ -34,21 +34,21 @@ export default function RootLayout() {
     );
   }
 
-  /* ───────── Layout principale + redirect condizionali ───────── */
+  // Layout principale con redirect condizionali
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" translucent backgroundColor="transparent" />
 
-      {/* 1  Se l’intro NON è ancora stata vista → vai su /onboarding */}
+      {/* Se l'intro non è ancora stata vista, vai su /onboarding */}
       {hasSeenIntro === false && <Redirect href="/onboarding" />}
 
-      {/* 2  Se l’intro è già stata vista → vai direttamente alle tab */}
-      {hasSeenIntro === true  && <Redirect href="/(tabs)" />}
+      {/* Se l'intro è già stata vista, vai direttamente alle tab */}
+      {hasSeenIntro === true && <Redirect href="/(tabs)" />}
 
-      {/* 3  Registriamo comunque entrambe le rotte nello stack */}
+      {/* Registriamo comunque entrambe le rotte nello stack */}
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="onboarding" />
-        <Stack.Screen name="(tabs)"     />
+        <Stack.Screen name="(tabs)" />
       </Stack>
     </SafeAreaProvider>
   );

@@ -31,10 +31,10 @@ export function useFirstLaunchRecommendations() {
           
           if (validRecs.length >= 3) {
             setRecs(validRecs);
-            // Rimuovo subito la chiave per non ripetere la show
+            // Rimuove subito la chiave per non ripetere la visualizzazione
             await AsyncStorage.removeItem('firstLaunchRecommendations');
           } else {
-            console.warn('Not enough valid complete recommendations found, removing from storage');
+            console.warn('Non trovate abbastanza raccomandazioni valide complete, rimozione dal storage');
             await AsyncStorage.removeItem('firstLaunchRecommendations');
             setRecs(null);
           }

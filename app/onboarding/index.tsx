@@ -35,7 +35,7 @@ export default function OnboardingScreen() {
     );
   };
 
-  /* ───────── Callback finale ───────── */
+  // Callback per completare l'onboarding
   const finish = async () => {
     await AsyncStorage.setItem('hasSeenIntro', 'true');
 
@@ -51,9 +51,9 @@ export default function OnboardingScreen() {
       onDone={finish}
       containerStyles={{ paddingBottom: 40 }}
       pages={[
-        /* ───────────────────────── Pagina 1 */
+        // Pagina 1 - Benvenuto
         {
-          backgroundColor: '#ffffff', // Bianco per la prima pagina
+          backgroundColor: '#ffffff',
           title: (
             <View style={styles.logoContainer}>
               <Image 
@@ -66,15 +66,15 @@ export default function OnboardingScreen() {
           ),
           subtitle: 'La tua libreria digitale a portata di mano.',
         },
-        /* ───────────────────────── Pagina 2 */
+        // Pagina 2 - Organizzazione
         {
-          backgroundColor: Colors.primaryLight, // Celeste per la seconda pagina
+          backgroundColor: Colors.primaryLight,
           title: 'Tieniti organizzato',
           subtitle: 'Aggiungi, ordina e filtra i tuoi libri in un attimo.',
         },
-        /* ───────────────────────── Pagina 3 */
+        // Pagina 3 - Funzionalità
         {
-          backgroundColor: '#ffffff', // Bianco per la terza pagina
+          backgroundColor: '#ffffff',
           title: 'Un compagno di lettura',
           subtitle:
             'Cerca titoli online, scannerizza ISBN o aggiungili manualmente.\n\n'
@@ -82,7 +82,7 @@ export default function OnboardingScreen() {
             + 'principale prima di iniziare a leggere e ricliccalo quando hai finito: '
             + 'Readit terrà traccia del tempo per mostrarti statistiche sempre più ricche!',
         },
-        /* ───────────────────────── Pagina 4 (generi selezionabili) */
+        // Pagina 4 - Selezione generi
         {
           backgroundColor: Colors.primaryLight,
           title: 'Scopri i tuoi generi preferiti',
@@ -159,7 +159,7 @@ export default function OnboardingScreen() {
   );
 }
 
-/* ───────── Styles ───────── */
+// Styles
 const styles = StyleSheet.create({
   logoContainer: {
     alignItems: 'center',
