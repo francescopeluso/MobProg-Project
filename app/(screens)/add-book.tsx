@@ -4,21 +4,21 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MotiView } from 'moti';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-    ActivityIndicator,
-    Alert,
-    Dimensions,
-    Image,
-    Keyboard,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -82,6 +82,18 @@ export default function AddBookScreen() {
     animate: { translateY: 0, opacity: 1 },
     transition: { type: 'spring', damping: 50, stiffness: 10, mass: 1 }
   }
+
+  // Funzione per generare colori per i generi
+  const getGenreColor = (index: number) => {
+    const colors = [
+      '#4A90E2', // Blu
+      '#9F7AEA', // Viola
+      '#38B2AC', // Teal
+      '#F6AD55', // Arancione
+      '#68D391', // Verde
+    ];
+    return colors[index % colors.length];
+  };
 
   // Funzione per lo scroll automatico ai campi
   const scrollToInput = (yOffset: number) => {
@@ -802,13 +814,13 @@ return (
                     </TouchableOpacity>
                   </View>
                   <View style={styles.genreRow}>
-                    {GENRES.map(g => (
+                    {GENRES.map((g, index) => (
                       <Pressable
                         key={g}
                         onPress={() => toggleGenre(g)}
                         style={[
                           styles.genrePill,
-                          selectedGenres.includes(g) && styles.genreSelected,
+                          selectedGenres.includes(g) && [styles.genreSelected, { backgroundColor: getGenreColor(index) }],
                         ]}
                       >
                         <Text
@@ -1431,22 +1443,40 @@ const styles = StyleSheet.create({
   genreRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
-    marginTop: 6,
+    gap: 12,
+    marginTop: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   genrePill: {
-    backgroundColor: '#F0F0F0',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderWidth: 2,
+    borderColor: '#E9ECEF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+    minWidth: 80,
+    alignItems: 'center',
   },
   genreSelected: {
-    backgroundColor: '#A4E8D7',
+    borderColor: 'transparent',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+    transform: [{ scale: 1.05 }],
   },
   genreText: {
-    color: '#666',
-    fontSize: Typography.fontSize.md,
-    fontWeight: Typography.fontWeight.medium,
+    color: '#6C757D',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   genreTextSelected: {
     fontWeight: '700',
