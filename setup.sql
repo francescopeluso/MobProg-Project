@@ -11,36 +11,24 @@ PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS authors (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   name        TEXT    NOT NULL,
-  bio         TEXT,
   created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
 );
-
-CREATE INDEX IF NOT EXISTS idx_author_name
-  ON authors(name);
 
 -- --------------------------------------------------
 -- Table: books
 -- --------------------------------------------------
 CREATE TABLE IF NOT EXISTS books (
-  id               INTEGER PRIMARY KEY AUTOINCREMENT,
-  title            TEXT    NOT NULL,
-  description      TEXT,
-  cover_url        TEXT,
-  editor           TEXT,
-  publication      INTEGER,
-  language         TEXT,
-  isbn10           TEXT    CHECK(length(isbn10) = 10 OR isbn10 IS NULL),
-  isbn13           TEXT    CHECK(length(isbn13) = 13 OR isbn13 IS NULL),
-  external_source  TEXT    NOT NULL DEFAULT 'manual' 
-                         CHECK(external_source IN ('manual','google','openlibrary')),
-  external_id      TEXT,
-  created_at       TEXT    NOT NULL DEFAULT (datetime('now'))
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  title       TEXT    NOT NULL,
+  description TEXT,
+  cover_url   TEXT,
+  editor      TEXT,
+  publication INTEGER,
+  language    TEXT,
+  isbn10      TEXT    CHECK(length(isbn10) = 10 OR isbn10 IS NULL),
+  isbn13      TEXT    CHECK(length(isbn13) = 13 OR isbn13 IS NULL),
+  created_at  TEXT    NOT NULL DEFAULT (datetime('now'))
 );
-
-CREATE INDEX IF NOT EXISTS idx_book_title
-  ON books(title);
-CREATE INDEX IF NOT EXISTS idx_book_created_at
-  ON books(created_at);
 
 -- --------------------------------------------------
 -- Junction: book_authors (books ↔ authors M:N)
@@ -53,7 +41,7 @@ CREATE TABLE IF NOT EXISTS book_authors (
     ON DELETE CASCADE
     ON UPDATE CASCADE,
   FOREIGN KEY(author_id) REFERENCES authors(id)
-    ON DELETE CASCADE
+    ON DELETE RESTRICT
     ON UPDATE CASCADE
 );
 
@@ -106,17 +94,12 @@ CREATE TABLE IF NOT EXISTS reading_status (
     ON UPDATE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_reading_status
-  ON reading_status(status);
-CREATE INDEX IF NOT EXISTS idx_reading_end_time
-  ON reading_status(end_time);
-
 -- --------------------------------------------------
 -- Table: reading_sessions (history of sessions)
 -- --------------------------------------------------
 CREATE TABLE IF NOT EXISTS reading_sessions (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  book_id     INTEGER NOT NULL,
+  book_id     INTEGER,
   start_time  TEXT    NOT NULL,
   end_time    TEXT,
   duration    INTEGER GENERATED ALWAYS AS (
@@ -127,9 +110,6 @@ CREATE TABLE IF NOT EXISTS reading_sessions (
     ON DELETE CASCADE
     ON UPDATE CASCADE
 );
-
-CREATE INDEX IF NOT EXISTS idx_sessions_book
-  ON reading_sessions(book_id);
 
 -- --------------------------------------------------
 -- Table: notes (one-to-one per book)
@@ -156,11 +136,6 @@ CREATE TABLE IF NOT EXISTS ratings (
     ON UPDATE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_rating_value
-  ON ratings(rating);
-CREATE INDEX IF NOT EXISTS idx_rating_rated_at
-  ON ratings(rated_at);
-
 -- --------------------------------------------------
 -- Table: favorites (toggle)
 -- --------------------------------------------------
@@ -176,9 +151,9 @@ CREATE TABLE IF NOT EXISTS favorites (
 -- Table: wishlist (toggle)
 -- --------------------------------------------------
 CREATE TABLE IF NOT EXISTS wishlist (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  book_title TEXT NOT NULL,
-  added_at TEXT NOT NULL DEFAULT (datetime('now'))
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  book_title TEXT    NOT NULL,
+  added_at   TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 
 -- --------------------------------------------------
