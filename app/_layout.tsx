@@ -1,10 +1,10 @@
-import { Stack, Redirect } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Colors } from '@/constants/styles';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Redirect, Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import { Colors } from '@/constants/styles';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export default function RootLayout() {
   // Stato locale

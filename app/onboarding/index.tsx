@@ -1,17 +1,18 @@
 import { Colors, Spacing, Typography } from '@/constants/styles';
 import { prepareInitialRecommendations } from '@/services/onboardingService';
+import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import {
-    Image,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 // @ts-ignore
 import Onboarding from 'react-native-onboarding-swiper';
@@ -64,17 +65,45 @@ export default function OnboardingScreen() {
               <Text style={styles.welcomeTitle}>Benvenuto su Readit!</Text>
             </View>
           ),
-          subtitle: 'La tua libreria digitale a portata di mano.',
+          subtitle: (
+            <View style={styles.subtitleContainer}>
+              <Text style={styles.welcomeSubtitle}>La tua libreria digitale a portata di mano</Text>
+              <View style={styles.welcomeFeatures}>
+                <View style={styles.welcomeFeature}>
+                  <Ionicons name="book" size={24} color={Colors.primary} />
+                  <Text style={styles.welcomeFeatureText}>Organizza i tuoi libri</Text>
+                </View>
+                <View style={styles.welcomeFeature}>
+                  <MaterialIcons name="timer" size={24} color={Colors.primary} />
+                  <Text style={styles.welcomeFeatureText}>Traccia il tempo di lettura</Text>
+                </View>
+                <View style={styles.welcomeFeature}>
+                  <Feather name="trending-up" size={24} color={Colors.primary} />
+                  <Text style={styles.welcomeFeatureText}>Statistiche personali</Text>
+                </View>
+              </View>
+            </View>
+          ),
         },
         // Pagina 2 - Organizzazione
         {
           backgroundColor: Colors.primaryLight,
+          image: (
+            <View style={styles.iconPageContainer}>
+              <Ionicons name="library" size={120} color={Colors.background} />
+            </View>
+          ),
           title: 'Tieniti organizzato',
           subtitle: 'Aggiungi, ordina e filtra i tuoi libri in un attimo.',
         },
         // Pagina 3 - Funzionalità
         {
           backgroundColor: '#ffffff',
+          image: (
+            <View style={styles.iconPageContainer}>
+              <MaterialIcons name="auto-stories" size={120} color={Colors.primary} />
+            </View>
+          ),
           title: 'Un compagno di lettura',
           subtitle:
             'Cerca titoli online, scannerizza ISBN o aggiungili manualmente.\n\n'
@@ -85,7 +114,6 @@ export default function OnboardingScreen() {
         // Pagina 4 - Selezione generi
         {
           backgroundColor: Colors.primaryLight,
-          title: 'Scopri i tuoi generi preferiti',
           subtitle: (
             <KeyboardAvoidingView
               behavior={Platform.select({ ios: 'padding', android: undefined })}
@@ -176,6 +204,40 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.primary, // Assicurati che sia visibile su sfondo bianco
     textAlign: 'center',
+  },
+  iconPageContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: Spacing.xl,
+  },
+  subtitleContainer: {
+    alignItems: 'center',
+    paddingHorizontal: Spacing.lg,
+  },
+  welcomeSubtitle: {
+    fontSize: Typography.fontSize.lg,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: Spacing.xl,
+  },
+  welcomeFeatures: {
+    width: '100%',
+    gap: Spacing.md,
+  },
+  welcomeFeature: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(79, 70, 229, 0.05)',
+    padding: Spacing.md,
+    borderRadius: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.primary,
+  },
+  welcomeFeatureText: {
+    fontSize: Typography.fontSize.md,
+    color: Colors.textPrimary,
+    marginLeft: Spacing.md,
+    fontWeight: '500',
   },
   keyboardContainer: {
     flex: 1,
