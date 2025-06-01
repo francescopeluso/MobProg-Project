@@ -2,23 +2,23 @@ import { AntDesign, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MotiView } from 'moti';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  Dimensions,
-  Image,
-  Keyboard,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    ActivityIndicator,
+    Alert,
+    Dimensions,
+    Image,
+    Keyboard,
+    KeyboardAvoidingView,
+    Modal,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -36,7 +36,12 @@ const initialForm = {
 
 export default function AddBookScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ id?: string; prefilledData?: string }>();
+  const params = useLocalSearchParams<{ 
+    id?: string; 
+    prefilledData?: string;
+    searchQuery?: string;
+    openSearch?: string;
+  }>();
   const [form, setForm] = useState({ ...initialForm });
   const [remoteBook, setRemoteBook] = useState<Book | null>(null);
   const [showSearch, setShowSearch] = useState(false);
@@ -104,11 +109,16 @@ export default function AddBookScreen() {
         console.error('Errore nel parsing dei dati precompilati:', error);
         Alert.alert('Errore', 'Impossibile caricare i dati del libro raccomandato.');
       }
+    } else if (params.openSearch === 'true' && params.searchQuery) {
+      // Apri automaticamente il SearchModal con la query dalla wishlist
+      setTimeout(() => {
+        setShowSearch(true);
+      }, 500); // Small delay to let the screen render first
     }
-  }, [params.id, params.prefilledData]);
+  }, [params.id, params.prefilledData, params.openSearch, params.searchQuery]);
 
   const [isUserModifiedComment, setIsUserModifiedComment] = useState(false);
-  const ratingLabels = ['Terribile', 'Scarso', 'Discreto', 'Buono', 'Ottimo'];
+  const ratingLabels = useMemo(() => ['Terribile', 'Scarso', 'Discreto', 'Buono', 'Ottimo'], []);
 
   useEffect(() => {
     if (rating >= 1) {
@@ -124,7 +134,7 @@ export default function AddBookScreen() {
         setComment(currentLabel);
       }
     }
-  }, [rating]); // Only depend on rating changes, not comment
+  }, [rating, comment, isUserModifiedComment, ratingLabels]);
 
   useEffect(() => {
   if (showRating) {
@@ -994,6 +1004,7 @@ return (
             mode="remote"
             onSelectRemote={handleRemoteSelect}
             onClose={() => setShowSearch(false)}
+            initialQuery={params.searchQuery}
           />
         </Modal>
       </View>

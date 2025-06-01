@@ -30,10 +30,11 @@ interface Props {
   onSelectRemote?: (book: Book) => void;
   onSelectLocal?: (book: Book) => void;
   onClose: () => void;
+  initialQuery?: string;
 }
 
-export default function SearchModal({ mode, onSelectRemote, onSelectLocal, onClose }: Props) {
-  const [query, setQuery] = useState('');
+export default function SearchModal({ mode, onSelectRemote, onSelectLocal, onClose, initialQuery }: Props) {
+  const [query, setQuery] = useState(initialQuery || '');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<Book[]>([]);
   const [allBooks, setAllBooks] = useState<Book[]>([]);  // Nuova variabile per memorizzare tutti i libri
@@ -60,6 +61,16 @@ export default function SearchModal({ mode, onSelectRemote, onSelectLocal, onClo
       useNativeDriver: true,
     }).start();
   }, [fadeAnim]);
+
+  // Auto-search when initialQuery is provided
+  useEffect(() => {
+    if (initialQuery && initialQuery.trim()) {
+      // Small delay to allow the modal to render first
+      setTimeout(() => {
+        setQuery(initialQuery.trim());
+      }, 100);
+    }
+  }, [initialQuery]);
 
   // Funzione per applicare filtri e ordinamento in modo animato
   const applyFiltersAndSort = useCallback((books: Book[]) => {
@@ -253,7 +264,7 @@ export default function SearchModal({ mode, onSelectRemote, onSelectLocal, onClo
     }, 400);
     
     return () => clearTimeout(timeout);
-  }, [query, mode]); // Rimuovi dipendenze problematiche che causano il ciclo
+  }, [query, mode, allBooks, applyFiltersAndSort, doSearch]);
 
   const handleSelect = (item: Book) => {
     console.log('[SearchModal] item selected:', item);

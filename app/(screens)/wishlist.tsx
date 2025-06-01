@@ -99,7 +99,14 @@ export default function WishlistScreen() {
           text: "Cerca online", 
           onPress: () => {
             removeFromWishlistHandler(item.id);
-            router.push('/(tabs)/aggiungi');
+            // Naviga alla pagina add-book con il SearchModal aperto e query precompilata
+            router.push({
+              pathname: '/(screens)/add-book',
+              params: { 
+                searchQuery: item.bookTitle,
+                openSearch: 'true' 
+              }
+            });
           }
         },
         { 
