@@ -760,7 +760,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
-    flexShrink: 0, // L'header non deve mai ridursi
+    flexShrink: 0,
   },
   headerTitle: {
     fontSize: 18,
@@ -777,6 +777,7 @@ const styles = StyleSheet.create({
     minHeight: 60,
     maxHeight: 60,
     flexShrink: 0,
+    width: '100%', // Assicura che non esca dal contenitore
   },
   searchBar: {
     flex: 1,
@@ -784,11 +785,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.surfaceVariant,
     borderRadius: 12,
-    paddingHorizontal: 12,  // Rimosso paddingVertical
+    paddingHorizontal: 12,
     borderWidth: 1,
     borderColor: 'transparent',
     height: 40,
-    minWidth: 200,
+    minWidth: 0, // Cambiato da 200 a 0 per permettere il restringimento
+    maxWidth: '100%', // Assicura che non esca dal contenitore
   },
   searchIcon: {
     marginRight: 8,
@@ -797,16 +799,16 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
-    height: 40,  // Altezza esplicita che corrisponde al contenitore
-    paddingVertical: 0,  // Zero padding verticale
+    height: 40,
+    paddingVertical: 0,
     color: Colors.textPrimary,
-    minWidth: 120,
+    minWidth: 0, // Cambiato da 120 a 0 per permettere il restringimento
   },
   clearBtn: {
-    height: 40,  // Altezza fissa uguale alla barra di ricerca
-    width: 30,   // Larghezza fissa per un'area di tocco adeguata
-    alignItems: 'center',  // Centra orizzontalmente
-    justifyContent: 'center',  // Centra verticalmente
+    height: 40,
+    width: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginLeft: 4,
     flexShrink: 0,
   },
@@ -814,8 +816,8 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     paddingVertical: 8,
     paddingHorizontal: 5,
-    minWidth: 70, // Larghezza minima per il pulsante Annulla
-    flexShrink: 0, // Non si riduce mai
+    minWidth: 60, // Ridotto da 70 a 60 per iPad
+    flexShrink: 0,
   },
   cancelText: {
     color: Colors.primary,
@@ -975,6 +977,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: Colors.border,
+    width: '100%', // Assicura che i filtri non escano dal contenitore
   },
   filtersTitle: {
     fontSize: 12,
@@ -985,6 +988,7 @@ const styles = StyleSheet.create({
   filtersScrollContent: {
     paddingRight: 16,
     paddingBottom: 4,
+    minWidth: '100%', // Assicura che il contenuto scorrevole occupi tutta la larghezza
   },
   filterChip: {
     flexDirection: 'row',
@@ -996,17 +1000,20 @@ const styles = StyleSheet.create({
     marginRight: 8,
     borderWidth: 1,
     borderColor: 'transparent',
+    maxWidth: 150, // Aggiunge un limite massimo per evitare chip troppo larghi
   },
   filterChipActive: {
     backgroundColor: Colors.primary,
   },
   filterIcon: {
     marginRight: 4,
+    flexShrink: 0, // L'icona non deve restringersi
   },
   filterChipText: {
     fontSize: 13,
     fontWeight: '500',
     color: Colors.textPrimary,
+    flexShrink: 1, // Il testo può restringersi se necessario
   },
   filterChipTextActive: {
     color: Colors.textOnPrimary,
@@ -1019,15 +1026,18 @@ const styles = StyleSheet.create({
     borderBottomColor: Colors.border,
     flexDirection: 'row',
     alignItems: 'center',
+    width: '100%', // Assicura che non esca dal contenitore
   },
   sortLabel: {
     fontSize: 12,
     fontWeight: '600',
     color: Colors.textSecondary,
     marginRight: 8,
+    flexShrink: 0, // La label non deve restringersi
   },
   sortScrollContent: {
     flexDirection: 'row',
+    paddingRight: 16, // Aggiunge padding per evitare il taglio
   },
   sortOption: {
     flexDirection: 'row',
@@ -1037,6 +1047,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
     borderRadius: 12,
     backgroundColor: 'transparent',
+    maxWidth: 120, // Limite massimo per le opzioni di ordinamento
   },
   sortOptionActive: {
     backgroundColor: Colors.primary,
@@ -1045,6 +1056,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginLeft: 4,
     color: Colors.textSecondary,
+    flexShrink: 1, // Il testo può restringersi
   },
   sortOptionTextActive: {
     color: Colors.textOnPrimary,
@@ -1056,6 +1068,7 @@ const styles = StyleSheet.create({
     marginRight: 4,
     height: 16,
     width: 16,
+    flexShrink: 0,
   },
   genreSelectorContainer: {
     backgroundColor: Colors.surfaceVariant,
@@ -1068,6 +1081,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
     marginBottom: 8,
+    width: '100%', // Assicura che non esca dal contenitore
   },
   genreSelectorTitle: {
     fontSize: 14,
@@ -1078,6 +1092,7 @@ const styles = StyleSheet.create({
   genreList: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    width: '100%', // Assicura che la lista generi occupi tutta la larghezza
   },
   genreOption: {
     backgroundColor: Colors.surface,
@@ -1088,6 +1103,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderWidth: 1,
     borderColor: Colors.border,
+    maxWidth: '45%', // Limita la larghezza per permettere 2 generi per riga su schermi stretti
   },
   genreOptionActive: {
     backgroundColor: Colors.primary,
