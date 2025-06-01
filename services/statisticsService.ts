@@ -96,51 +96,53 @@ export async function getReadingStatistics(): Promise<ReadingStats> {
  * 
  * @function getMonthlyReadingData
  * @description Restituisce i dati per il grafico delle letture mensili degli ultimi 6 mesi.
+ * Restituisce i dati di lettura mensile degli **ultimi 6 mesi completi**,
+ * compreso il mese corrente, senza tagliare i primi giorni del mese iniziale
+ * e senza duplicare i libri se lo status fosse salvato più volte.
  * @returns {Promise<MonthlyData[]>} Array di dati per il grafico mensile
  * @async
  */
 export async function getMonthlyReadingData(): Promise<MonthlyData[]> {
   const db = getDBConnection();
-  
+
+  /* Dal primo giorno del mese corrente, risali di 5 mesi.
+     Esempio: oggi 1 giu 2025  →  range 1 gen 2025 – 31 mag 2025 + giugno. */
   const monthlyStats = await db.getAllAsync(`
-    SELECT 
-      strftime('%m', rs.end_time) as month,   -- equivale a EXTRACT(MONTH FROM rs.end_time) di psql
-      strftime('%Y', rs.end_time) as year,    -- equivale a EXTRACT(YEAR FROM rs.end_time) di psql
-      COUNT(*) as count
-    FROM reading_status rs
-    WHERE rs.status = 'completed' 
-      AND rs.end_time IS NOT NULL
-      AND rs.end_time >= date('now', '-6 months')
-    GROUP BY strftime('%Y-%m', rs.end_time)
-    ORDER BY year, month
+    SELECT
+      strftime('%m', rs.end_time) AS month,
+      strftime('%Y', rs.end_time) AS year,
+      COUNT(DISTINCT rs.book_id)     AS count
+    FROM   reading_status rs
+    WHERE  rs.status   = 'completed'
+      AND  rs.end_time IS NOT NULL
+      AND  rs.end_time >= date('now','start of month','-5 months')
+    GROUP BY year, month
+    ORDER BY year, month;
   `) as any[];
 
-  // Nomi dei mesi abbreviati
-  const monthNames = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 
-                     'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
+  const monthNames = ['Gen','Feb','Mar','Apr','Mag','Giu',
+                      'Lug','Ago','Set','Ott','Nov','Dic'];
 
-  // Crea array degli ultimi 6 mesi
-  const result: MonthlyData[] = [];
   const now = new Date();
-  
+  const result: MonthlyData[] = [];
+
   for (let i = 5; i >= 0; i--) {
-    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const monthNum = date.getMonth();
-    const yearNum = date.getFullYear();
-    
-    const stat = monthlyStats.find(s => 
-      parseInt(s.month) === monthNum + 1 && parseInt(s.year) === yearNum
-    );
-    
+    const date     = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const m        = date.getMonth();        // 0-based
+    const y        = date.getFullYear();
+    const row      = monthlyStats.find(
+                       s => parseInt(s.month,10) === m + 1 && parseInt(s.year,10) === y);
+
     result.push({
-      value: stat?.count || 0,
-      label: monthNames[monthNum],
-      frontColor: '#4A90E2'
+      value      : row?.count ?? 0,
+      label      : monthNames[m],
+      frontColor : '#4A90E2',
     });
   }
 
   return result;
 }
+
 
 /**
  * 
@@ -195,7 +197,8 @@ export async function getYearlyReadingData(): Promise<MonthlyData[]> {
 export async function getGenreDistribution(): Promise<GenreData[]> {
   const db = getDBConnection();
   
-  const genreStats = await db.getAllAsync(`
+  // Prima ottieni tutti i generi senza limite
+  const allGenreStats = await db.getAllAsync(`
     SELECT 
       g.name,
       COUNT(bg.book_id) as count
@@ -204,21 +207,56 @@ export async function getGenreDistribution(): Promise<GenreData[]> {
     JOIN books b ON bg.book_id = b.id
     GROUP BY g.id, g.name
     ORDER BY count DESC
-    LIMIT 5
   `) as any[];
 
-  const colors = ['#4A90E2', '#9F7AEA', '#38B2AC', '#ED64A6', '#48BB78'];
-  const total = genreStats.reduce((sum, genre) => sum + genre.count, 0);
+  if (allGenreStats.length === 0) return [];
+
+  const colors = ['#4A90E2', '#9F7AEA', '#38B2AC', '#ED64A6', '#48BB78', '#9e9e9e'];
+  const total = allGenreStats.reduce((sum, genre) => sum + genre.count, 0);
   
-  return genreStats.map((genre, index) => {
-    const percentage = Math.round((genre.count / total) * 100);
-    return {
-      value: percentage,
-      color: colors[index] || '#9e9e9e',
-      text: `${percentage}%`,
-      label: genre.name
-    };
-  });
+  let result: GenreData[] = [];
+  
+  if (allGenreStats.length <= 5) {
+    // Se abbiamo 5 o meno generi, mostriamo tutti
+    result = allGenreStats.map((genre, index) => {
+      const percentage = Math.round((genre.count / total) * 100);
+      return {
+        value: percentage,
+        color: colors[index] || '#9e9e9e',
+        text: `${percentage}%`,
+        label: genre.name
+      };
+    });
+  } else {
+    // Se abbiamo più di 5 generi, mostriamo i primi 4 + "Altri"
+    const topGenres = allGenreStats.slice(0, 4);
+    const otherGenres = allGenreStats.slice(4);
+    const otherCount = otherGenres.reduce((sum, genre) => sum + genre.count, 0);
+    
+    // Aggiungi i primi 4 generi
+    result = topGenres.map((genre, index) => {
+      const percentage = Math.round((genre.count / total) * 100);
+      return {
+        value: percentage,
+        color: colors[index],
+        text: `${percentage}%`,
+        label: genre.name
+      };
+    });
+    
+    // Aggiungi la categoria "Altri"
+    if (otherCount > 0) {
+      const otherPercentage = Math.round((otherCount / total) * 100);
+      result.push({
+        value: otherPercentage,
+        color: colors[4], // Colore grigio per "Altri"
+        text: `${otherPercentage}%`,
+        label: 'Altri'
+      });
+    }
+  }
+
+  return result;
 }
 
 /**
@@ -233,35 +271,37 @@ export async function getWeeklyProgressData(): Promise<ProgressData[]> {
   
   const weeklyStats = await db.getAllAsync(`
     SELECT 
-      CASE strftime('%w', date(rs.start_time))
-        WHEN '0' THEN 'Dom'
-        WHEN '1' THEN 'Lun'
-        WHEN '2' THEN 'Mar'
-        WHEN '3' THEN 'Mer'
-        WHEN '4' THEN 'Gio'
-        WHEN '5' THEN 'Ven'
-        WHEN '6' THEN 'Sab'
-      END as day_name,
-      strftime('%w', date(rs.start_time)) as day_number,
+      date(rs.start_time) as date,
       COUNT(*) as sessions
     FROM reading_sessions rs
-    WHERE rs.start_time >= date('now', '-7 days')
+    WHERE rs.start_time >= date('now', '-6 days')
       AND rs.end_time IS NOT NULL
-    GROUP BY strftime('%w', date(rs.start_time))
-    ORDER BY day_number
+    GROUP BY date(rs.start_time)
+    ORDER BY date
   `) as any[];
 
-  const daysOfWeek = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+  const result: ProgressData[] = [];
+  const today = new Date();
   
-  return daysOfWeek.map(day => {
-    const stat = weeklyStats.find(s => s.day_name === day);
-    const value = stat?.sessions || 0;
-    return {
-      value,
-      dataPointText: value.toString(),
-      label: day
-    };
-  });
+  // Crea array degli ultimi 7 giorni (da 6 giorni fa a oggi)
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    
+    const dateStr = date.toISOString().split('T')[0];
+    const dayNames = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+    const dayName = dayNames[date.getDay()];
+    
+    const sessions = weeklyStats.find(stat => stat.date === dateStr)?.sessions || 0;
+    
+    result.push({
+      value: sessions,
+      dataPointText: sessions.toString(),
+      label: dayName
+    });
+  }
+
+  return result;
 }
 
 /**

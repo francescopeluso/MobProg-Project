@@ -39,16 +39,18 @@ const RatingDistributionChart: React.FC<RatingDistributionProps> = ({
               <RatingStars rating={rating} size={16} />
             </View>
             <View style={styles.barContainer}>
-              <View 
-                style={[
-                  styles.bar, 
-                  { 
-                    width: `${percentage}%`,
-                    backgroundColor: rating >= 4 ? Colors.accent : 
-                                   rating >= 3 ? Colors.warning : Colors.error
-                  }
-                ]} 
-              />
+              {count > 0 && (
+                <View 
+                  style={[
+                    styles.bar, 
+                    { 
+                      width: `${percentage}%`,
+                      backgroundColor: rating >= 4 ? Colors.accent : 
+                                     rating >= 3 ? Colors.warning : Colors.error
+                    }
+                  ]} 
+                />
+              )}
             </View>
             <Text style={styles.count}>{count}</Text>
           </View>

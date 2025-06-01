@@ -8,46 +8,77 @@ interface MonthlyReadingChartProps {
 }
 
 const MonthlyReadingChart: React.FC<MonthlyReadingChartProps> = ({ data }) => {
-  // Calcola dimensioni ottimali per garantire leggibilità
-  const screenWidth = Dimensions.get('window').width;
-  const containerPadding = 32; // Padding del SectionCard  
-  const chartPadding = 32; // Padding del chart container
-  const availableContainerWidth = screenWidth - containerPadding - chartPadding;
-  
-  // Dimensioni fisse per garantire leggibilità
-  const barWidth = 35; // Larghezza fissa per buona leggibilità
-  const spacing = 15; // Spaziatura fissa tra le barre
-  const yAxisWidth = 45; // Spazio per le etichette Y
-  
-  const totalBars = data.length;
-  const totalSpacing = (totalBars - 1) * spacing;
-  const barsWidth = totalBars * barWidth;
-  const chartContentWidth = barsWidth + totalSpacing;
-  const totalChartWidth = chartContentWidth + yAxisWidth;
-  
-  // Se il grafico è più largo del container, permettiamo lo scroll
-  const needsScroll = totalChartWidth > availableContainerWidth;
-  const finalWidth = needsScroll ? totalChartWidth : availableContainerWidth;
+  /* 1.  Se non ci sono dati, mostriamo un messaggio elegante e usciamo */
+  if (!data?.length) {
+    return (
+      <View style={styles.chartContainer}>
+        <Text style={styles.chartTitle}>Libri letti per mese</Text>
+        <Text style={styles.emptyMsg}>Nessuna lettura registrata negli ultimi mesi</Text>
+      </View>
+    );
+  }
 
-  const ChartComponent = (
+  /* 2.  NON filtriamo più i mesi con valore 0: il grafico resta uniforme.
+        Se vuoi ancora nasconderli, cambia `sourceData` in `data.filter(...)`. */
+  const sourceData = data;
+
+  /* 3.  Layout dinamico ---------------------------------------------------- */
+  const screenWidth            = Dimensions.get('window').width;
+  const outerPadding           = 32;  // padding del container SectionCard
+  const innerPadding           = 32;  // padding orizzontale locale
+  const availableWidth         = screenWidth - outerPadding - innerPadding;
+
+  const barWidth               = 35;
+  const spacing                = 15;
+  const yAxisWidth             = 45;
+  const endPadding             = 10;
+
+  const totalBars              = sourceData.length;
+  const totalSpacing           = Math.max((totalBars - 1) * spacing, 0);
+  const barsWidth              = totalBars * barWidth;
+  const chartContentWidth      = barsWidth + totalSpacing + endPadding;
+  const calcWidth              = chartContentWidth + yAxisWidth;
+
+  const needsScroll            = calcWidth > availableWidth;
+  const finalWidth             = needsScroll ? calcWidth : availableWidth;
+
+  /* 4.  Scroll automatico verso la fine per mostrare sempre il mese più recente */
+  const scrollViewRef = React.useRef<ScrollView>(null);
+  const scrollToEnd   = () => {
+    if (needsScroll && scrollViewRef.current) {
+      scrollViewRef.current.scrollToEnd({ animated: false });
+    }
+  };
+
+  /* 5.  Pre-processing dei dati per il BarChart --------------------------- */
+  const processed = sourceData.map(item => ({
+    ...item,
+    frontColor       : item.frontColor ?? Colors.secondary,
+    topLabelComponent: () => (
+      <Text style={styles.topLabel}>{item.value}</Text>
+    ),
+  }));
+
+  const maxValue = Math.max(...processed.map(p => p.value), 1);
+
+  /* 6.  Render ------------------------------------------------------------- */
+  const Chart = (
     <BarChart
-      data={data.map(item => ({ 
-        ...item,
-        frontColor: item.frontColor || Colors.secondary 
-      }))}
-      width={finalWidth}
-      barWidth={barWidth}
-      spacing={spacing}
+      data                 = {processed}
+      width                = {finalWidth}
+      barWidth             = {barWidth}
+      spacing              = {spacing}
       roundedTop
       hideRules
-      xAxisThickness={1}
-      yAxisThickness={0}
-      yAxisTextStyle={{ color: Colors.textTertiary, fontSize: 11 }}
-      xAxisLabelTextStyle={{ color: Colors.textTertiary, fontSize: 10 }}
-      noOfSections={4}
-      maxValue={Math.max(...data.map(item => item.value), 1)}
+      xAxisThickness       = {1}
+      yAxisThickness       = {0}
+      yAxisTextStyle       = {styles.axisText}
+      xAxisLabelTextStyle  = {styles.axisText}
+      noOfSections         = {4}
+      maxValue             = {maxValue}
       isAnimated
-      animationDuration={800}
+      animationDuration    = {800}
+      disablePress         = {true}
     />
   );
 
@@ -55,54 +86,60 @@ const MonthlyReadingChart: React.FC<MonthlyReadingChartProps> = ({ data }) => {
     <View style={styles.chartContainer}>
       <Text style={styles.chartTitle}>Libri letti per mese</Text>
       {needsScroll && (
-        <Text style={styles.scrollHint}>← Scorri per vedere tutti gli ultimi mesi →</Text>
+        <Text style={styles.scrollHint}>
+          ← Scorri per i mesi precedenti →
+        </Text>
       )}
+
       {needsScroll ? (
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          style={styles.scrollContainer}
-          contentContainerStyle={styles.scrollContent}
+        <ScrollView
+          ref                   = {scrollViewRef}
+          horizontal
+          showsHorizontalScrollIndicator = {false}
+          onContentSizeChange   = {scrollToEnd}
+          style                 = {styles.scrollContainer}
+          contentContainerStyle = {[styles.scrollContent, { paddingRight: endPadding }]}
         >
-          {ChartComponent}
+          {Chart}
         </ScrollView>
       ) : (
-        <View style={styles.chartWrapper}>
-          {ChartComponent}
-        </View>
+        <View style={styles.chartWrapper}>{Chart}</View>
       )}
     </View>
   );
 };
 
+/* ─────────── Styles ─────────── */
 const styles = StyleSheet.create({
-  chartContainer: {
-    alignItems: 'center',
-    marginTop: Spacing.sm,
-  },
-  chartWrapper: {
-    alignItems: 'center',
-    width: '100%',
-  },
-  scrollContainer: {
-    width: '100%',
-  },
-  scrollContent: {
-    alignItems: 'center',
-    paddingHorizontal: Spacing.xs,
-  },
-  chartTitle: {
-    fontSize: Typography.fontSize.lg,
+  chartContainer: { alignItems: 'center', marginTop: Spacing.sm },
+  chartWrapper  : { alignItems: 'center', width: '100%' },
+  scrollContainer: { width: '100%' },
+  scrollContent : { alignItems: 'center', paddingHorizontal: Spacing.xs },
+  chartTitle    : {
+    fontSize : Typography.fontSize.lg,
     fontWeight: Typography.fontWeight.medium,
     marginBottom: Spacing.lg,
-    color: Colors.textSecondary,
+    color    : Colors.textSecondary,
     textAlign: 'center',
   },
   scrollHint: {
-    fontSize: Typography.fontSize.sm,
-    color: Colors.textTertiary,
+    fontSize : Typography.fontSize.sm,
+    color    : Colors.textTertiary,
     textAlign: 'center',
     marginBottom: Spacing.md,
+    fontStyle: 'italic',
+  },
+  axisText: { color: Colors.textTertiary, fontSize: 11 },
+  topLabel: {
+    color    : Colors.textSecondary,
+    fontSize : 10,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  emptyMsg: {
+    fontSize: Typography.fontSize.md,
+    color   : Colors.textTertiary,
+    marginTop: Spacing.md,
     fontStyle: 'italic',
   },
 });
