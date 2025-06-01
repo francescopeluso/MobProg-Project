@@ -822,52 +822,58 @@ return (
               transparent
               onRequestClose={() => setShowNoteModal(false)}
             >
-              <View style={styles.modalOverlay}>
-                <View style={styles.modalContent}>
-                  <View style={styles.modalHeader}>
-                    <Text style={styles.modalTitle}>Note</Text>
-                    <TouchableOpacity onPress={() => setShowNoteModal(false)}>
-                      <Ionicons name="close" size={24} color={Colors.textSecondary} />
-                    </TouchableOpacity>
-                  </View>
+              <KeyboardAvoidingView 
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={0}
+              >
+                <View style={styles.modalOverlay}>
+                  <View style={styles.modalContent}>
+                    <View style={styles.modalHeader}>
+                      <Text style={styles.modalTitle}>Note</Text>
+                      <TouchableOpacity onPress={() => setShowNoteModal(false)}>
+                        <Ionicons name="close" size={24} color={Colors.textSecondary} />
+                      </TouchableOpacity>
+                    </View>
 
-                  <TextInput
-                    style={[styles.notesTextInput, {
-                      marginBottom: Spacing.xl,
-                      maxHeight: 300  // Add fixed maximum height
-                    }]}
-                    placeholder="Aggiungi le tue note..."
-                    placeholderTextColor="#999"
-                    multiline
-                    textAlignVertical="top"
-                    value={note}
-                    onChangeText={(text) => {
-                      setNote(text);
-                      setIsDirty(true);
-                    }}
-                    scrollEnabled={true}  // Enable scrolling inside the TextInput
-                    autoFocus={true}
-                  />
-
-                  <View style={styles.modalButtons}>
-                    <TouchableOpacity 
-                      style={[styles.modalButton, styles.cancelButton]}
-                      onPress={() => setShowNoteModal(false)}
-                    >
-                      <Text style={styles.cancelButtonText}>Annulla</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={[styles.modalButton, styles.primaryButton]}
-                      onPress={() => {
+                    <TextInput
+                      style={[styles.notesTextInput, {
+                        marginBottom: Spacing.md,  // Ridotto da Spacing.xl
+                        maxHeight: 300
+                      }]}
+                      placeholder="Aggiungi le tue note..."
+                      placeholderTextColor="#999"
+                      multiline
+                      textAlignVertical="top"
+                      value={note}
+                      onChangeText={(text) => {
+                        setNote(text);
                         setIsDirty(true);
-                        setShowNoteModal(false);
                       }}
-                    >
-                      <Text style={styles.primaryButtonText}>Salva</Text>
-                    </TouchableOpacity>
+                      scrollEnabled={true}
+                      autoFocus={true}
+                    />
+
+                    <View style={styles.modalButtons}>
+                      <TouchableOpacity 
+                        style={[styles.modalButton, styles.cancelButton]}
+                        onPress={() => setShowNoteModal(false)}
+                      >
+                        <Text style={styles.cancelButtonText}>Annulla</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[styles.modalButton, styles.primaryButton]}
+                        onPress={() => {
+                          setIsDirty(true);
+                          setShowNoteModal(false);
+                        }}
+                      >
+                        <Text style={styles.primaryButtonText}>Salva</Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </View>
-              </View>
+              </KeyboardAvoidingView>
             </Modal>
 
             </View>
@@ -1386,7 +1392,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
   },
   primaryButtonText: {
-    fontSize: Typography.fontSize.xs,
+    fontSize: Typography.fontSize.md,
     color: Colors.textOnPrimary,
     fontWeight: Typography.fontWeight.medium,
   },
