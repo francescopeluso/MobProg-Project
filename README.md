@@ -1,4 +1,11 @@
 # 📚 Readit - Mobile Programming course project - Group 10
+
+[![React Native](https://img.shields.io/badge/React%20Native-blue.svg)](https://reactnative.dev/)
+[![Expo](https://img.shields.io/badge/Expo-white.svg)](https://expo.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript--blue.svg)](https://www.typescriptlang.org/)
+[![SQLite](https://img.shields.io/badge/SQLite-3-green.svg)](https://www.sqlite.org/)
+[![Platform](https://img.shields.io/badge/Platform-iOS%20%7C%20iPadOS%20%7C%20Android-lightgrey.svg)](https://reactnative.dev/)
+
 - ⚙️ Mobile Programming team project, Academic Year 2024-25
 - 🎓 Computer Engineering Bachelor's degree course, cohort 2022-23
 - 🏫 Dept. of Information, Electrical Engineering and Applied Mathematics @ [University of Salerno](https://unisa.it/)
