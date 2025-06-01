@@ -269,35 +269,37 @@ export async function getWeeklyProgressData(): Promise<ProgressData[]> {
   
   const weeklyStats = await db.getAllAsync(`
     SELECT 
-      CASE strftime('%w', date(rs.start_time))
-        WHEN '0' THEN 'Dom'
-        WHEN '1' THEN 'Lun'
-        WHEN '2' THEN 'Mar'
-        WHEN '3' THEN 'Mer'
-        WHEN '4' THEN 'Gio'
-        WHEN '5' THEN 'Ven'
-        WHEN '6' THEN 'Sab'
-      END as day_name,
-      strftime('%w', date(rs.start_time)) as day_number,
+      date(rs.start_time) as date,
       COUNT(*) as sessions
     FROM reading_sessions rs
-    WHERE rs.start_time >= date('now', '-7 days')
+    WHERE rs.start_time >= date('now', '-6 days')
       AND rs.end_time IS NOT NULL
-    GROUP BY strftime('%w', date(rs.start_time))
-    ORDER BY day_number
+    GROUP BY date(rs.start_time)
+    ORDER BY date
   `) as any[];
 
-  const daysOfWeek = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+  const result: ProgressData[] = [];
+  const today = new Date();
   
-  return daysOfWeek.map(day => {
-    const stat = weeklyStats.find(s => s.day_name === day);
-    const value = stat?.sessions || 0;
-    return {
-      value,
-      dataPointText: value.toString(),
-      label: day
-    };
-  });
+  // Crea array degli ultimi 7 giorni (da 6 giorni fa a oggi)
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    
+    const dateStr = date.toISOString().split('T')[0];
+    const dayNames = ['Dom', 'Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab'];
+    const dayName = dayNames[date.getDay()];
+    
+    const sessions = weeklyStats.find(stat => stat.date === dateStr)?.sessions || 0;
+    
+    result.push({
+      value: sessions,
+      dataPointText: sessions.toString(),
+      label: dayName
+    });
+  }
+
+  return result;
 }
 
 /**
