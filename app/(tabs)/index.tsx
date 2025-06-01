@@ -1,4 +1,3 @@
-import { SectionCard } from '@/components';
 import { getTabContentBottomPadding } from '@/constants/layout';
 import { Colors, CommonStyles } from '@/constants/styles';
 import { createTables, getDBConnection } from '@/utils/database';
@@ -18,6 +17,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SectionCard } from '../../components';
 import BookCarousel from '../../components/BookCarousel';
 import RecommendationCarousel from '../../components/RecommendationCarousel';
 import RecommendationDetailModal from '../../components/RecommendationDetailModal';
@@ -26,11 +26,9 @@ import SessionButton from '../../components/SessionButton';
 import { Book, getBooksByStatus } from '../../services/bookApi';
 import { getPersonalizedWishlistRecommendations } from '../../services/recommendationApi';
 
-// ───── Import del nostro hook “first launch” ─────
+// Import per i suggerimenti al primo avvio
 import type { RecommendedBook } from '@/services/onboardingService';
 import { useFirstLaunchRecommendations } from '../../hooks/useFirstLaunchRecommendations';
-
-
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -71,7 +69,7 @@ export default function HomeScreen() {
     setCompleted(completedBooks);
   }, []);
 
-  /* Fetch delle raccomandazioni “wishlist” (personalizzate) */
+  /* Fetch delle raccomandazioni "wishlist" (personalizzate) */
   const fetchWishlistRecommendations = useCallback(async () => {
     try {
       setLoadingWishlistRecommendations(true);
@@ -159,7 +157,7 @@ export default function HomeScreen() {
           <SectionCard title="Consigliati per te">
             <RecommendationCarousel
               books={firstLaunchRecs.map((rb: RecommendedBook) => ({
-                // Converto RecommendedBok in Book per il carousel
+                // Converto RecommendedBook in Book per il carousel
                 id: undefined, // Questi libri non sono ancora nel database
                 title: rb.title,
                 authors: [rb.authors],
@@ -236,17 +234,6 @@ export default function HomeScreen() {
             )}
           </SectionCard>
         )}
-
-        {/* Vecchia sezione suggeriti - non più necessaria
-        {suggested.length > 0 && (
-          <SectionCard title="Suggeriti">
-            <BookCarousel
-              books={suggested}
-              onPress={(id) => router.push({ pathname: '/book-details', params: { id } })}
-            />
-          </SectionCard>
-        )}
-        */}
       </ScrollView>
 
       {/* Modale di ricerca */}
@@ -274,7 +261,7 @@ export default function HomeScreen() {
   );
 }
 
-// Styles
+// Stili componente
 const styles = StyleSheet.create({
   emptyText: {
     textAlign: 'center',
