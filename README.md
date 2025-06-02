@@ -23,11 +23,11 @@
 ## 🚀 Quick Start
 
 ```bash
-# Install dependencies
-npm install
+# Install all needed dependencies
+npm i
 
-# Start the app
-npx expo start
+# Start the development server
+npm run start
 ```
 
 ## 🛠️ Tech Stack
