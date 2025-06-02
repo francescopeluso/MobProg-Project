@@ -32,14 +32,14 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Build and update (Preview)
+      - name: Build Android and update (Preview)
         if: github.event_name == 'pull_request'
         run: |
-          eas build --platform all --profile preview --non-interactive --no-wait
+          eas build --platform android --profile preview --non-interactive --no-wait
           eas update --branch preview --message "Preview build from PR #${{ github.event.number }}"
 
-      - name: Build and update (Production)
+      - name: Build Android and update (Production)
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         run: |
-          eas build --platform all --profile production --non-interactive --no-wait
+          eas build --platform android --profile production --non-interactive --no-wait
           eas update --branch production --message "Production build from commit ${{ github.sha }}"
