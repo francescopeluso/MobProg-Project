@@ -356,9 +356,16 @@ export default function AddBookScreen() {
     
     // Validazione URL copertina
     if (form.cover_url.trim()) {
+      // Skip validation if it's a local file URI from ImagePicker
+      const isLocalUri = form.cover_url.startsWith('file://') || 
+               form.cover_url.startsWith('content://') ||
+               bookImage === form.cover_url;
+               
+      if (!isLocalUri) {
       const urlPattern = /^https?:\/\/.+\..+/i;
       if (!urlPattern.test(form.cover_url.trim())) {
-        errors.push('L\'URL della copertina deve essere un link valido (http:// o https://).');
+        errors.push('L\'URL della copertina deve essere un link valido (http:// o https://) o un\'immagine dalla galleria.');
+      }
       }
     }
     
